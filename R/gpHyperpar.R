@@ -116,6 +116,7 @@ gpHyperparExportVector <- function(gp, col = "value")
 
 # get index of i-th optimized (non-fixed) hyperparameter (numbered from 1) within all hyperparameters
 # i: index of the hyperparameter within non-fixed (optimized) hyperparameters
+#' @export
 gpHyperparIdx <- function (gp, i)
 {
 	stopifnot(i >= 1)
@@ -220,6 +221,7 @@ gpHyperparCheckAll <- function (gp)
 
 # get the starting values from another model (gp0) wherever possible
 # will set the hyperpar columns `start` and `value` based on `value` from model gp0 wherever it will match the component, hyperparameter name and variable name
+#' @export
 gpHyperparStartFromModel <- function(gp, gp0)
 {
 	hy <- gp$hyperpar
@@ -231,6 +233,8 @@ gpHyperparStartFromModel <- function(gp, gp0)
 	gpHyperparCheckAll(gp)
 	gp
 }
+
+
 
 #hyperpar 
 #	D- decode/encode 
