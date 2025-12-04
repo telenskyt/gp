@@ -1,0 +1,11 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+R/_other/
+R/obsolete/
+R/cov_funcs/obsolete/
+tmp/
+new/
+_legacy_model/
+inst/doc

@@ -1,0 +1,7 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^.*/obsolete/
+^R/_other/
+^tmp/
+^new/
+^_legacy_model/
