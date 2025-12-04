@@ -1,5 +1,7 @@
 # 2025-12-04: prebiram tento kod z R/my_lib/, je uplne stejny jako d:\tomas\ces\pradel_tr_paper\code\functions\tools.R
 
+cubic.root <- function (x) sign(x)*(abs(x)^(1/3))
+
 
 # This function returns TRUE wherever elements are the same, including NA's,
 # and FALSE everywhere else.
@@ -70,6 +72,7 @@ na2zero <- function (x) if (is.na(x)) 0 else x
 # TIP: if you want really good debugging, call this:
 # mstartOptions(mem_precise = TRUE, report_id = TRUE)
 # this will change these options for all calls of mstart/mstop anywhere!! :)
+#'@export
 mstart <- function(absolute_time = FALSE, id = NULL, bw.compat = FALSE, quiet = FALSE, mem_precise = mstartOptions("mem_precise"))
 {
 	gc_max <- gc(full = FALSE) # get the maximum before reset
@@ -112,6 +115,7 @@ mstart <- function(absolute_time = FALSE, id = NULL, bw.compat = FALSE, quiet = 
 
 mstartDataInit <- function () list(i = 0, stack = list(), options = list(mem_precise = FALSE, report_id = FALSE))
 
+#'@export
 mstartOptions <- function (getOption = NULL, mem_precise = NULL, report_id = NULL)
 {
 	if (!exists("mstart_mstop_data"))
@@ -124,6 +128,7 @@ mstartOptions <- function (getOption = NULL, mem_precise = NULL, report_id = NUL
 		mstart_mstop_data$options$report_id <<- report_id		
 }
 
+#'@export
 mstop <- function(absolute_time = FALSE, id = NULL, bw.compat = FALSE, quiet = FALSE, report_id = mstartOptions("report_id")) 
 {
 	t2 <- proc.time()
