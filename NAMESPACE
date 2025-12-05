@@ -3,6 +3,7 @@
 export(endLog)
 export(gp)
 export(gpData)
+export(gpDataSize)
 export(gpFit)
 export(gpHyperparCheck)
 export(gpHyperparCheckAll)
