@@ -255,12 +255,19 @@ gpDataPrepare <- function(gp, gpData)
 }
 
 
-# size of the GP dataset along given grouping factor `fact`, or its "raw size" if there is no grouping factor (the default fact = "1").
-#
-# If the grouping factor `fact` is specified, the size unit is this grouping factor, i.e.
-# the function returns number of levels of this grouping factor. If fact = "1" (the default), the dimension is given by the main table
-# (if the main table is not present, all tables necessarily have the same number of rows - this is a consequence of the data validation in gpData()).
-
+#' Size of the GP dataset (number of rows) along given grouping factor. 
+#'
+#' If the grouping factor `fact` is specified, the size unit is this grouping factor, i.e.
+#' the function returns number of levels of this grouping factor. If there is no grouping factor 
+#' specified (fact = "1", the default), the dimension is given by the main table
+#' (if the main table is not present, all tables necessarily have the same number of rows - 
+#' this is a consequence of the data validation in \code{gpData()}).
+#' 
+#' @param gpData object of class gpData
+#' @param fact character. Grouping factor name, or "1" for no grouping factor (the default).
+#' @return Integer. Size of the dataset along the given grouping factor, or the "raw size" if fact = "1".
+#' @export
+#' 
 gpDataSize <- function(gpData, fact = "1")
 {
 	if (fact == "1")
@@ -284,6 +291,29 @@ gpDataSubset <- function(gpData, fact = "1", indices)
 }
 
 
+
+#' Determine the size of the Gaussian Process 
+#' 
+#' Determine the size of the Gaussian Process, i.e. the dimension of the covariance matrix, as well as the corresponding grouping factor which defines this size 
+#' (or "1" if there is no such grouping factor).
+#' 
+#' @details 
+#' 1. If all covariance components (except intercept) use the same grouping factor (true grouping factor, not "1"), then the dimension of the Gaussian Process is determined
+#' by this factor, and the size is given by the number of levels of this factor.
+#' 
+#' 2. In all other cases (no grouping factors, or some components with and some without a grouping factor, or multiple grouping factors used in different components), 
+#' the size is given by the number of rows of the main table (if the main table is not present, all tables necessarily have the same number of rows). The returned factor is "1",
+#' meaning "no grouping factor".
+#' 
+#' @param gp object of class gp
+#' @return A list with two elements:
+#' \describe{
+#' \item{size}{integer - size of the Gaussian Process (dimension of the covariance matrix; i.e. both number of rows and columns, since
+#' the covariance matrix is a square matrix)}
+#' \item{fact}{character - grouping factor corresponding to the dimension of the Gaussian process which defines the size; or "1" meaning "no grouping factor"}
+#' }
+#' @export 
+#' 
 # dimenze GP (vsechny komponenty zvoleny):
 # - pokud tam nejsou grouping factors, zadna table neni main, vsechny pouzite tables have same number of rows a to bude dimenze GP
 # - pokud tam jsou grouping factors:
@@ -296,8 +326,7 @@ gpDataSubset <- function(gpData, fact = "1", indices)
 # 2025-10-18: ?? nevrati to presne totez co gpDataSize(gp$data, gp$GP_factor), jak to pouzivam v K_matrix()?
 #				asi jo, ale je to cirkularni definice, protoze to gp$GP_factor se inicializuje na zaklade teto funkce!
 #		- tj. prejmenovat ji spis na gpDetermineSize() a prezentovat spis jako one time function?
-
-gpSize <- function (gp)
+gpDetermineSize <- function (gp)
 {
 	data <- gp$data
 	comps <- gp$covComp_df
