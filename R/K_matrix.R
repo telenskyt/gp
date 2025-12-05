@@ -63,6 +63,33 @@ K_cache <- function (gp, hyperpar, x1, x2 = NULL, cache_for = c("derivative", "g
 }
 
 
+
+#' Construct covariance matrix (K) for given data and hyperparameters
+#' 
+#' @param gp Object of class \code{gp}.
+#' @param hyperpar (optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.
+#' @param x1 object of class \code{gpData} - data corresponding to rows of the resultant covariance matrix. !!! It is supposed to be correctly scaled already! 
+#' (see \code{gpDataPrepare()})
+#' @param x2 (optional) object of class \code{gpData} - data corresponding to columns of the resultant covariance matrix. If not supplied, \code{x1} is used and 
+#' the covariance matrix is square and symmetric. !!! It is supposed to be correctly scaled already!  !!! doplnit standardizacni fci kterou pouziju u predikci!!!
+#' @param K.cache (optional) object returned by \code{K_cache()} function, to speed up repeated calls to \code{K_matrix()} and \code{dK_dhi()} functions.
+#' @template param-components
+#' 
+#' @param comp_means only meaningful for \code{x1} being the training dataset and \code{x2 = NULL}. If set to TRUE, then for each component, calculate vector of covariances 
+#' 		of the training data with the average of all the predictions from the training dataset, for that particular component. These vectors are 
+#' 		the rowmeans of training covariance matrices (that's why called component means). Save them in an attribute `comp_means` of K. These are later used
+#' 		in the \code{predict} method.
+#' 
+#'		For comp_means = TRUE, x1 should be the training dataset. Perhaps it might make sense in other cases as well, but just make sure you know what you're doing :)
+#' @param comp_means_weights - don't have to sum up to 1, will be normalized
+#'
+#' @details 
+#' If \code{x2} is not supplied, the covariance matrix is square and symmetric, representing the covariances among all rows in \code{x1}. 
+#' 
+#' The dimension of the resultant covariance matrix: the number of rows will be determined by \code{gpDataSize(x1, gp$GP_factor)}, where \code{gp$GP_factor} 
+#' is the grouping factor corresponding to the dimension of the Gaussian process. Analogically, if \code{x2} is supplied, the number of columns will be determined by 
+#' \code{gpDataSize(x2, gp$GP_factor)}.
+
 # hyperpar - list of lists of vectors
 # components - see validate_components()
 
