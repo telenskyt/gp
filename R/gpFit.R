@@ -115,7 +115,7 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 		} else {
 			# two-stage fitting method!
 
-			# determine the components to be staged
+			# determine the components to be staged (i.e. those that have also other hyper-parameters apart from sigma2)
 			hy <- gp$hyperpar
 			staged_components <- hy %>%
 				summarize(.by = component, nhyp = n_distinct(hyperpar), with_sigma2 = any(hyperpar == "sigma2")) %>%
