@@ -1,15 +1,21 @@
 
 
-# validates the `components` argument - the selection of components
-# returns character vector of component names
+#' Validates the components argument - the selection of components
+#'
+#' 
+#' @param gp object of class gp
+#' @template param-components
+#' 
+#' @returns character vector of component names
+#' @export 
+#' 
+
+
 #
-# components - can be:
-#	character vector: components to be selected
-#	NULL : all components will be selected
-#	formula: additive formula specifying components, e.g.
-#		~.    		all components
-#		~.-env-spat	all components except env and spat
-#		~spat+year  only components spat and year
+#		`~.`    		all components
+#		`~.-env-spat`	all components except env and spat
+#		`~spat+year`    only components spat and year
+
 validate_components <- function (gp, components)
 {
 	if (is.null(components)) {
