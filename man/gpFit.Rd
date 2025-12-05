@@ -65,7 +65,7 @@ call \code{gpPack()} first to remove these; when you need to use the model again
 Fit a Gaussian process model
 }
 \details{
-The two-stage fitting method is a special optimization procedure (Telenský et al 2026) where the optimization is split into two stages:
+The two-stage fitting method (\code{two.stage = TRUE}) is a special optimization procedure (Telenský et al 2026) where the optimization is split into two stages:
 \enumerate{
 \item In the first stage, sigma2 parameters are not allowed to go too close to zero (as per the \code{stage1low} parameter). This way, the other hyper-parameters in the same component have time
 to optimize themselves before the sigma2 parameter could shut the whole component down to zero. (This is only applied to components
