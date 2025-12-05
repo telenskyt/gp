@@ -1,9 +1,6 @@
 #'@import tidyverse
 #'@import RTMB
 #'@import memoise
-#'@import pryr
-#'@import rlang
-
 
 .onLoad <- function(libname, pkgname) {
 	options(show.error.locations = TRUE)
