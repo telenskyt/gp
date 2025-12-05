@@ -15,6 +15,7 @@
 gp <- function(f, data, logLik)
 {
 	gp <- gpFormula(f)
+	gp$covFormula <- f
 
 	stopifnot(class(data) == "gpData")
 
@@ -26,7 +27,7 @@ gp <- function(f, data, logLik)
 
 	gp$covComp_df <- gpComponentsTable(gp)
 
-	gp_size <- gpSize(gp)
+	gp_size <- gpDetermineSize(gp)
 	gp$GP_size <- gp_size$size
 	gp$GP_factor <- gp_size$fact # bude vzdy character string ruzny od "", NA, NULL, viz gpSize()
 
