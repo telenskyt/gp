@@ -1,6 +1,11 @@
-#'@import tidyverse
+#@xxixmportFrom dplyr select filter arrange
+#'@import dplyr
+#'@importFrom purrr map
 #'@import RTMB
 #'@import memoise
+
+# toto ne, pouzil jsem usethis::use_pipe()! viz https://stackoverflow.com/a/52231630/684229
+# @xxximportFrom magrittr %>%
 
 .onLoad <- function(libname, pkgname) {
 	options(show.error.locations = TRUE)
