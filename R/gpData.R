@@ -2,7 +2,7 @@
 
 #' gpData constructor
 #'
-#' Construct a gpData object from a named list of tables (data.frame or matrix).
+#' Construct a gpData object from a named list of tables (data.frame's).
 #'
 #' The function validates and converts a list of tables into an object of class
 #' \code{gpData}. Tables may carry an attribute \code{"fact"} naming a grouping
@@ -13,7 +13,7 @@
 #' factor columns. Performs validation checks, which are not tied to any particular
 #' formula or object of class `gp`.
 #'
-#' @param x Named list of tables (data.frame or matrix). Tables may carry an attribute \code{"fact"} naming a grouping
+#' @param x Named list of tables (data.frame's). Tables may carry an attribute \code{"fact"} naming a grouping
 #' factor column (the column must exist and be a unique identification of the table's rows)
 #'
 #' @return An object of class \code{gpData}
@@ -33,14 +33,14 @@
 # This data doesn't have to be standardized, this will be done internally (by the XXX() function).
 #
 # input:
-# - list of tables - data.frame's/matrices
+# - list of tables - data.frame's
 #		- if the rows of a given table correspond to some grouping factor, the factor's name
 #		  must be specified via attr "fact", and column of the same name must exist in that table - that column
 #		  is basically a primary key of that table (in that case, it cannot be a matrix of course)
 # - if there tables with different grouping factors (table without grouping factor is considered as a special "grouping factor" for that purpose),
 #	the first table is a main table (data.frame); otherwise, no main data.frame needed
 # - main df obsahuje vsechny ty grouping factors (ano jsou grouping)
-#	- tj. jednoznacne urcuje vsechny ty factors (a tedy typicky bude alespon tolik radek jako ty ostatni df's/matrices)
+#	- tj. jednoznacne urcuje vsechny ty factors (a tedy typicky bude alespon tolik radek jako ty ostatni df's)
 #	- samozrejme ze sam nemuze mit grouping factor
 #	- ne nutne urcuje dimenzi GP (dimenzi cov matrix K) - viz case czech atlas without bigm - dimenzi GP urcuje spis ta formula - konkretne ty tables, ktery jsou bez faktoru (ty by mely bejt vsechny stejne velky)
 # - all tables with the same grouping factor must have the same number of rows and there must be 1-1 correspondence between the rows. (All tables without grouping factor are considered having the "same grouping factor" for that matter)
@@ -92,8 +92,8 @@ gpData <- function(x)
 	first <- TRUE
 	for (name in names(x)) {
 		d <- x[[name]]
-		if (!(is.matrix(d) || is.data.frame(d))) {
-			warning("List item `", name, "` - only tables (data.frame, matrix, ...) are allowed.")
+		if (!(is.data.frame(d))) {
+			warning("List item `", name, "` - only data.frame's are allowed.")
 		}
 		fact <- attr(d, "fact")
 		if (!is.null(fact)) {
@@ -180,8 +180,11 @@ gpData <- function(x)
 }
 
 
-
-# checks, whether gpData fulfills the requirements given by the gp object (gp$dataReq in particular)
+#' internal function
+#' 
+#' checks, whether gpData fulfills the requirements given by the gp object (gp$dataReq in particular),
+#' i.e. whether all tables required by the formula are present, with correct grouping factors
+#' 
 # - doesn't test whether the main table contains all the factors - we assume this was already tested by the gpData() constructor
 # Maybe this function will change, if we decide to change the semantics so that the gpData() constructor already constructs the gpData according
 # to the formula and the dataRequirements implied by that. Then, some of these checks would perhaps be done in that new constructor (but maybe not).
@@ -195,7 +198,7 @@ gpDataCheckReq <- function(gp, gpData)
 	stopifnot(class(gpData) == "gpData")
 	tables_w_grouping_factors <- do.call(c, lapply(attr(gpData, "factors"), function (x) x$tables))
 	# Go through all required tables and check if they are there, with correct grouping factors
-	for (m in names(gp$dataReq$mats)) {
+	for (m in names(gp$dataReq$mats)) { # note that not all the tables in gpData have to be in this set! The main table probably won't be.
 		if (!m %in% names(gpData))
 			stop("Table `", m, "` is missing in the gpData object.")
 		if (gp$dataReq$mats[[m]]$fact != "1") { # the table m should have a grouping factor according to the requirements
@@ -216,8 +219,8 @@ gpDataCheckReq <- function(gp, gpData)
 }
 
 
-# Prepares the data:
-#	- converts those tables, that need it, to matrices (at this moment, it does so for all the tables mentioned in the formula)
+# Prepares the data for the model:
+#	- converts tables (data.frames) to matrices
 #	- scales the matrices (to mean = 0 and sd = 1) that need it (scale = TRUE in cov_funcs.R)
 #		- if the gp object already has scaled training data (gp$data), this function will take scaling from there, and
 # It issues an error, if there are any non-numeric columns,
@@ -227,18 +230,17 @@ gpDataPrepare <- function(gp, gpData)
 	stopifnot(!is.null(gp$covComp))
 	stopifnot(class(gpData) == "gpData")
 	mats <- names(gp$dataReq$mats) # all used tables (not necessarily matrices yet)
-	stopifnot(setequal(mats, na.omit(unique(do.call(c, lapply(gp$covComp, function (x) x$mat)))))) #  just to verify (shouldn't be needed though)
+	if (!is.null(gp[["data"]]))
+		stopifnot(length(setdiff(names(gpData), names(gp[["data"]]))) == 0) # if training dataset is already present, make sure all tables here were also present in the training
 	for (m in mats) {
 		# convert m to matrix - but first do some checks
-		if (is.matrix(gpData[[m]]))
-			break
 		stopifnot(is.data.frame(gpData[[m]]))
 		non_num <- !sapply(gpData[[m]], is.numeric)
 		if (any(non_num))
 			stop("Non-numeric columns in table `", m, "`: ", paste(colnames(gpData[[m]])[non_num], collapse = ", "))
-		int <- sapply(gpData[[m]], is.integer)
-		if (any(int))
-			warning("Integer columns in table `", m, "`: ", paste(colnames(gpData[[m]])[int], collapse = ", "))
+		#int <- sapply(gpData[[m]], is.integer)
+		#if (any(int))
+		#	warning("Integer columns in table `", m, "`: ", paste(colnames(gpData[[m]])[int], collapse = ", "))
 		# convert to matrix now
 		if (!gp$dataReq$mats[[m]]$scaling)
 			gpData[[m]] <- as.matrix(gpData[[m]])
