@@ -7,3 +7,4 @@
 #'   \code{~.-env-spat} \tab all components except \code{env} and \code{spat} \cr
 #'   \code{~spat+year}  \tab only components \code{spat} and \code{year} \cr
 #' }
+#'
