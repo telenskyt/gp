@@ -180,8 +180,11 @@ gpData <- function(x)
 }
 
 
-
-# checks, whether gpData fulfills the requirements given by the gp object (gp$dataReq in particular)
+#' internal function
+#'
+#' checks, whether gpData fulfills the requirements given by the gp object (gp$dataReq in particular),
+#' i.e. whether all tables required by the formula are present, with correct grouping factors
+#'
 # - doesn't test whether the main table contains all the factors - we assume this was already tested by the gpData() constructor
 # Maybe this function will change, if we decide to change the semantics so that the gpData() constructor already constructs the gpData according
 # to the formula and the dataRequirements implied by that. Then, some of these checks would perhaps be done in that new constructor (but maybe not).
@@ -195,7 +198,7 @@ gpDataCheckReq <- function(gp, gpData)
 	stopifnot(class(gpData) == "gpData")
 	tables_w_grouping_factors <- do.call(c, lapply(attr(gpData, "factors"), function (x) x$tables))
 	# Go through all required tables and check if they are there, with correct grouping factors
-	for (m in names(gp$dataReq$mats)) {
+	for (m in names(gp$dataReq$mats)) { # note that not all the tables in gpData have to be in this set! The main table probably won't be.
 		if (!m %in% names(gpData))
 			stop("Table `", m, "` is missing in the gpData object.")
 		if (gp$dataReq$mats[[m]]$fact != "1") { # the table m should have a grouping factor according to the requirements
@@ -215,30 +218,38 @@ gpDataCheckReq <- function(gp, gpData)
 	return(TRUE)
 }
 
+# internal function to check whether gpData has a main table
+gpDataHasMainTable <- function (gpData)
+{
+  stopifnot(class(gpData) == "gpData")
+	!is.null(attr(gpData, "main_table"))
+}
 
-# Prepares the data:
-#	- converts those tables, that need it, to matrices (at this moment, it does so for all the tables mentioned in the formula)
+# Prepares the data for the model:
+#	- converts tables (data.frames) to matrices
 #	- scales the matrices (to mean = 0 and sd = 1) that need it (scale = TRUE in cov_funcs.R)
 #		- if the gp object already has scaled training data (gp$data), this function will take scaling from there, and
 # It issues an error, if there are any non-numeric columns,
+#'@export
 gpDataPrepare <- function(gp, gpData)
 {
 	stopifnot(class(gp) == "gp")
 	stopifnot(!is.null(gp$covComp))
 	stopifnot(class(gpData) == "gpData")
-	mats <- names(gp$dataReq$mats) # all used tables (not necessarily matrices yet)
-	stopifnot(setequal(mats, na.omit(unique(do.call(c, lapply(gp$covComp, function (x) x$mat)))))) #  just to verify (shouldn't be needed though)
+	if (!is.null(gp[["data"]]))
+		stopifnot(length(setdiff(names(gpData), names(gp[["data"]]))) == 0) # if training dataset is already present, make sure all tables here were also present in the training
+	# note: if training dataset is not present, i.e. gpData is supposed to be the training dataset, we don't have to check if all tables from dataReq are present
+	# - this was already done by gpDataCheckReq()
+	mats <- intersect(names(gpData), names(gp$dataReq$mats)) # pick all tables that are provided in the data and at the same time used by the formula
 	for (m in mats) {
 		# convert m to matrix - but first do some checks
-		if (is.matrix(gpData[[m]]))
-			break
 		stopifnot(is.data.frame(gpData[[m]]))
 		non_num <- !sapply(gpData[[m]], is.numeric)
 		if (any(non_num))
 			stop("Non-numeric columns in table `", m, "`: ", paste(colnames(gpData[[m]])[non_num], collapse = ", "))
-		int <- sapply(gpData[[m]], is.integer)
-		if (any(int))
-			warning("Integer columns in table `", m, "`: ", paste(colnames(gpData[[m]])[int], collapse = ", "))
+		#int <- sapply(gpData[[m]], is.integer)
+		#if (any(int))
+		#	warning("Integer columns in table `", m, "`: ", paste(colnames(gpData[[m]])[int], collapse = ", "))
 		# convert to matrix now
 		if (!gp$dataReq$mats[[m]]$scaling)
 			gpData[[m]] <- as.matrix(gpData[[m]])
@@ -255,19 +266,19 @@ gpDataPrepare <- function(gp, gpData)
 }
 
 
-#' Size of the GP dataset (number of rows) along given grouping factor. 
+#' Size of the GP dataset (number of rows) along given grouping factor.
 #'
 #' If the grouping factor `fact` is specified, the size unit is this grouping factor, i.e.
-#' the function returns number of levels of this grouping factor. If there is no grouping factor 
+#' the function returns number of levels of this grouping factor. If there is no grouping factor
 #' specified (fact = "1", the default), the dimension is given by the main table
-#' (if the main table is not present, all tables necessarily have the same number of rows - 
+#' (if the main table is not present, all tables necessarily have the same number of rows -
 #' this is a consequence of the data validation in \code{gpData()}).
-#' 
+#'
 #' @param gpData object of class gpData
 #' @param fact character. Grouping factor name, or "1" for no grouping factor (the default).
 #' @return Integer. Size of the dataset along the given grouping factor, or the "raw size" if fact = "1".
 #' @export
-#' 
+#'
 gpDataSize <- function(gpData, fact = "1")
 {
 	if (fact == "1")
@@ -288,23 +299,24 @@ gpDataSubset <- function(gpData, fact = "1", indices)
 	# assume fact is not NA
 
 	# !!! dopsat!!!
+	# !!! you need to remake also all the attr stuff like  attr(gpData, "factors")[[fact]]$nrow  !!!
 }
 
 
 
-#' Determine the size of the Gaussian Process 
-#' 
-#' Determine the size of the Gaussian Process, i.e. the dimension of the covariance matrix, as well as the corresponding grouping factor which defines this size 
+#' Determine the size of the Gaussian Process
+#'
+#' Determine the size of the Gaussian Process, i.e. the dimension of the covariance matrix, as well as the corresponding grouping factor which defines this size
 #' (or "1" if there is no such grouping factor).
-#' 
-#' @details 
+#'
+#' @details
 #' 1. If all covariance components (except intercept) use the same grouping factor (true grouping factor, not "1"), then the dimension of the Gaussian Process is determined
 #' by this factor, and the size is given by the number of levels of this factor.
-#' 
-#' 2. In all other cases (no grouping factors, or some components with and some without a grouping factor, or multiple grouping factors used in different components), 
+#'
+#' 2. In all other cases (no grouping factors, or some components with and some without a grouping factor, or multiple grouping factors used in different components),
 #' the size is given by the number of rows of the main table (if the main table is not present, all tables necessarily have the same number of rows). The returned factor is "1",
 #' meaning "no grouping factor".
-#' 
+#'
 #' @param gp object of class gp
 #' @return A list with two elements:
 #' \describe{
@@ -312,8 +324,8 @@ gpDataSubset <- function(gpData, fact = "1", indices)
 #' the covariance matrix is a square matrix)}
 #' \item{fact}{character - grouping factor corresponding to the dimension of the Gaussian process which defines the size; or "1" meaning "no grouping factor"}
 #' }
-#' @export 
-#' 
+#' @export
+#'
 # dimenze GP (vsechny komponenty zvoleny):
 # - pokud tam nejsou grouping factors, zadna table neni main, vsechny pouzite tables have same number of rows a to bude dimenze GP
 # - pokud tam jsou grouping factors:
