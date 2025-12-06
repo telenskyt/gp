@@ -18,10 +18,12 @@ RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 Imports: 
     dplyr,
+	purrr,
     memoise,
     pryr,
     rlang,
-    RTMB
+    RTMB,
+	magrittr
 Suggests: 
     knitr,
     rmarkdown
