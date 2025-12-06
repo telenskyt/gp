@@ -16,13 +16,14 @@
 #		`~.-env-spat`	all components except env and spat
 #		`~spat+year`    only components spat and year
 
+#'@importFrom rlang is_formula
 validate_components <- function (gp, components)
 {
 	if (is.null(components)) {
 		components <- names(gp$covComp) # select all components
 		return(components)
 	}
-	if (is.formula(components)) {
+	if (is_formula(components)) {
 		f0 <- as.formula(paste0("~", paste(names(gp$covComp), collapse = "+"))) # make formula from all components
 		f <- update.formula(f0, components) # update it according to a given formula
 		if (f[[1]] != "~")
