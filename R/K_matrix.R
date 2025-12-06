@@ -89,6 +89,8 @@ K_cache <- function (gp, hyperpar, x1, x2 = NULL, cache_for = c("derivative", "g
 #' The dimension of the resultant covariance matrix: the number of rows will be determined by \code{gpDataSize(x1, gp$GP_factor)}, where \code{gp$GP_factor} 
 #' is the grouping factor corresponding to the dimension of the Gaussian process. Analogically, if \code{x2} is supplied, the number of columns will be determined by 
 #' \code{gpDataSize(x2, gp$GP_factor)}.
+#'
+#'@export
 
 # hyperpar - list of lists of vectors
 # components - see validate_components()
@@ -153,9 +155,16 @@ K_matrix <- function (gp, hyperpar = gpHyperparList(gp), x1 = gp$data, x2 = NULL
 		cov_fun_name <- gp$covComp[[cc]]$cov_fun
 		fact <- gp$covComp[[cc]]$fact
 
+		
 		reindex_needed <- TRUE
 		if (!is.na(fact) && fact == gp$GP_factor) # we are at the scale of GP, no reindex needed
 			reindex_needed <- FALSE
+		# the case that fact == "1" a gp$GP_factor != "1" should not happen
+		# thus if fact == "1", then gp$GP_factor must be also "1"
+		# thus if fact == "1", the above condition should set reindex_needed <- FALSE
+		# verify it:
+		if (!is.na(fact) && fact == "1")
+			stopifnot(reindex_needed == FALSE)
 		
 		# check - toto by melo ted platit, diky nasim omezenim:
 		if (!is.na(fact) && fact != "1" && gp$GP_factor != "1")
@@ -187,10 +196,23 @@ K_matrix <- function (gp, hyperpar = gpHyperparList(gp), x1 = gp$data, x2 = NULL
 			cov_fn_args <- hyperpar[[cc]]
 			cov_fn_args[['sigma2']] <- NULL 
 			stopifnot(!is.na(mat))
+			if (!mat %in% names(x1))
+				stop("K_matrix(): table ", mat, " is missing in x1 (or perhaps you didn't want to include the component ", cc, "?)")
+			if (!is.null(x2) && !mat %in% names(x2))
+				stop("K_matrix(): table ", mat, " is missing in x2 (or perhaps you didn't want to include the component ", cc, "?)")
 			x1m <- x1[[mat]]
 			x2m <- if (is.null(x2)) NULL else x2[[mat]]
 			Kc <- hyperpar[[cc]]$sigma2 * do.call(cov_fun_name, c(list(x1 = x1m, x2 = x2m), cov_fn_args))
 		}
+		if (reindex_needed == TRUE)
+			stopifnot(gp$GP_factor == "1" && !is.na(fact) && fact != "1")
+				# I don't need this condition, but it is a consequence of the above conditions and checks, so here just claiming it and verifying it. Proof:
+				# reindex_needed == TRUE => either is.na(fact), but in that case it must be intercept, and that would set reindex_needed == FALSE 
+				#							or fact != gp$GP_factor, a pak (na zaklade if-u vyse):
+				#								is.na(fact) || fact == "1" || GP_factor == "1";
+				#								to prvni neplati viz vyse, takze bud fact == 1 nebo GP_factor == "1"
+				#							a diky dalsimu if-u vyse vime ze fact != "1", takze z toho vime ze GP_factor == "1"!!!				
+			
 		# v nasledujicim (ale mozna i v tom vyse) bude potreba specialne osetrit intercept a cov.iid() - proste ty, co maj `mat` = NA! Nebo ne?
 		if (comp_means)
 			meansm_c <- calc_K_mean(Kc, cc, comp_means_weights)
@@ -201,19 +223,25 @@ K_matrix <- function (gp, hyperpar = gpHyperparList(gp), x1 = gp$data, x2 = NULL
 				K <- K + Kc
 		} else { # we will need to re-index from `fact` to the main table
 			fact_idx <- paste0(fact, "_idx")
-			if (is.null(x2)) {
-				if (is.null(K))
-					K <- Kc[x1[[1]][[fact_idx]], x1[[1]][[fact_idx]]]
-				else
-					K <- K + Kc[x1[[1]][[fact_idx]], x1[[1]][[fact_idx]]]
-			} else {
-				if (is.null(K))
-					K <- Kc[x1[[1]][[fact_idx]], x2[[1]][[fact_idx]]]
-				else
-					K <- K + Kc[x1[[1]][[fact_idx]], x2[[1]][[fact_idx]]]
-			}
+			if (gpDataHasMainTable(x1))
+				x1_fact_idx <- x1[[1]][[fact_idx]]
+			else # when x1 doesn't have main table, we cannot reindex, even if we "need" to!
+				x1_fact_idx <- 1:nrow(Kc)
+				
+			if (is.null(x2))
+				x2_fact_idx <- x1_fact_idx
+			else if (gpDataHasMainTable(x2))
+				x2_fact_idx <- x2[[1]][[fact_idx]]
+			else # when x2 doesn't have main table, we cannot reindex, even if we "need" to!
+				x2_fact_idx <- 1:ncol(Kc)
+				
+			if (is.null(K))
+				K <- Kc[x1_fact_idx, x2_fact_idx]
+			else
+				K <- K + Kc[x1_fact_idx, x2_fact_idx]
+			
 			if (comp_means)
-				meansm_c <- meansm_c[x1[[1]][[fact_idx]],] # re-index rows from `fact` to the main table
+				meansm_c <- meansm_c[x1_fact_idx,] # re-index rows from `fact` to the main table
 		}
 		#cat("component dimension: ")
 		#print(dim(Kc))
