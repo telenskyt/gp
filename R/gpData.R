@@ -2,7 +2,7 @@
 
 #' gpData constructor
 #'
-#' Construct a gpData object from a named list of tables (data.frame or matrix).
+#' Construct a gpData object from a named list of tables (data.frame's).
 #'
 #' The function validates and converts a list of tables into an object of class
 #' \code{gpData}. Tables may carry an attribute \code{"fact"} naming a grouping
@@ -13,7 +13,7 @@
 #' factor columns. Performs validation checks, which are not tied to any particular
 #' formula or object of class `gp`.
 #'
-#' @param x Named list of tables (data.frame or matrix). Tables may carry an attribute \code{"fact"} naming a grouping
+#' @param x Named list of tables (data.frame's). Tables may carry an attribute \code{"fact"} naming a grouping
 #' factor column (the column must exist and be a unique identification of the table's rows)
 #'
 #' @return An object of class \code{gpData}
@@ -33,14 +33,14 @@
 # This data doesn't have to be standardized, this will be done internally (by the XXX() function).
 #
 # input:
-# - list of tables - data.frame's/matrices
+# - list of tables - data.frame's
 #		- if the rows of a given table correspond to some grouping factor, the factor's name
 #		  must be specified via attr "fact", and column of the same name must exist in that table - that column
 #		  is basically a primary key of that table (in that case, it cannot be a matrix of course)
 # - if there tables with different grouping factors (table without grouping factor is considered as a special "grouping factor" for that purpose),
 #	the first table is a main table (data.frame); otherwise, no main data.frame needed
 # - main df obsahuje vsechny ty grouping factors (ano jsou grouping)
-#	- tj. jednoznacne urcuje vsechny ty factors (a tedy typicky bude alespon tolik radek jako ty ostatni df's/matrices)
+#	- tj. jednoznacne urcuje vsechny ty factors (a tedy typicky bude alespon tolik radek jako ty ostatni df's)
 #	- samozrejme ze sam nemuze mit grouping factor
 #	- ne nutne urcuje dimenzi GP (dimenzi cov matrix K) - viz case czech atlas without bigm - dimenzi GP urcuje spis ta formula - konkretne ty tables, ktery jsou bez faktoru (ty by mely bejt vsechny stejne velky)
 # - all tables with the same grouping factor must have the same number of rows and there must be 1-1 correspondence between the rows. (All tables without grouping factor are considered having the "same grouping factor" for that matter)
@@ -92,8 +92,8 @@ gpData <- function(x)
 	first <- TRUE
 	for (name in names(x)) {
 		d <- x[[name]]
-		if (!(is.matrix(d) || is.data.frame(d))) {
-			warning("List item `", name, "` - only tables (data.frame, matrix, ...) are allowed.")
+		if (!(is.data.frame(d))) {
+			warning("List item `", name, "` - only data.frame's are allowed.")
 		}
 		fact <- attr(d, "fact")
 		if (!is.null(fact)) {
