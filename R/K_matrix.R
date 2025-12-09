@@ -195,6 +195,8 @@ K_matrix <- function (gp, hyperpar = gpHyperparList(gp), x1 = gp$data, x2 = NULL
 			stopifnot(gp$GP_factor == "1") # jiny pripad neni zatim osetreny, jsou tam challenges, viz GP_factor-k_rozreseni.docx
 			Kc <- hyperpar[[cc]]$sigma2 * cov.I.factor(x1[[1]][[fact]], if (is.null(x2)) NULL else x2[[1]][[fact]])
 				# 2025-12-08: neslo by totez zajistit pomoci normalni te reindexace nize, spolu s normalni cov.I?
+				#
+				# !!! XYZ546: [[1]] a netestuje na existenci main table jako u reindex v K_matrix() - to nebude fungovat
 			reindex_needed <- FALSE
 		} else {
 			mat <- gp$covComp[[cc]]$mat
@@ -326,6 +328,7 @@ dK_dhi <- function (gp, hyperpar, x1, i, K.cache = NULL)
 		} else if (cov_fun_name == "cov.I.factor") {
 			stopifnot(gp$GP_factor == "1") # jiny pripad neni zatim osetreny, jsou tam challenges, viz GP_factor-k_rozreseni.docx		
 			K <- cov.I.factor(x1[[1]][[fact]])
+			# !!! XYZ546: [[1]] a netestuje na existenci main table jako u reindex v K_matrix() - to nebude fungovat
 			reindex_needed <- FALSE
 		} else {
 			stopifnot(!is.na(mat))
@@ -349,7 +352,7 @@ dK_dhi <- function (gp, hyperpar, x1, i, K.cache = NULL)
 			# since this function is called only for the training dataset as x1,
 			# and since reindex_needed, GP_factor == "1" and fact != "1" (see my "lemma" in K_matrix),
 			# this means that the training dataset needs to have main table
-			# If this wasn't true, we could solve it as in K_matrix by not reindexing if main table is missing,
+			# If this wasn't true, and main table could possibly be missing, we could solve it as in K_matrix by not reindexing,
 			# but here it is just not needed.
 		fact_idx <- paste0(fact, "_idx")
 		K <- K[x1[[1]][[fact_idx]], x1[[1]][[fact_idx]]]
