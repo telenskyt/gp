@@ -125,7 +125,7 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 			cat("Two-stage fitting method\n")
 			# fit stage 1
 			if (1 %in% stages) {
-				warning("testing warning, remove this one!!!")
+				#warning("testing warning, remove this one!!!") # it will be in the log
 				cat("Fitting stage 1\n")
 				# set limits for STAGE 1
 				old_low_limits <- gp$hyperpar$low[gp$hyperpar$hyperpar == "sigma2" & gp$hyperpar$component %in% staged_components]
