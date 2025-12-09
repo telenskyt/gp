@@ -10,9 +10,14 @@
 #' factor are treated as belonging to a special factor \code{"1"}. If multiple
 #' distinct grouping factors are present (the special factor \code{"1"} included), the first table in the list is treated
 #' as the main table and must be a \code{data.frame} containing all grouping
-#' factor columns. Performs validation checks, which are not tied to any particular
-#' formula or object of class `gp`.
-#'
+#' factor columns. 
+# ZVL001:
+#' Note that in the special case when all tables have the same grouping factor different from \code{"1"}, the main table 
+#' is not required in the gpData() constructor (and so it might be passed e.g. as the \code{newdata} to the \code{predict()} method), 
+#' but it will be required for the training dataset passed to the \code{gp()} constructor. 
+#' 
+#' The function performs validation checks, not tied to any particular formula or object of class `gp`.
+#' 
 #' @param x Named list of tables (data.frame's). Tables may carry an attribute \code{"fact"} naming a grouping
 #' factor column (the column must exist and be a unique identification of the table's rows)
 #'
@@ -218,10 +223,13 @@ gpDataCheckReq <- function(gp, gpData)
 	return(TRUE)
 }
 
-# internal function to check whether gpData has a main table
+#' Internal function to check whether gpData has a main table
+#' @param gpData object of class gpData
+#' @return TRUE/FALSE
+
 gpDataHasMainTable <- function (gpData)
 {
-  stopifnot(class(gpData) == "gpData")
+	stopifnot(class(gpData) == "gpData")
 	!is.null(attr(gpData, "main_table"))
 }
 
