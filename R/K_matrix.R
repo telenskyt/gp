@@ -345,6 +345,12 @@ dK_dhi <- function (gp, hyperpar, x1, i, K.cache = NULL)
 		K <- hyperpar[[cc]]$sigma2 * do.call(cov_fun_name_d1, c(list(x1 = x1m, der_wrt = der_wrt$hyperpar, der_wrt_i = der_wrt$i), cov_fn_args))
 	}
 	if (reindex_needed) { # we will need to re-index from `fact` to the main table
+		stopifnot(gpDataHasMainTable(x1)) 
+			# since this function is called only for the training dataset as x1,
+			# and since reindex_needed, GP_factor == "1" and fact != "1" (see my "lemma" in K_matrix),
+			# this means that the training dataset needs to have main table
+			# If this wasn't true, we could solve it as in K_matrix by not reindexing if main table is missing,
+			# but here it is just not needed.
 		fact_idx <- paste0(fact, "_idx")
 		K <- K[x1[[1]][[fact_idx]], x1[[1]][[fact_idx]]]
 	}
