@@ -225,6 +225,17 @@ gpDataHasMainTable <- function (gpData)
 	!is.null(attr(gpData, "main_table"))
 }
 
+#' Check whether gpData has been scaled already (gpDataPrepare() has been called on it)
+#' 
+#' @param gpData object of class gpData
+#' @return TRUE/FALSE
+#' @export
+gpDataIsScaled <- function (gpData)
+{
+	stopifnot(class(gpData) == "gpData")
+	!is.null(attr(gpData, "gpDataPrepared"))
+}
+
 # Prepares the data for the model:
 #	- converts tables (data.frames) to matrices
 #	- scales the matrices (to mean = 0 and sd = 1) that need it (scale = TRUE in cov_funcs.R)
