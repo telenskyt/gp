@@ -237,7 +237,7 @@ gpDataPrepare <- function(gp, gpData)
 	stopifnot(!is.null(gp$covComp))
 	stopifnot(class(gpData) == "gpData")
 	if (!is.null(gp[["data"]]))
-		stopifnot(length(setdiff(names(gpData), names(gp[["data"]]))) == 0) # if training dataset is already present, make sure all tables here were also present in the training
+		stopifnot(all(names(gpData) %in% names(gp[["data"]]))) # if training dataset is already present, make sure all tables here were also present in the training
 	# note: if training dataset is not present, i.e. gpData is supposed to be the training dataset, we don't have to check if all tables from dataReq are present
 	# - this was already done by gpDataCheckReq()
 	mats <- intersect(names(gpData), names(gp$dataReq$mats)) # pick all tables that are provided in the data and at the same time used by the formula
