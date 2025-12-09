@@ -11,10 +11,9 @@
 #' distinct grouping factors are present (the special factor \code{"1"} included), the first table in the list is treated
 #' as the main table and must be a \code{data.frame} containing all grouping
 #' factor columns. 
-# ZVL001:
+#'
 #' Note that in the special case when all tables have the same grouping factor different from \code{"1"}, the main table 
-#' is not required in the gpData() constructor (and so it might be passed e.g. as the \code{newdata} to the \code{predict()} method), 
-#' but it will be required for the training dataset passed to the \code{gp()} constructor. 
+#' is not required in the gpData() constructor.
 #' 
 #' The function performs validation checks, not tied to any particular formula or object of class `gp`.
 #' 
@@ -187,15 +186,16 @@ gpData <- function(x)
 
 #' internal function
 #'
-#' checks, whether gpData fulfills the requirements given by the gp object (gp$dataReq in particular),
+#' check, whether gpData fulfills the requirements given by the gp object (gp$dataReq in particular),
 #' i.e. whether all tables required by the formula are present, with correct grouping factors
 #'
-# - doesn't test whether the main table contains all the factors - we assume this was already tested by the gpData() constructor
+#
 # Maybe this function will change, if we decide to change the semantics so that the gpData() constructor already constructs the gpData according
 # to the formula and the dataRequirements implied by that. Then, some of these checks would perhaps be done in that new constructor (but maybe not).
 # It either returns TRUE or ends with an error.
 #
 # !!! mozna zde doplnit parametr `components`, aby tim slo testovat i data pro predikce? To by bylo genialni! A kdyz nebude specif, budou to vsechny komponenty
+#		- dodatecne: prijde mi to zbytecny
 gpDataCheckReq <- function(gp, gpData)
 {
 	stopifnot(class(gp) == "gp")
@@ -217,7 +217,7 @@ gpDataCheckReq <- function(gp, gpData)
 		}
 	}
 	# Check if all grouping factors are present in the main data.frame
-	if (!all(gp$dataReq$factors %in% colnames(gpData[[1]]))) # tento if funguje i kdyz tam nebudou zadny grouping factors - otestovano!
+	if (gpDataHasMainTable(gpData) && !all(gp$dataReq$factors %in% colnames(gpData[[1]]))) # tento if funguje i kdyz tam nebudou zadny grouping factors - otestovano!
 		stop("These factors are missing in the main data.frame `", names(xx)[1], "`: ",
 			paste(setdiff(gp$dataReq$factors, colnames(gpData[[1]])), collapse = ", "))
 	return(TRUE)
