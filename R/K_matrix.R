@@ -66,12 +66,16 @@ K_cache <- function (gp, hyperpar, x1, x2 = NULL, cache_for = c("derivative", "g
 
 #' Construct covariance matrix (K) for given data and hyperparameters
 #' 
+#' This function is mostly used internally. In most common use, user will call gpFit() or predict(), which call this function themselves.
+#' 
 #' @param gp Object of class \code{gp}.
 #' @param hyperpar (optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.
-#' @param x1 object of class \code{gpData} - data corresponding to rows of the resultant covariance matrix. !!! It is supposed to be correctly scaled already! 
-#' (see \code{gpDataPrepare()})
-#' @param x2 (optional) object of class \code{gpData} - data corresponding to columns of the resultant covariance matrix. If not supplied, \code{x1} is used and 
-#' the covariance matrix is square and symmetric. !!! It is supposed to be correctly scaled already!  !!! doplnit standardizacni fci kterou pouziju u predikci!!!
+#' @param x1 object of class \code{gpData} - data corresponding to rows of the resultant covariance matrix.
+#' It is supposed to be correctly scaled already! (see \code{gpDataPrepare()})
+#' @param x2 (optional) object of class \code{gpData} - data corresponding to columns of the resultant covariance matrix. 
+#' If not supplied, \code{x1} is used and 
+#' the covariance matrix is square and symmetric. 
+#' It is supposed to be correctly scaled already! (see \code{gpDataPrepare()})
 #' @param K.cache (optional) object returned by \code{K_cache()} function, to speed up repeated calls to \code{K_matrix()} and \code{dK_dhi()} functions.
 #' @template param-components
 #' 
@@ -86,8 +90,10 @@ K_cache <- function (gp, hyperpar, x1, x2 = NULL, cache_for = c("derivative", "g
 #' @details 
 #' If \code{x2} is not supplied, the covariance matrix is square and symmetric, representing the covariances among all rows in \code{x1}. 
 #' 
-#' The dimension of the resultant covariance matrix: the number of rows will be determined by \code{gpDataSize(x1, gp$GP_factor)}, where \code{gp$GP_factor} 
-#' is the grouping factor corresponding to the dimension of the Gaussian process. Analogically, if \code{x2} is supplied, the number of columns will be determined by 
+#' The dimension of the resultant covariance matrix: the number of rows will be determined by \code{gpDataSize(x1, gp$GP_factor)}, 
+#' where \code{gp$GP_factor} is the grouping factor corresponding to the dimension of the Gaussian process. 
+#' 
+#' Analogically, if \code{x2} is supplied, the number of columns will be determined by 
 #' \code{gpDataSize(x2, gp$GP_factor)}.
 #'
 #'@export
@@ -127,9 +133,9 @@ K_matrix <- function (gp, hyperpar = gpHyperparList(gp), x1 = gp$data, x2 = NULL
 		stopifnot(identical(hyperpar, K.cache$hyperpar))
 	}
 	# extra checks to let the user know (maybe should be just warnings?)
-	if (is.null(attr(x1, "gpDataPrepared")))
+	if (!gpDataIsScaled(x1))
 		stop("perhaps you want to run gpDataPrepare() first for the x1 argument?")
-	if (!is.null(x2) && is.null(attr(x2, "gpDataPrepared")))
+	if (!is.null(x2) && !gpDataIsScaled(x2))
 		stop("perhaps you want to run gpDataPrepare() first for the x1 argument?")
 	
 	# arrange the components from smallest to largest, and the intercept (which has nrow = NA) will go last!
@@ -188,6 +194,7 @@ K_matrix <- function (gp, hyperpar = gpHyperparList(gp), x1 = gp$data, x2 = NULL
 		} else if (cov_fun_name == "cov.I.factor") {
 			stopifnot(gp$GP_factor == "1") # jiny pripad neni zatim osetreny, jsou tam challenges, viz GP_factor-k_rozreseni.docx
 			Kc <- hyperpar[[cc]]$sigma2 * cov.I.factor(x1[[1]][[fact]], if (is.null(x2)) NULL else x2[[1]][[fact]])
+				# 2025-12-08: neslo by totez zajistit pomoci normalni te reindexace nize, spolu s normalni cov.I?
 			reindex_needed <- FALSE
 		} else {
 			mat <- gp$covComp[[cc]]$mat
