@@ -216,12 +216,12 @@ optimise.gp <- function(args)
 	forget(mem_gpFit)
 	#cat("After forget:\n")
 	#print(gc())
-	m$fit$iter_info <- iter_info
-	m$fit$iter_h <- iter_h
-	m$fit$iter_dmll_dh <- iter_dmll_dh
-	m$fit$iter_dP_dh <- iter_dP_dh
-	m$fit$iter_dp_dh <- iter_dp_dh
-	m$fit$optim <- opt
+	m$iter_info <- iter_info
+	m$iter_h <- iter_h
+	m$iter_dmll_dh <- iter_dmll_dh
+	m$iter_dP_dh <- iter_dP_dh
+	m$iter_dp_dh <- iter_dp_dh
+	m$optim <- opt
 	f_start <- NULL	
 	return (m)
 }
