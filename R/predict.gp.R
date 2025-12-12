@@ -1,129 +1,141 @@
-# newdata - ***unscaled*** data! They must be on the same scale as was the unscaled training dataset.
-# when you omit newdata, it will be done on the training dataset! And it will be super fast (if CI = NULL)
-
-
-# maxn - maximum `n`, i.e. the maximum dataset size to fit at once (for the unit, see the comment on x_dataset_size of the appropriate model). 
-#   It doesn't affect the result; is only to speed-up the computation and use less memory by splitting the dataset -> the K (pred,pred) matrix
-#	is then smaller.
-#   So it only speeds it up for CI != NULL (in the backsolve function)
-#	for CI = NULL its only slowdown
-
-# CI - at the moment, for model specific stuff (model_expand_predictions()), the CIs will always be set at 0.95, or NULL.
-#	if this is set to NULL, no standard errors and CIs will be calculated, so it's faster, but also no mean on the response scale will be
-#	calculated - because for this, the standard error of the latent GP `f` is needed.
+#' Predict from a fitted Gaussian process model
+#' 
+#' @param newdata object of class gpData, ***unscaled*** (i.e. not passed through \code{gpDataPrepare()}) data! They must be on the same scale as 
+#' the unscaled training dataset used for fitting the model. If \code{NULL} (the default), predictions will be made on the training dataset (which
+#' is going to be super fast if CI = NULL)
+#' @param gp object of class gp, the fitted Gaussian process model
+#' @param hyperpar (optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.
+#' @template param-components
+#' 
+#' @param comp_missing how to compensate for missing components (if there are any), in mean and variance of the predictions: 
+##' \describe{
+##' \item{\code{"none"}}{no compensation. In this case, the interpretation of the result's variance isn't much clear (!!!??? why?).}
+##' \item{\code{"avg"}}{the missing components are replaced by "averaging over them" - more
+##'		precisely, it predicts for the average effects of these components - for these, the variance/CI corresponds to confidence interval 
+##'		(uncertainty around the mean predictions) and not the prediction interval - see http://www.sthda.com/english/articles/40-regression-analysis/166-predict-in-r-model-predictions-and-confidence-intervals/
+##'		For models which have grouping factors, be aware of how the average is weighted - see CAUTION CAU001 in the code.
+##' }
+#' }
+#' Thus, the most reasonable setting now is \code{"avg"}; unless one cares only about the prediction mean (`f`) of the latent variable, in which case
+#' a simple "none" would also do the job.
+#' 
+#' @param w providing this optional argument will calculate average prediction(s) of all data points in this dataset, given these weights. Can 
+#' be either a vector of the same length as the size of \code{newdata} (in which case a single average is calculated), or, 
+#' if more different averages with different weights are desired, `w` can be a matrix where each column corresponds to one average - one set of weights
+#' (i.e. number of rows of `w` must be equal to the size of \code{newdata}, number of columns equal to the number of different averages to be calculated).
+#'
+#' @param groupMeans optional, factor of the size of the predicted dataset. If provided, mean predictions for each factor level are calculated.
+#' 
+#' @param type character; type of prediction:
+#' \describe{
+#' \item{\code{"response"}}{(default) - predictions on the response scale}
+#' \item{\code{"latent"}}{predictions on the latent scale}
+#' }
+#'
+#' @param !!!!!! upravit po nove definici - mozna udelat default NULL? CI numeric between 0 and 1, or \code{NULL}; confidence level for the confidence intervals to be calculated. If \code{NULL}, no standard errors
+#' and confidence intervals will be calculated, which makes the prediction much faster (but then also no mean on the response scale will be
+#' calculated - because for this, the standard error of the latent GP `f` is needed.)). Default is 0.95.
+#' @param cov.fit logical; if \code{TRUE}, the covariance matrix of the predictions will also be returned (can be very memory consuming for large datasets!).
+#' Default is \code{FALSE}.
+#' @param maxn maximum maximum dataset size to fit at once (!!! the unit ???!!!); if the dataset is larger, it will be split into chunks of size \code{maxn}
+#' before predictions are calculated. This parameter doesn't affect the result. It is only to speed-up the computation and use less memory by splitting the dataset
+#' - the K(newdata,newdata) matrix is then smaller. So it only speeds it up for CI != NULL (in the backsolve function) for CI = NULL its only slowdown.
+#'
+#' @param pred.sims number of simulations to be used for calculating the response scale predictions and their CIs. Default is 100000.
+#' Higher values give more accurate results, but are slower. Ignored if \code{CI = NULL}.
+#' @param Kx.cache optional, object returned by \code{K_cache()} function, to speed up repeated calls to \code{predict.gp()} with the same \code{newdata} by 
+#' caching parts of the K(training_data, newdata) matrix.
+#' @param Kxx.cache optional, object returned by \code{K_cache()} function, to speed up repeated calls to \code{predict.gp()} with the same \code{newdata} by 
+#' caching parts of the K(newdata, newdata) matrix.
+#'
+#' @export
 
 # pred.sims (timingy u plotu: = 1e6 => 24s; 1e5 => 12.58 ; 1e4 => 11s -> volim 1e5 jako default)
 #	=> now is obsolete, we are using numerical integration. Whether or not it's used depends on CI.
 
-# comp_missing - how to compensate for missing components, in mean and variance. Method "none" does no compensation. In this case, 
-#		the interpretation of the result's variance isn't much clear to me :-) "avg" is replacing the missing components by "averaging over them" - more
-#		precisely, it predicts for the average effects of these components - for these, the variance/CI corresponds to confidence interval 
-#		(uncertainty around the mean predictions) and not the prediction interval - see http://www.sthda.com/english/articles/40-regression-analysis/166-predict-in-r-model-predictions-and-confidence-intervals/
-#		For models which use reindexed sub-matrices (like big matrix model) be aware of how the average is weighted - see CAUTION CAU001 in the code.
-#	=> tak jsem zkusil jeste jeden napad s "intercept", ale nefacha to... hazi to na diagonale zaporny cisla a odmocnina pak vrati NaN..
-#		myslim ze tady by to chtelo tu mou genialni metodu na variance of a draw... kterou jsem vymyslel genialne okolo toho 8.5., ale 
-#		ona na tech komponentovych maticich nekterych nefacha, protoze cholesky rekne, ze neni positive-semi definite.
-#	=> so the only reasonable setting now is "avg"; unless one cares only about the prediction mean (`f`) of the latent variable, in which case
-#		a simple "none" would also do the job.
+# Note: weighting is done before predicting. Which is same as after, as it is all linear, but probably faster.
+
 #
-# groupMeans - vector of the length of the predicted dataset; will be coerced to a factor
+# groupMeans - 
 
 # ... - passed to model_expand_predictions()
 
-predict.graf <-	function(object, newdata = NULL, hyperpar = NULL, type = c('response', 'latent'),
-						 CI = 0.95, maxn = NULL, pred.sims = 100000, w = NULL, Kx.cache = NULL, Kxx.cache = NULL, 
-						 cov = FALSE, components = NULL, comp_missing = c("avg", "intercept", "none"), groupMeans = NULL, ...)  
+predict.gp <- function(gp, newdata = NULL, hyperpar = gpHyperparList(gp), components = NULL, comp_missing = c("avg", "none"), w = NULL, groupMeans = NULL, 
+						type = c('response', 'latent'),	se.fit = FALSE, cov.fit = FALSE, CI = 0.95, maxn = NULL, pred.sims = 100000, 
+						Kx.cache = NULL, Kxx.cache = NULL, ...)  
 {
 	comp_missing <- match.arg(comp_missing)
-	need <- function (object, x) if (is.null(object[[x]])) stop("Model object is missing the `", x, "` element - try to call `unpack` on it")
+	need <- function (object, x) if (is.null(object[[x]])) stop("Model object is missing the `", x, "` element - try to call gpUnpack() on it")
 	
-	if (class(newdata) %in% c('Raster', 'RasterBrick', 'RasterStack')) {
-		
-		# predict to a raster
-		ans <- predict.graf.raster(object = object,
-								   x = newdata,
-								   type = type,
-								   CI = CI,
-								   maxn = maxn,
-								   ...)
-		
-		return (ans)
-		
-	}
+	need(gp, "data")
+	need(gp, "obsdata") #!!! na co?
 	
-	use_model(object)
-	need(object, "x")
-	need(object, "y")
-	need(object, "obsx")
+	components <- validate_components(gp, components) # model components (components of covariance matrix)
+	all_components_used <- all(names(gp$covComp) %in% components)
 	
-	all_model_components <- object$model.opts$components
-	if (is.null(components)) 
-		components <- all_model_components
-	validate_components(components, within = all_model_components)	
+	type <- match.arg(type)
 	
-	type = match.arg(type)
 	# set up data
 	same <- FALSE
 	if (is.null(newdata)) {
 		# use already set up inference data if not specified
-		x_new <- object$x
-		if (is.null(components) || components == object$model.opts$components)
+		x_new <- gp$data
+		if (all_components_used)
 			same <- TRUE
 	} else {
 		# data must not be scaled!!!
 		# use some hints to detect if user by mistake supplied scaled data
-		if (model_data_is_scaled(newdata))
-			stop("newdata must not be scaled for predict()!! predict() will scale them. The newdata must be on the same scale as the unscaled training data.")
-		# convert any ints to numerics
-		obsx <- model_prepare_obsx(newdata)
-		x_new <- model_prepare_x(obsx, object$x) # scale atd. a ty dalsi veci 
-				# it will scale the data in exactly the way that training data set was
-		
-		# cunarna tyto testy ale seru na to uz @@@
-		if (is.data.frame(newdata$env) &&
-			!all(sapply(object$obsx$env, class) == sapply(newdata$env, class)))
-			stop('newdata must be with the same elements as used for inference, or NULL')
-		#if (is.data.frame(newdata$visits) &&  # toto neplati v datetime plotu...
-		#	!all(sapply(object$obsx$visits, class) == sapply(newdata$visits, class)))
-		#	stop('newdata must be with the same elements as used for inference, or NULL')
+		if (gpDataIsScaled(newdata))
+			stop("newdata must not be scaled for predict()! predict() will scale them. The newdata must be on the same scale as the unscaled training data.")
+		# convert any ints to numerics (!!!2025: is it needed?)
+
+		# at least check all if tables have the same columns as in the training dataset
+        for (tbl_name in names(newdata)) {
+            if (!tbl_name %in% names(gp$obsdata)) {
+				stop("newdata contains table '", tbl_name, "' which was not present in the training data")
+			} else {
+				if (!all(names(newdata[[tbl_name]]) %in% names(gp$obsdata[[tbl_name]]))) {
+					stop("newdata$", tbl_name, " contains columns not present in training data")
+				}
+				if (!all(names(gp$obsdata[[tbl_name]] %in% names(newdata[[tbl_name]])))) {
+					stop("newdata$", tbl_name, " is missing columns present in training data")
+				}
+            }
+        }
+
+		x_new <- gpDataPrepare(gp, newdata) # it will scale the data in exactly the way that training data set was		
 	}
 	
 	# check CI
 	if (!is.null(CI)) {
-		if (!(CI == 'std')) {
-			if (CI >= 1 | CI <= 0) {
-				stop("CI must be a number between 0 and 1, or NULL")
-			}
-			err <- qnorm( 1 - (1 - CI) / 2 )
+		if (CI >= 1 | CI <= 0) {
+			stop("CI must be a number between 0 and 1, or NULL")
 		}
+		err <- qnorm( 1 - (1 - CI) / 2 )
+		#se.fit <- TRUE
 	}
 
-	if (is.null(maxn)) maxn <- ceiling(x_dataset_size(x_new)  / 10) # we are splitting the newdata, not the training dataset; ceiling needed instead of round here
-
-	if (is.null(hyperpar))
-		hyperpar <- hyperpar_decode(object$ls)
+	if (is.null(maxn)) maxn <- ceiling(gpDataSize(x_new, gp$GP_factor)  / 10) # we are splitting the newdata, not the training dataset; ceiling needed instead of round here
 		
 	# first, put up together the latent prediction
 	mstart(id = "whole predict", mem_precise = TRUE)
 	mstart(id = "whole pred", mem_precise = TRUE)
-	if (is.null(CI)) { # if CIs aren't wanted
-		pred <- pred(x_new, object, hyperpar = hyperpar, std = FALSE, maxn = maxn, same = same, w = w, Kx.cache = Kx.cache, Kxx.cache = Kxx.cache, cov = cov, components = components, comp_missing = comp_missing, groupMeans = groupMeans)
-	} else {
-		pred <- pred(x_new, object, hyperpar = hyperpar, std = TRUE, maxn = maxn, same = same, w = w, Kx.cache = Kx.cache, Kxx.cache = Kxx.cache, cov = cov, components = components, comp_missing = comp_missing, groupMeans = groupMeans)
-	}
+	pred <- pred(gp, x_new, same = same, hyperpar = hyperpar, components = components, comp_missing = comp_missing, 
+		w = w, groupMeans = groupMeans, se.fit = se.fit, cov.fit = cov.fit, maxn = maxn, Kx.cache = Kx.cache, Kxx.cache = Kxx.cache
+	)
 	cat("pred() took ")
 	mstop(id = "whole pred")
-	if (cov) {
+	if (cov.fit) {
 		pred.cov <- pred$cov
 		pred <- pred$pred
 	}
 	
 	if (type == 'latent') {
-		if (is.null(CI)) {
+		if (!se.fit) {
 			ans <- pred
-		} else if (CI == 'std') { # if standard deviations are wanted instead
+		} else if (is.null(CI)) { # se.fit = TRUE & CI is NULL
 			ans <- pred
-		} else { # CI wanted
+		} else { # # se.fit = TRUE & CI is not NULL
 			upper <- pred[, 1] + err * pred[, 2]
 			lower <- pred[, 1] - err * pred[, 2]
 			dCI <- cbind(lower, upper)
@@ -132,6 +144,7 @@ predict.graf <-	function(object, newdata = NULL, hyperpar = NULL, type = c('resp
 			ans <- cbind(pred, dCI)							   
 		}	
 	} else { # if not only latent wanted, predict also other stuff
+		stop("not implemented yet")
 		# correct for the "intercept" of the missing components (we chose not to do it in the 'latent' case)
 		if (0) { # no longer done here; done in pred() now, so it can be done also for (co)variances
 				# hmm, tak zpetne si rikam, ze tohle bylo skoro nejlepsi nakonec.. mohl bych to sem znova dat jako jednu z voleb
@@ -140,7 +153,7 @@ predict.graf <-	function(object, newdata = NULL, hyperpar = NULL, type = c('resp
 			if (nchar(missing_components) > 0) {
 				cat("calculating posterior mean for missing components ", missing_components, ", to correct for it\n")
 				mstart(id = "missing", mem_precise = TRUE)
-				pr <- pred(object$x, object, hyperpar = hyperpar, std = FALSE, maxn = Inf, components = missing_components) # @@@@@@@@@@@ experimental
+				pr <- pred(gp$x, gp, hyperpar = hyperpar, std = FALSE, maxn = Inf, components = missing_components) # @@@@@@@@@@@ experimental
 				pred[,'f'] <- pred[,'f'] + mean(pr[,'f'])
 				cat("pred() for missing components took ")
 				mstop(id = "missing")			
@@ -162,7 +175,7 @@ predict.graf <-	function(object, newdata = NULL, hyperpar = NULL, type = c('resp
 	mstop(id = "gc")
 	cat("whole predict() took ")
 	mstop(id = "whole predict")
-	if (!cov)
+	if (!cov.fit)
 		ans
 	else
 		list(pred = ans, cov = pred.cov)
