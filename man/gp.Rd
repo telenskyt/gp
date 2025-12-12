@@ -4,7 +4,7 @@
 \alias{gp}
 \title{Construct gaussian process model}
 \usage{
-gp(f, data, logLik, logLik.rescale = TRUE)
+gp(f, data, logLik, logLik.reindex2main = TRUE)
 }
 \arguments{
 \item{f}{formula for the covariance matrix}
@@ -12,10 +12,11 @@ gp(f, data, logLik, logLik.rescale = TRUE)
 \item{data}{object of class gpData, created by the gpData() function}
 
 \item{logLik}{likelihood function taking two parameters: \code{data} (object of class gpData), and \code{f}, a numeric vector - result of the gaussian process.
-The \code{f} vector can be either of the dimension of the gaussian process, or the main table - see the \code{logLik.rescale} parameter.}
+The \code{f} vector can be either of the dimension of the gaussian process, or the main table - see the \code{logLik.reindex2main} parameter.}
 
-\item{logLik.rescale}{should the \code{f} parameter of the \code{logLik} function be rescaled to the dimension of the main table?
-If \code{FALSE}, the \code{f} parameter will be kept at the dimension of the Gaussian Process (as reported by \code{gpDetermineSize()}).}
+\item{logLik.reindex2main}{should the \code{f} parameter of the \code{logLik} function be reindexed to the rows of the main table?
+If \code{FALSE}, the \code{f} parameter will be kept at the dimension of the Gaussian Process (as reported by \code{gpDetermineSize()}).
+If the Gaussian process is running at the dimension of the main table, then it does not matter.}
 }
 \value{
 object of class gp - the gaussian process model. Some important slots:

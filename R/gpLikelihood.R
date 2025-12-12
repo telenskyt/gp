@@ -8,7 +8,8 @@
 
 d0 <- function (gp, f, data = gp$data, hyperpar = numeric(0))
 {
-	if (gp$ll.rescale_to_main) { 
+	if (gp$logLik.reindex2main && gp$GP_factor != "1") { 
+		stopifnot(gpDataHasMainTable(data))
 		# reindex from the GP_factor to main table 
 		fact_idx <- paste0(gp$GP_factor, "_idx")
 		f <- f[data[[1]][[fact_idx]]]		
@@ -23,7 +24,8 @@ d0 <- function (gp, f, data = gp$data, hyperpar = numeric(0))
 
 d1 <- function (gp, f, data = gp$data, hyperpar = numeric(0))
 {
-	if (gp$ll.rescale_to_main) { 
+	if (gp$logLik.reindex2main && gp$GP_factor != "1") { 
+		stopifnot(gpDataHasMainTable(data))
 		# reindex from the GP_factor to main table in the closure wrapper, so that also the automatic differentiation
 		# gives vector of the dimension of GP_factor!
 		cmb <- function(func, data) function(f) {
@@ -51,7 +53,8 @@ d1 <- function (gp, f, data = gp$data, hyperpar = numeric(0))
 
 d2 <- function (gp, f, data = gp$data, hyperpar = numeric(0))
 {
-	if (gp$ll.rescale_to_main) { 
+	if (gp$logLik.reindex2main && gp$GP_factor != "1") { 
+		stopifnot(gpDataHasMainTable(data))	
 		# reindex from the GP_factor to main table in the closure wrapper, so that also the automatic differentiation
 		# gives vector of the dimension of GP_factor!
 		cmb <- function(func, data) function(f) {
@@ -80,7 +83,8 @@ d2 <- function (gp, f, data = gp$data, hyperpar = numeric(0))
 
 d3 <- function (gp, f, data = gp$data, hyperpar = numeric(0))
 {
-	if (gp$ll.rescale_to_main) { 
+	if (gp$logLik.reindex2main && gp$GP_factor != "1") { 
+		stopifnot(gpDataHasMainTable(data))	
 		# reindex from the GP_factor to main table in the closure wrapper, so that also the automatic differentiation
 		# gives vector of the dimension of GP_factor!
 		cmb <- function(func, data) function(f) {
