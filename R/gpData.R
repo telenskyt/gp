@@ -194,6 +194,72 @@ gpData <- function(x)
 	return(x)
 }
 
+#' Subset gpData along given factor and indices
+#' 
+#' Subsets the gpData object along the given grouping factor `fact` (or along the main table if fact = "1"),
+#' taking only the rows/levels with given `indices`.
+#' @param x object of class gpData. Does not matter if the data is scaled (gpDataPrepare()'d) or not,
+#' 			it works on both.
+#' @param fact character. Grouping factor name along which to index, or "1" for no grouping factor (the default), 
+#'		which means indexing along the main table (or all tables, if there is no main table; since in the absence of main table 
+#' 		all tables must have one-to-one correspondence between their rows).
+#' @param ind indices along given factor \code{fact} to subset from the dataset.  If \code{fact = "1"}, indices correspond to the 
+#'   main table (or simply all tables, if no main table exists).
+#' @return gpData object, subsetted along the given factor and indices.
+#' @export
+gpDataSubset <- function(x, fact = "1", ind)
+{
+	stopifnot(max(ind) <= gpDataSize(x, fact))
+	stopifnot(is.character(fact))
+	if (gpDataHasMainTable(x))
+		stopifnot(attr(x, "main_table") == names(x)[1])
+
+	if (fact != "1") {
+		stopifnot(!is.null(attr(x, "factors")))
+		stopifnot(!is.null(attr(x, "factors")[[fact]]))
+		sel_ids <- attr(x, "factors")[[fact]]$id[ind]
+		if (gpDataHasMainTable(x))
+			ind <- x[[1]][[fact]] %in% sel_ids # get the index along main table
+	}
+	# subset the main table
+	if (gpDataHasMainTable(x)) {
+		x[[1]] <- x[[1]][ind,,drop = FALSE]
+	}
+	factors <- attr(x, "factors")
+	# redo all the indices
+	f_ind <- list()
+	for (fact in names(factors)) {
+		fact_idx_name <- paste0(fact, "_idx")
+		if (gpDataHasMainTable(x))
+			fact_ind <- sort(unique(x[[1]][[fact_idx_name]])) # get the subset index along the factor table
+				# done on already subsetted main table; so these are also already subsetted
+		else
+			fact_ind <- ind
+		factors[[fact]]$id <- factors[[fact]]$id[fact_ind]
+		factors[[fact]]$nrow <- length(factors[[fact]]$id)
+		f_ind[[fact]] <- fact_ind # save it, it will come in handy for the tables!
+		if (gpDataHasMainTable(x))
+			x[[1]][[fact_idx_name]] <- match(x[[1]][[fact]], factors[[fact]]$id) # reindex the factor in main table
+	}
+	attr(x, "factors") <- factors
+	# redo all the tables, except for the main table
+	tables <- names(x)
+	if (gpDataHasMainTable(x))
+		tables <- names(x)[-1]
+	for (tbl in tables) {
+		fact <- attr(x[[tbl]], "fact")
+		if (is.null(fact))
+			fact_ind <- ind # no grouping factor
+		else
+			fact_ind <- f_ind[[fact]]
+		x[[tbl]] <- x[[tbl]][fact_ind,,drop = FALSE]
+	}
+	return(x)
+}
+
+
+
+
 
 #' internal function
 #'
@@ -298,15 +364,16 @@ gpDataPrepare <- function(gp, gpData)
 
 #' Size of the GP dataset (number of rows) along given grouping factor.
 #'
-#' If the grouping factor `fact` is specified, the size unit is this grouping factor, i.e.
-#' the function returns number of levels of this grouping factor. If there is no grouping factor
-#' specified (fact = "1", the default), the dimension is given by the main table
-#' (if the main table is not present, all tables necessarily have the same number of rows -
-#' this is a consequence of the data validation in \code{gpData()}).
+#' If the grouping factor \code{fact} is specified, the size unit is this grouping factor, i.e.
+#' the function returns number of levels of this grouping factor in the data. 
+#' If there is no grouping factor specified (fact = "1", the default), 
+#' the dimension is given by the main table, or, if the main table is not present, simply by 
+#' all tables (since if the main table is not present, all tables necessarily have the same number 
+#' of rows).
 #'
 #' @param gpData object of class gpData
 #' @param fact character. Grouping factor name, or "1" for no grouping factor (the default).
-#' @return Integer. Size of the dataset along the given grouping factor, or the "raw size" if fact = "1".
+#' @return Integer. Size of the dataset along the given grouping factor.
 #' @export
 #'
 gpDataSize <- function(gpData, fact = "1")
@@ -322,16 +389,6 @@ gpDataSize <- function(gpData, fact = "1")
 	attr(gpData, "factors")[[fact]]$nrow
 }
 
-# `indices` along given factor `fact` to subset from the dataset. If fact is "1" (default), then the indices correspond to the main table
-gpDataSubset <- function(gpData, fact = "1", indices)
-{
-	stopifnot(max(indices) <= gpDataSize(x, fact))
-
-	# assume fact is not NA
-
-	# !!! dopsat!!!
-	# !!! you need to remake also all the attr stuff like  attr(gpData, "factors")[[fact]]$nrow  !!!
-}
 
 
 
