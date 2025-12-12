@@ -16,7 +16,7 @@ K_matrix(
 )
 }
 \arguments{
-\item{gp}{Object of class \code{gp}.}
+\item{gp}{object of class \code{gp}.}
 
 \item{hyperpar}{(optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.}
 

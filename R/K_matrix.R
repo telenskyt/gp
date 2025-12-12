@@ -68,7 +68,7 @@ K_cache <- function (gp, hyperpar, x1, x2 = NULL, cache_for = c("derivative", "g
 #' 
 #' This function is mostly used internally. In most common use, user will call gpFit() or predict(), which call this function themselves.
 #' 
-#' @param gp Object of class \code{gp}.
+#' @param gp object of class \code{gp}.
 #' @param hyperpar (optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.
 #' @param x1 object of class \code{gpData} - data corresponding to rows of the resultant covariance matrix.
 #' It is supposed to be correctly scaled already! (see \code{gpDataPrepare()})
