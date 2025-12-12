@@ -9,10 +9,11 @@ gpPack <- function(gp)
 	gp$data <- NULL
 
 	#gp$fit$f <- NULL # nakonec i bez tohoto se da obejit!!! :-))) # ale necham tam radsi uplne to puvodni, kvuli ruzne num nestabilite....
-	rownames(gp$fit$f) <- NULL # rownames take a lot of space! Just one column matrix with them 279872 bytes, without 31440 bytes!!! 
+	rownames(gp$fit$f) <- NULL # rownames take a lot of space! Just one column matrix with them 279872 bytes, without 31440 bytes!!!
 							# And they only had 6 characters each! (nrow = 3881, ncol = 1). R is not very efficient storing them.
 							# And rownames are in obsx already
-								
+
+	gp
 }
 
 # compute - priprava na vypocty - predikce. Je ale casove narocna viz vyse. compute = FALSE nebude delat ty casove narocne veci...
@@ -23,33 +24,32 @@ gpPack <- function(gp)
 #' @export
 gpUnpack <- function (gp, compute = TRUE, need.K = compute, need.L = compute)
 {
-	
-	gp$data <- gpDataPrepare(gp, data)
-	
+	gp$data <- gpDataPrepare(gp, gp$obsdata)
+
 	if (!compute) {
 		stopifnot(!need.K)
 		stopifnot(!need.L)
 		return(x)
 	}
-		
+
 	mstart(id = "K")
-cat("Re-creating covariance matrix... ")		
-	gp$fit$K <- K_matrix(comp_means = TRUE)
+cat("Re-creating covariance matrix... ")
+	gp$fit$K <- K_matrix(gp, comp_means = TRUE)
 	cat(sprintf("(%4dx%-4d): \t", nrow(gp$fit$K), ncol(gp$fit$K)))
-	mstop(id = "K")	
+	mstop(id = "K")
 #mstop()
 #mstart()
 	n <- nrow(gp$fit$K)
-	
+
 	hyperpar <- gpHyperparList(gp)
-	
+
 	mn <- mnfun(gp, h)
 	#gp$fit$f <- gp$fit$K %*% gp$fit$a + mn
 
-	gp$fit$W <- -(gp$fit$wt * d2(gp, gp$fit$f, gp$data, hyperpar)) 
-		
+	gp$fit$W <- -(gp$fit$wt * d2(gp, gp$fit$f, gp$data, hyperpar))
+
 	stopifnot(all(gp$fit$W >= 0))
-	
+
 	if (!need.L) {
 		if (!need.K) {
 			empty_K <- NA
@@ -58,11 +58,11 @@ cat("Re-creating covariance matrix... ")
 		}
 		return(gp)
 	}
-	
+
 	# recompute L
 	mstart(id = "L")
-cat("Re-computing L matrix ... ")	
-	
+cat("Re-computing L matrix ... ")
+
 	rW <- sqrt(gp$fit$W)
 	xx <- rW %*% t(rW)# * K + diag(n)
 gc()
@@ -71,15 +71,15 @@ gc()
 		empty_K <- NA
 		mostattributes(empty_K) <- attributes(gp$fit$K)
 		gp$fit$K <- empty_K
-	}	
+	}
 gc() # ta vlozena gc() tady jsou velmi dulezita!!!
 
 	xx <- xx + diag(n)
 gc()
 	gp$fit$L <- tryCatch(chol(xx), error = function(x) return(NULL))
 	rm(xx)
-	mstop(id = "L")	
-gc()	
+	mstop(id = "L")
+gc()
 #mstop()
 	gp
 }
