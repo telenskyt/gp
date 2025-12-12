@@ -9,10 +9,10 @@ validate_components(gp, components)
 \arguments{
 \item{gp}{object of class gp}
 
-\item{components}{one of the following:
+\item{components}{of the covariance formula. One of the following:
 \itemize{
+\item NULL : all components will be selected (the default)
 \item character vector: components to be selected
-\item NULL : all components will be selected
 \item formula: additive formula specifying components, same syntax as in \link[stats:update.formula]{update.formula}, e.g.
 \tabular{ll}{
 \code{~.}          \tab all components \cr

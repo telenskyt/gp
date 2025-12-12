@@ -4,14 +4,18 @@
 \alias{gp}
 \title{Construct gaussian process model}
 \usage{
-gp(f, data, logLik)
+gp(f, data, logLik, logLik.rescale = TRUE)
 }
 \arguments{
 \item{f}{formula for the covariance matrix}
 
 \item{data}{object of class gpData, created by the gpData() function}
 
-\item{logLik}{blikelihood function taking two parameters: \code{data} (object of class gpData), and \code{f}, a numeric vector - result of the gaussian process}
+\item{logLik}{likelihood function taking two parameters: \code{data} (object of class gpData), and \code{f}, a numeric vector - result of the gaussian process.
+The \code{f} vector can be either of the dimension of the gaussian process, or the main table - see the \code{logLik.rescale} parameter.}
+
+\item{logLik.rescale}{should the \code{f} parameter of the \code{logLik} function be rescaled to the dimension of the main table?
+If \code{FALSE}, the \code{f} parameter will be kept at the dimension of the Gaussian Process (as reported by \code{gpDetermineSize()}).}
 }
 \value{
 object of class gp - the gaussian process model. Some important slots:

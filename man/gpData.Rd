@@ -7,29 +7,44 @@
 gpData(x)
 }
 \arguments{
-\item{x}{Named list of tables (data.frame or matrix). Tables may carry an attribute \code{"fact"} naming a grouping
-factor column (the column must exist and be a unique identification of the table's rows)}
+\item{x}{Named list of tables (data.frame's). Tables may carry an attribute \code{"fact"} naming a grouping
+factor column; the column must exist and be a unique identification of the table's rows. See Details below.}
 }
 \value{
 An object of class \code{gpData}
 }
 \description{
-Construct a gpData object from a named list of tables (data.frame or matrix).
+Bundle the data for the gaussian process model - construct a gpData object from a named list of tables (data.frame's).
 }
 \details{
-The function validates and converts a list of tables into an object of class
-\code{gpData}. Tables may carry an attribute \code{"fact"} naming a grouping
-factor column (the column must exist and be a unique identification of the table's rows). Tables without a grouping
-factor are treated as belonging to a special factor \code{"1"}. If multiple
-distinct grouping factors are present (the special factor \code{"1"} included), the first table in the list is treated
-as the main table and must be a \code{data.frame} containing all grouping
-factor columns. Performs validation checks, which are not tied to any particular
-formula or object of class \code{gp}.
+For computation efficiency reasons, this package doesn't work in an usual way where a single data.frame which is joined from multiple
+data.frames. Rather, data is provided as a list of data.frames (we also call them "tables"), where each table can differ in the type of records
+that each row represents (and thus also in the number of rows).
+
+There are two main cases:
+\enumerate{
+\item All tables describe the same record type - there is one-to-one correspondence between their rows, and thus they all have the same number of rows.
+\item There are tables representing different record types. In that case, there must be a main table (which is first on the list),
+and this main table contains so called "grouping factors" (columns). These grouping factors represent all the other record types
+present in the dataset.
 \itemize{
-\item The special factor value \code{"1"} denotes absence of a grouping factor;
+\item Tables whose rows represent given grouping factor must carry an attribute \code{"fact"} naming that grouping
+factor - and they need to have a column of that name, which uniquely identifies its rows. Multiple tables can share the same grouping factor,
+in which case, there must be one-to-one correspondence between their rows.
+\item Tables without grouping factor must represent the same record type as the main table, having one-to-one correspondence between their rows.
+Throughout the package, absence of a grouping factor is marked as belonging to a special factor \code{"1"}. However, it doesn't need to be denoted with the \code{"fact"} attribute
+in the input data.
+}
+}
+
+Note that if there is only one grouping factor in the data, the main table is not required.
+That is, all tables can carry the same attribute \code{"fact"} (same grouping factor) without main table to be present.
+
+The function performs validation checks, not tied to any particular formula or object of class \code{gp}.
+\itemize{
+\item Since the special factor value \code{"1"} denotes absence of a grouping factor throughout the package,
 naming a factor \code{"1"} is not allowed.
 \item Tables that share the same grouping factor (including the special factor \code{"1"}) must have identical row counts
 and there is 1:1 correspondence between their rows.
-\item TODO: pridat consequences z me puvodni dokumentace nize - a adresovat tam case kdy vsechny tabulky maji stejny faktor
 }
 }

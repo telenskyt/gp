@@ -12,12 +12,13 @@ gpDataSize(gpData, fact = "1")
 \item{fact}{character. Grouping factor name, or "1" for no grouping factor (the default).}
 }
 \value{
-Integer. Size of the dataset along the given grouping factor, or the "raw size" if fact = "1".
+Integer. Size of the dataset along the given grouping factor.
 }
 \description{
 If the grouping factor \code{fact} is specified, the size unit is this grouping factor, i.e.
-the function returns number of levels of this grouping factor. If there is no grouping factor
-specified (fact = "1", the default), the dimension is given by the main table
-(if the main table is not present, all tables necessarily have the same number of rows -
-this is a consequence of the data validation in \code{gpData()}).
+the function returns number of levels of this grouping factor in the data.
+If there is no grouping factor specified (fact = "1", the default),
+the dimension is given by the main table, or, if the main table is not present, simply by
+all tables (since if the main table is not present, all tables necessarily have the same number
+of rows).
 }
