@@ -127,7 +127,7 @@ pred <- function(gp, predx, same = FALSE, hyperpar = gpHyperparList(gp), compone
 			}
 			cat(sprintf("(%4dx%-4d): \t", nrow(Kx), ncol(Kx)))
 			mstop(id = "Kx")
-			mpred <- mnfun(gp, h) # mpred - mean on the normal scale of GP
+			mpred <- mnfun(gp, data = predx, hyperpar = hyperpar) # mpred - mean on the normal scale of GP
 			stopifnot(length(mpred) == ncol(Kx))
 			if (!is.null(w)) {
 				stopifnot((is.matrix(w) && nrow(w) == ncol(Kx)) || (is.vector(w) && length(w) == ncol(Kx)))

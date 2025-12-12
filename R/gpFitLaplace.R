@@ -45,8 +45,6 @@ gpFitLaplace <- function (gp, h, mn = NULL, wt = 1, e = NULL, tol = 10 ^ -6, itm
 	wt <- 1 # currently weights are not supported
 	x <- gp$data # alias for **scaled** data; but there is also y in there....
 	y <- gp$data
-	if (is.null(mn))
-		mn <- mnfun(gp, h)	
 options(scipen = 9)
 #options(warn = 2) # just for debug
 #cat("  ... (pro kontrolu hyper_iter = ", hyper_iter, ")\n") # tady to vychazi ze promenna hyper_iter cisluje od nuly, uz to tak necham
@@ -55,6 +53,8 @@ print(h)
 	#hyperpar <- hyperpar_decode(h)
 	gp$hyperpar <- gpHyperparImportVector(gp, h); 
 	hyperpar <- gpHyperparList(gp)
+	if (is.null(mn))
+		mn <- mnfun(gp, hyperpar = hyperpar)	
 print(gc())
 	mstart(id = "graf_fit", mem_precise = TRUE)
 	# create the covariance matrix

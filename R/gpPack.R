@@ -43,7 +43,7 @@ cat("Re-creating covariance matrix... ")
 
 	hyperpar <- gpHyperparList(gp)
 
-	mn <- mnfun(gp, h)
+	mn <- mnfun(gp, hyperpar = hyperpar)
 	#gp$fit$f <- gp$fit$K %*% gp$fit$a + mn
 
 	gp$fit$W <- -(gp$fit$wt * d2(gp, gp$fit$f, gp$data, hyperpar))
