@@ -39,7 +39,7 @@ gp <- function(f, data, logLik, logLik.reindex2main = TRUE)
 
 	stopifnot(is.function(logLik))
 	gp$ll <- logLik
-	gp$logLik.reindex2main <- llogLik.reindex2main
+	gp$logLik.reindex2main <- logLik.reindex2main
 	if (gp$logLik.reindex2main && gp$GP_factor != "1") { # the reindexing is desired to take place
 		if (!gpDataHasMainTable(gp$data))
 			stop("The parameter logLik.reindex2main = TRUE, but I cannot reindex from the factor ", gp$GP_factor, ", at which gaussian process is running, to the main table, since it is missing in the training data. Supply the main table or consider setting logLik.reindex2main = FALSE.")
