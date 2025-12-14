@@ -119,6 +119,7 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 			args$h <- gpHyperparExportVector(gp, "start")
 		}
 
+		fit.stage1 <- NULL
 		if (!two.stage) {
 			# pass this to optimiser
 			fit <- optimise.gp(args)
@@ -158,6 +159,7 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 
 				# recover the previous limits
 				gp$hyperpar$low[gp$hyperpar$hyperpar == "sigma2" & gp$hyperpar$component %in% staged_components] <- old_low_limits
+				fit.stage1 <- gpPackFit(fit, maximum = TRUE)
 			}
 
 			if (2 %in% stages) {
@@ -191,6 +193,8 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 		fit$args$gp <- NULL # save space, at to tam neni 2x
 		#fit$my_args <- c(as.list(environment())) # c(as.list(environment()), list(...)) # simple. https://stackoverflow.com/a/17244041
 		# skip out of this top-level function call and return the final result
+		if (!is.null(fit.stage1) && 2 %in% stages) # fit object from stage 1 exists and it is not the current fit object
+			fit$stage1 <- fit.stage1
 		gp$fit <- fit
 		return (gp)
 	} else if (!recursive) { # direct call, no optim
