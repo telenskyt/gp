@@ -2,10 +2,14 @@
 % Please edit documentation in R/gpPack.R
 \name{gpPack}
 \alias{gpPack}
-\title{zahod vse co se da "snadno" vypocitat}
+\title{Pack the model - reduce its size for memory or disk storage}
 \usage{
-gpPack(gp)
+gpPack(gp, maximum = FALSE)
+}
+\arguments{
+\item{maximum}{should it be taken to maximum level? Default FALSE.}
 }
 \description{
-zahod vse co se da "snadno" vypocitat
+Reduce model size by deleting auxiliary data structures which speed up the computations
+but take a lot of space.
 }
