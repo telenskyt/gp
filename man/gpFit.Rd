@@ -19,6 +19,7 @@ gpFit(
   use_f_start = TRUE,
   weights = NULL,
   grad.computation = TRUE,
+  warn.exclude = NULL,
   recursive = FALSE
 )
 }
@@ -30,9 +31,13 @@ the starting values are taken from \code{gp} hyperparameter table (\code{gp$hype
 
 \item{opt.h}{logical; should hyperparameters be optimised? Default TRUE; Only rarely you may want to say FALSE.}
 
-\item{two.stage}{logical; if TRUE, the two-stage optimization method will be applied (see Details below).}
+\item{two.stage}{logical; if TRUE (the default), the two-stage optimization method will be applied (see Details below).}
 
-\item{stages}{numerical vector - the optimization stages to be performed. Only valid for \code{two.stage = TRUE}. Default is \code{1:2}, i.e. both stages.}
+\item{stages}{numerical vector - the optimization stages to be performed. Only relevant for \code{two.stage = TRUE}. Default is \code{1:2}, i.e. both stages.
+See details below.
+
+If you are running only stage 2 separately, which would make sense only in rare cases (perhaps \code{two.stage = FALSE} is what you need in most of those cases),
+note that stage 2 doesn't start from \code{gp$hyperpar$start}, but from \code{gp$hyperpar$value}.}
 
 \item{stage1low}{the low threshold for the sigma2 parameter of the components for which the two-stage fitting applies.}
 
@@ -52,6 +57,8 @@ the starting values are taken from \code{gp} hyperparameter table (\code{gp$hype
 
 \item{grad.computation}{logical; compute gradients during the gaussian process optimization (required when
 \code{opt.h = TRUE}).}
+
+\item{warn.exclude}{character vector; vector of warnings that should be disabled. Allowed values are: \code{"warn.stage2.start"}. Default \code{NULL}.}
 
 \item{recursive}{internal option; do not use.}
 }
@@ -73,8 +80,11 @@ that have also other hyper-parameters apart from sigma2.)
 \item In the second stage, the restriction applied in the first stage is lifted and all the sigma2 hyper-parameters are allowed to go further down to zero.
 }
 
-In some cases, where user tries to optimize the CPU time by manually splitting the procedure in multiple steps, it might be a good idea to run the stage 2 only in the last step,
+In some cases, where user tries to optimize the CPU time by manually splitting the procedure in multiple steps, it might be a good idea to run both stages only in the last step,
 and use only stage 1 in all the previous steps (see Vignette XXX).
+
+If you are running only stage 2 separately, which would make sense only in rare cases (perhaps \code{two.stage = FALSE} is what you need in most of those cases),
+note that stage 2 doesn't start from \code{gp$hyperpar$start}, but from \code{gp$hyperpar$value}.
 }
 \examples{
 \dontrun{

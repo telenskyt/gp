@@ -4,8 +4,13 @@
 #' @param h optional; a numeric vector of starting values of hyperparameters (untransformed, i.e. on their most natural scale). If \code{NULL},
 #'   the starting values are taken from \code{gp} hyperparameter table (\code{gp$hyperpar[,"start"]}).
 #' @param opt.h logical; should hyperparameters be optimised? Default TRUE; Only rarely you may want to say FALSE.
-#' @param two.stage logical; if TRUE, the two-stage optimization method will be applied (see Details below).
-#' @param stages numerical vector - the optimization stages to be performed. Only valid for \code{two.stage = TRUE}. Default is \code{1:2}, i.e. both stages.
+#' @param two.stage logical; if TRUE (the default), the two-stage optimization method will be applied (see Details below).
+#' @param stages numerical vector - the optimization stages to be performed. Only relevant for \code{two.stage = TRUE}. Default is \code{1:2}, i.e. both stages.
+#'			See details below. 
+#'
+#'	If you are running only stage 2 separately, which would make sense only in rare cases (perhaps \code{two.stage = FALSE} is what you need in most of those cases), 
+#'	note that stage 2 doesn't start from \code{gp$hyperpar$start}, but from \code{gp$hyperpar$value}.
+# !!! bacha ten text vyse (ty dva radky) je duplikovan zde
 #' @param stage1low the low threshold for the sigma2 parameter of the components for which the two-stage fitting applies.
 #' @param use.prior logical; if TRUE, likelihood + prior (posterior) is optimized; if FALSE, only likelihood is optimized.
 #' @param hessian logical; compute and return the Hessian during the optimization. Warning: may be heavy on CPU time! Default FALSE.
@@ -16,6 +21,7 @@
 #' @param weights numeric or \code{NULL}; observation weights (not implemented).
 #' @param grad.computation logical; compute gradients during the gaussian process optimization (required when
 #'   \code{opt.h = TRUE}).
+#' @param warn.exclude character vector; vector of warnings that should be disabled. Allowed values are: \code{"warn.stage2.start"}. Default \code{NULL}.
 #' @param recursive internal option; do not use.
 #'
 #' @return Returns the input \code{gp} object with the model fit (stored in \code{gp$fit}) and updated hyperparameters.
@@ -32,8 +38,12 @@
 #'
 #' 2. In the second stage, the restriction applied in the first stage is lifted and all the sigma2 hyper-parameters are allowed to go further down to zero.
 #'
-#' In some cases, where user tries to optimize the CPU time by manually splitting the procedure in multiple steps, it might be a good idea to run the stage 2 only in the last step,
-#' and use only stage 1 in all the previous steps (see Vignette XXX).
+#' In some cases, where user tries to optimize the CPU time by manually splitting the procedure in multiple steps, it might be a good idea to run both stages only in the last step,
+#' and use only stage 1 in all the previous steps (see Vignette XXX). 
+#' 
+#' If you are running only stage 2 separately, which would make sense only in rare cases (perhaps \code{two.stage = FALSE} is what you need in most of those cases), 
+#' note that stage 2 doesn't start from \code{gp$hyperpar$start}, but from \code{gp$hyperpar$value}.
+# !!! bacha ten text vyse je duplikovan zde
 #'
 #' @examples
 #' \dontrun{
@@ -68,6 +78,7 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 				  use_f_start = TRUE,
 				  weights = NULL,
 				  grad.computation = TRUE,
+				  warn.exclude = NULL,
 				  recursive = FALSE #internal option only, don't use!
 				  )
 {
@@ -151,6 +162,13 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 
 			if (2 %in% stages) {
 				cat("Fitting stage 2\n")
+				
+				# stage 2 always starts from hyperpar$value, not hyperpar$start! No matter if stage 1 was run in this call or not. 
+				# This is to make it somehow consistent.
+				args$h <- gpHyperparExportVector(gp, "value")
+				# But the user should possibly be warned about this, if he is running just stage 2 - just to make sure he understands
+				if (!1 %in% stages && any(gp$hyperpar$start != gp$hyperpar$value) && !"warn.stage2.start" %in% warn.exclude)
+					warning("!! note that stage 2 starts from hyperpar$value and not hyperpar$start! If you want to disable this particular warning, use warn.exclude = 'warn.stage2.start'.")
 
 				if (any(gp$hyperpar$low[gp$hyperpar$hyperpar == "sigma2" & gp$hyperpar$component %in% staged_components] >= stage1low - sqrt(.Machine$double.eps)))
 					warning("gpFit(): trying to proceed with stage 2, but low limits for some sigma2 components are at the level of stage 1 (which is stage1low = ", stage1low, ") or higher!")
