@@ -11,7 +11,8 @@
 	options(show.error.locations = TRUE)
 	options(keep.source = TRUE)
 	options(keep.source.pkgs = TRUE)
-
+	options(pillar.print_max = 120)
+	
 	options(warnPartialMatchDollar = TRUE)
 	options(warnPartialMatchAttr = TRUE)
 	options(warnPartialMatchArgs = FALSE)
