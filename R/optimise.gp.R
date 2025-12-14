@@ -110,7 +110,8 @@ gradient <- function(theta, prior.pars, isfac, args, fun) {
 	else
 		dOdtheta <- dOdP * dLdtheta
 	
-	if (nrow(iter_dmll_dh) < hyper_iter) {
+	nrow_iter_dmll_dh <- if (!is.null(iter_dmll_dh)) nrow(iter_dmll_dh) else 0
+	if (nrow_iter_dmll_dh < hyper_iter) {
 		# derivace na skale log lik, nikoli negloglik
 		# komentare peclive prekontrolovany 16.5.2020, muze slouzit jako dokumentace
 		iter_dmll_dh <<- rbind(iter_dmll_dh, m$h_grads) # gradient of marginal log likelihood w.r.t. h (h ~ hyperparameters, SE lengthscales are squared) (mll = marginal log lik, pozor not negative)
