@@ -12,10 +12,12 @@
   comp_missing = c("avg", "none"),
   w = NULL,
   groupMeans = NULL,
-  type = c("response", "latent"),
+  type = c("latent", "response"),
   se.fit = FALSE,
   cov.fit = FALSE,
   CI = 0.95,
+  link = NULL,
+  parname = NULL,
   maxn = NULL,
   pred.sims = 1e+05,
   Kx.cache = NULL,
@@ -72,13 +74,17 @@ if more different averages with different weights are desired, \code{w} can be a
 \item{cov.fit}{logical; if \code{TRUE}, the covariance matrix of the predictions will also be returned (can be very memory consuming for large datasets!).
 Default is \code{FALSE}.}
 
+\item{link}{character, optional. In case of \code{type = "response"}, what should be the link function to take inverse of for calculating the derived quantity (response scale)? Character as passed to \code{make.link()}.}
+
+\item{parname}{character, optional. In case of \code{type = "response"}, what should be the name of the parameter which is the derived quantity on the response scale?}
+
 \item{maxn}{maximum maximum dataset size to fit at once (!!! the unit ???!!!); if the dataset is larger, it will be split into chunks of size \code{maxn}
 before predictions are calculated. This parameter doesn't affect the result. It is only to speed-up the computation and use less memory by splitting the dataset
 \itemize{
 \item the K(newdata,newdata) matrix is then smaller. So it only speeds it up for CI != NULL (in the backsolve function) for CI = NULL its only slowdown.
 }}
 
-\item{pred.sims}{number of simulations to be used for calculating the response scale predictions and their CIs. Default is 100000.
+\item{pred.sims}{(currently unused) number of simulations to be used for calculating the response scale predictions and their CIs. Default is 100000.
 Higher values give more accurate results, but are slower. Ignored if \code{CI = NULL}.}
 
 \item{Kx.cache}{optional, object returned by \code{K_cache()} function, to speed up repeated calls to \code{predict.gp()} with the same \code{newdata} by
