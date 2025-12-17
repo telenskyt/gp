@@ -37,11 +37,13 @@
 #' calculated - because for this, the standard error of the latent GP `f` is needed.)). Default is 0.95.
 #' @param cov.fit logical; if \code{TRUE}, the covariance matrix of the predictions will also be returned (can be very memory consuming for large datasets!).
 #' Default is \code{FALSE}.
+#' @param link character, optional. In case of \code{type = "response"}, what should be the link function to take inverse of for calculating the derived quantity (response scale)? Character as passed to \code{make.link()}.
+#' @param parname character, optional. In case of \code{type = "response"}, what should be the name of the parameter which is the derived quantity on the response scale?
 #' @param maxn maximum maximum dataset size to fit at once (!!! the unit ???!!!); if the dataset is larger, it will be split into chunks of size \code{maxn}
 #' before predictions are calculated. This parameter doesn't affect the result. It is only to speed-up the computation and use less memory by splitting the dataset
 #' - the K(newdata,newdata) matrix is then smaller. So it only speeds it up for CI != NULL (in the backsolve function) for CI = NULL its only slowdown.
 #'
-#' @param pred.sims number of simulations to be used for calculating the response scale predictions and their CIs. Default is 100000.
+#' @param pred.sims (currently unused) number of simulations to be used for calculating the response scale predictions and their CIs. Default is 100000.
 #' Higher values give more accurate results, but are slower. Ignored if \code{CI = NULL}.
 #' @param Kx.cache optional, object returned by \code{K_cache()} function, to speed up repeated calls to \code{predict.gp()} with the same \code{newdata} by 
 #' caching parts of the K(training_data, newdata) matrix.
@@ -61,9 +63,13 @@
 # ... - passed to model_expand_predictions()
 
 predict.gp <- function(gp, newdata = NULL, hyperpar = gpHyperparList(gp), components = NULL, comp_missing = c("avg", "none"), w = NULL, groupMeans = NULL, 
-						type = c('response', 'latent'),	se.fit = FALSE, cov.fit = FALSE, CI = 0.95, maxn = NULL, pred.sims = 100000, 
+						type = c('latent', 'response'),	se.fit = FALSE, cov.fit = FALSE, CI = 0.95, link = NULL, parname = NULL, maxn = NULL, pred.sims = 100000, 
 						Kx.cache = NULL, Kxx.cache = NULL, ...)  
 {
+	if (type == "response") {
+		stopifnot(is.character(link))
+		stopifnot(is.character(parname) && nchar(parname) > 0)	
+	}
 	comp_missing <- match.arg(comp_missing)
 	need <- function (object, x) if (is.null(object[[x]])) stop("Model object is missing the `", x, "` element - try to call gpUnpack() on it")
 	
@@ -130,21 +136,19 @@ predict.gp <- function(gp, newdata = NULL, hyperpar = gpHyperparList(gp), compon
 		pred <- pred$pred
 	}
 	
-	if (type == 'latent') {
-		if (!se.fit) {
-			ans <- pred
-		} else if (is.null(CI)) { # se.fit = TRUE & CI is NULL
-			ans <- pred
-		} else { # # se.fit = TRUE & CI is not NULL
-			upper <- pred[, 1] + err * pred[, 2]
-			lower <- pred[, 1] - err * pred[, 2]
-			dCI <- cbind(lower, upper)
-			colnames(dCI) <- c(paste0("f_lower_", round(100 * CI), "CI"), #paste("lower ", round(100 * CI), "% CI", sep = ""),
-							   paste0("f_upper_", round(100 * CI), "CI")) #paste("upper ", round(100 * CI), "% CI", sep = "")
-			ans <- cbind(pred, dCI)							   
-		}	
-	} else { # if not only latent wanted, predict also other stuff
-		stop("not implemented yet")
+	if (!se.fit) {
+		ans <- pred
+	} else if (is.null(CI)) { # se.fit = TRUE & CI is NULL
+		ans <- pred
+	} else { # # se.fit = TRUE & CI is not NULL
+		upper <- pred[, 1] + err * pred[, 2]
+		lower <- pred[, 1] - err * pred[, 2]
+		dCI <- cbind(lower, upper)
+		colnames(dCI) <- c(paste0("f_lower_", round(100 * CI), "CI"), #paste("lower ", round(100 * CI), "% CI", sep = ""),
+						   paste0("f_upper_", round(100 * CI), "CI")) #paste("upper ", round(100 * CI), "% CI", sep = "")
+		ans <- cbind(pred, dCI)							   
+	}	
+	if (type == "response") { # if not only latent wanted, predict also other stuff
 		# correct for the "intercept" of the missing components (we chose not to do it in the 'latent' case)
 		if (0) { # no longer done here; done in pred() now, so it can be done also for (co)variances
 				# hmm, tak zpetne si rikam, ze tohle bylo skoro nejlepsi nakonec.. mohl bych to sem znova dat jako jednu z voleb
@@ -160,14 +164,7 @@ predict.gp <- function(gp, newdata = NULL, hyperpar = gpHyperparList(gp), compon
 			}
 		}
 		# calculate model specific response from the latent
-		mstart(id = "mep", mem_precise = TRUE)
-		if ("hyperpar" %in% names(formals(model_expand_predictions))) # supporting newer as well as older interface, when loading older models
-			exp_pred <- model_expand_predictions(pred, hyperpar, pred.sampling = !is.null(CI), pred.sims = pred.sims, ...)
-		else
-			exp_pred <- model_expand_predictions(pred, pred.sampling = !is.null(CI), pred.sims = pred.sims, ...)
-		ans <- cbind(pred, exp_pred)
-		cat("model_expand_predictions() took ")
-		mstop(id = "mep")
+		ans <- predict_expand_link(pred = ans, link = link, parname = parname)
 	}
 	cat("returning memory - gc() took ")
 	mstart(id = "gc")
