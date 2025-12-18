@@ -5,3 +5,4 @@
 ^tmp/
 ^new/
 ^_legacy_model/
+^\.github$
