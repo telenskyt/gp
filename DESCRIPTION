@@ -17,13 +17,14 @@ LazyData: true
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 Imports: 
-    dplyr,
+	dplyr,
 	purrr,
-    memoise,
-    pryr,
-    rlang,
-    RTMB,
-	magrittr
+	memoise,
+	pryr,
+	rlang,
+	RTMB,
+	magrittr,
+	bayesmeta
 Suggests: 
     knitr,
     rmarkdown
