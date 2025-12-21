@@ -87,15 +87,12 @@ K_cache <- function (gp, hyperpar, x1, x2 = NULL, cache_for = c("derivative", "g
 #'		For comp_means = TRUE, x1 should be the training dataset. Perhaps it might make sense in other cases as well, but just make sure you know what you're doing :)
 #' @param comp_means_weights - don't have to sum up to 1, will be normalized
 #'
-#' @details 
-#' If \code{x2} is not supplied, the covariance matrix is square and symmetric, representing the covariances among all rows in \code{x1}. 
+#' @return Covariance matrix K:
+#' - Number of rows will be equal to \code{gpDataSize(x1, gp$GP_factor)}, where \code{gp$GP_factor} is the grouping factor corresponding to the dimension of the Gaussian process. 
+#' - Analogically, if \code{x2} is supplied, the number of columns will be equal to \code{gpDataSize(x2, gp$GP_factor)}.
+#' - If \code{x2} is not supplied, the covariance matrix is square and symmetric, representing the covariances among all rows in \code{x1}. 
 #' 
-#' The dimension of the resultant covariance matrix: the number of rows will be determined by \code{gpDataSize(x1, gp$GP_factor)}, 
-#' where \code{gp$GP_factor} is the grouping factor corresponding to the dimension of the Gaussian process. 
-#' 
-#' Analogically, if \code{x2} is supplied, the number of columns will be determined by 
-#' \code{gpDataSize(x2, gp$GP_factor)}.
-#'
+
 #'@export
 
 # hyperpar - list of lists of vectors

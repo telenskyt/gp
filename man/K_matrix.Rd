@@ -54,15 +54,14 @@ in the \code{predict} method.
 \item don't have to sum up to 1, will be normalized
 }}
 }
+\value{
+Covariance matrix K:
+\itemize{
+\item Number of rows will be equal to \code{gpDataSize(x1, gp$GP_factor)}, where \code{gp$GP_factor} is the grouping factor corresponding to the dimension of the Gaussian process.
+\item Analogically, if \code{x2} is supplied, the number of columns will be equal to \code{gpDataSize(x2, gp$GP_factor)}.
+\item If \code{x2} is not supplied, the covariance matrix is square and symmetric, representing the covariances among all rows in \code{x1}.
+}
+}
 \description{
 This function is mostly used internally. In most common use, user will call gpFit() or predict(), which call this function themselves.
-}
-\details{
-If \code{x2} is not supplied, the covariance matrix is square and symmetric, representing the covariances among all rows in \code{x1}.
-
-The dimension of the resultant covariance matrix: the number of rows will be determined by \code{gpDataSize(x1, gp$GP_factor)},
-where \code{gp$GP_factor} is the grouping factor corresponding to the dimension of the Gaussian process.
-
-Analogically, if \code{x2} is supplied, the number of columns will be determined by
-\code{gpDataSize(x2, gp$GP_factor)}.
 }
