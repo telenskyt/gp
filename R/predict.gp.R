@@ -66,6 +66,8 @@ predict.gp <- function(gp, newdata = NULL, hyperpar = gpHyperparList(gp), compon
 						type = c('latent', 'response'),	se.fit = FALSE, cov.fit = FALSE, CI = 0.95, link = NULL, parname = NULL, maxn = NULL, pred.sims = 100000, 
 						Kx.cache = NULL, Kxx.cache = NULL, ...)  
 {
+	if (is.null(gp$fit))
+		stop("Model object has not been fit yet: you need to call gpFit() first")
 	if (type == "response") {
 		stopifnot(is.character(link))
 		stopifnot(is.character(parname) && nchar(parname) > 0)	

@@ -53,12 +53,14 @@ pred <- function(gp, predx, same = FALSE, hyperpar = gpHyperparList(gp), compone
 	recursive = FALSE)
 {
 	fit <- gp$fit
+	if (is.null(fit))
+		stop("Model object has not been fit yet: you need to call gpFit() first")
 	#cat("pred(): print(mstart):\n")
 	#print(mstart)
 	#cat("pred(): print(mstartOptions(mem_precise)):\n")
 	#print(mstartOptions("mem_precise"))
 	comp_missing <- match.arg(comp_missing)
-	need <- function (obj, x) if (is.null(obj[[x]])) stop("Model object is missing the `", x, "` element - try to call `unpack` on it")
+	need <- function (obj, x) if (is.null(obj[[x]])) stop("Model object is missing the `", x, "` element - you need to call gpUnpack() on it first")
 	n <- gpDataSize(predx, gp$GP_factor)
 	#validate_components(components) # allowing empty components here; K_matrix will solve it if needed :)
 	# and also trusting the validation from predict
