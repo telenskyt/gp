@@ -241,9 +241,9 @@ foreach2 <- function (.parallel = TRUE, .pass.wd = TRUE, .working.dir = NULL, .l
 		`%do_as_needed%` <- `%dopar%`
 	else
 		`%do_as_needed%` <- `%do%`
-	args <- c(args, list(expr = ex))
 
 	obj %do_as_needed% {
+		args <- c(args, list(expr = ex))
 		do.call(parallelJobWrapper, args)
 	}
 }
