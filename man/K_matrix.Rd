@@ -36,9 +36,9 @@ It is supposed to be correctly scaled already! (see \code{gpDataPrepare()})}
 \item character vector: components to be selected
 \item formula: additive formula specifying components, same syntax as in \link[stats:update.formula]{update.formula}, e.g.
 \tabular{ll}{
-\code{~.}          \tab all components \cr
-\code{~.-env-spat} \tab all components except \code{env} and \code{spat} \cr
-\code{~spat+year}  \tab only components \code{spat} and \code{year} \cr
+\code{~.}          \verb{   } \tab all components \cr
+\code{~.-env-spat} \verb{   } \tab all components except \code{env} and \code{spat} \cr
+\code{~spat+year}  \verb{   } \tab only components \code{spat} and \code{year} \cr
 }
 }}
 
