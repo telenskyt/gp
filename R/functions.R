@@ -151,13 +151,13 @@ expand_special <- function (fn)
 #'
 #' @param working.dir working directory
 #' @param masterPID the PID (process ID) of the process that is dispatching this parallel computation
-#' @param log.fn filename of the standard and error output log file. Special \code{\%} sequences can be used, see Details below. 
-#' @param dump.fn filename for the debug dump upon an error - without the .rda extension, that one will be added. Special \code{\%} sequences can be used, see Details below. 
+#' @param log.fn if not \code{NULL}, standard and error output of the job will be saved into a log file with this file name. Special \code{\%} sequences can be used, e.g. \code{"log-%h_%p.txt"}, see Details below. 
+#' @param dump.fn if not \code{NULL}, debug dump will be saved upon an error, with this file name (the .rda extension will be added to it). Special \code{\%} sequences can be used, e.g. \code{"dump-%h_%p"}, see Details below. 
 #' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:\cr
 #'     - \%h - hostname, i.e. the name of the machine where the worker job runs
 #'	   - \%p - process ID of the worker job
 #' @export
-parallelJobWrapper <- function (parallel = TRUE, working.dir = NULL, masterPID = NULL, log.fn = "log-%h_%p.txt", dump.fn = "dump-%h_%p", expr)
+parallelJobWrapper <- function (parallel = TRUE, working.dir = NULL, masterPID = NULL, log.fn = NULL, dump.fn = NULL, expr)
 
 #myParallel
 #jobWrapper
@@ -214,17 +214,21 @@ parallelJobWrapper <- function (parallel = TRUE, working.dir = NULL, masterPID =
 #' @param .pass.wd should the worker process set the same working directory as is on the master, before the job is executed? In most cases, \code{TRUE} will be the desired value (default).
 #'		Keep in mind that in some setups, e.g. with \code{library(doRedis)}, one might have the workers running on different machine.
 #' @param .working.dir working directory to be set before the job is executed. Will override \code{.pass.wd} if set.
-#' @param .log.fn filename of the standard and error output log file. Special \code{\%} sequences can be used, see Details below. Note that this parameter is evaluated in the context of the inner loop, 
+#' @param .log.fn if not \code{NULL}, standard and error output of the job will be saved into a log file with this file name. 
+#' 		Special \code{\%} sequences can be used, e.g. \code{"log-%h_%p.txt"}, see Details below. 
+#'		Note that this parameter is evaluated in the context of the inner loop, 
 #' (!!! o to jsem se snazil ale to nefunguje bohuzel), so you might happily use the 
 #' 		foreach2() iterator variables in the expression!
-#' @param .dump.fn filename for the debug dump upon an error - without the .rda extension, that one will be added. Special \code{\%} sequences can be used, see Details below. Note that this parameter is evaluated in the context of the inner loop (!!! o to jsem se snazil ale to nefunguje bohuzel), 
+#' @param .dump.fn if not \code{NULL}, debug dump will be saved upon an error, with this file name (the .rda extension will be added to it). 
+#' 		Special \code{\%} sequences can be used, e.g. \code{"dump-%h_%p"}, see Details below.
+#' Note that this parameter is evaluated in the context of the inner loop (!!! o to jsem se snazil ale to nefunguje bohuzel), 
 #'	so you might happily might use the \code{foreach2()} iterator variables in the expression!
 #' @param ... arguments passed to \code{\link[foreach]{foreach}()}.
 #' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:\cr
 #'     - \%h - hostname, i.e. the name of the machine where the worker job runs
 #'	   - \%p - process ID of the worker job
 #' @export
-foreach2 <- function (.parallel = TRUE, .pass.wd = TRUE, .working.dir = NULL, .log.fn = "log-%h_%p.txt", .dump.fn = "dump-%h_%p", ...)
+foreach2 <- function (.parallel = TRUE, .pass.wd = TRUE, .working.dir = NULL, .log.fn = NULL, .dump.fn = NULL, ...)
 {
 	obj <- foreach(...)
 	masterPID <- Sys.getpid()
