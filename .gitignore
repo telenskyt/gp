@@ -13,3 +13,4 @@ log*.txt
 *.bak
 *.R[0-9]
 dump-*.rda
+.cd.Rdata
