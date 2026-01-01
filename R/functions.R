@@ -108,11 +108,12 @@ endLog <- function (conn)
 }
 
 
-#' Get the true working directory
+#' Get working directory as user specified it (keeping symbolic links in the path)
 #'
-#' Like getwd(), but keeps the original path in case it contains symlinks on UNIX systems (doesn't replace symlinks in the path).
+#' Like getwd(), but keeps the path originally specified by the user, with symbolic links intact. This is a difference from \code{getwd()}, because on UNIX systems the path 
+#' might contain symlinks, and getwd() will then return a different path, with those symlinks resolved.
 #' @export
-getwd.true <- function()
+getwd.keepsym <- function()
 {
 	if (.Platform$OS.type == "unix") {
 		wd <- Sys.getenv('PWD')
@@ -145,19 +146,19 @@ expand_special <- function (fn)
 #' It will make sure the working directory is set correctly, standard and error outputs are logged, and in case of 
 #' error, a dump file will be saved for debugging purposes.
 #'
-#' @param parallel Should be set to \code{TRUE} for the wrapper to work normally. The \code{FALSE} setting is just for some perhaps
-#' debugging purposes, when we want to run the job in non-parallel, interactive mode, in which case most of the wrapper function (logging, setting working directory)
-#' will be disabled.
-#'
+#' @param expr expression - the job code to be run
 #' @param working.dir working directory
 #' @param masterPID the PID (process ID) of the process that is dispatching this parallel computation
-#' @param log.fn if not \code{NULL}, standard and error output of the job will be saved into a log file with this file name. Special \code{\%} sequences can be used, e.g. \code{"log-%h_%p.txt"}, see Details below. 
-#' @param dump.fn if not \code{NULL}, debug dump will be saved upon an error, with this file name (the .rda extension will be added to it). Special \code{\%} sequences can be used, e.g. \code{"dump-%h_%p"}, see Details below. 
+#' @param log.fn if not \code{NULL}, standard and error output of the job will be saved into a log file with this file name. Special \code{\%} sequences can be used, e.g. \code{"log-\%h_\%p.txt"}, see Details below. 
+#' @param dump.fn if not \code{NULL}, debug dump will be saved upon an error, with this file name (the .rda extension will be added to it). Special \code{\%} sequences can be used, e.g. \code{"dump-\%h_\%p"}, see Details below. 
+#' @param parallel should be set to \code{TRUE} for the wrapper to work normally. The \code{FALSE} setting is just for some perhaps
+#' debugging purposes, when we want to run the job in non-parallel, interactive mode, in which case most of the wrapper function (logging, setting working directory)
+#' will be disabled.
 #' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:\cr
 #'     - \%h - hostname, i.e. the name of the machine where the worker job runs
 #'	   - \%p - process ID of the worker job
 #' @export
-parallelJobWrapper <- function (parallel = TRUE, working.dir = NULL, masterPID = NULL, log.fn = NULL, dump.fn = NULL, expr)
+parallelJobWrapper <- function (expr, working.dir = NULL, masterPID = NULL, log.fn = NULL, dump.fn = NULL, parallel = TRUE)
 
 #myParallel
 #jobWrapper
@@ -190,17 +191,23 @@ parallelJobWrapper <- function (parallel = TRUE, working.dir = NULL, masterPID =
 		
 		expr
 	}, error = function (e) {
+		#traceback() # i zde vyhodi no traceback available
 		cat("error: ")
 		print(e)
 		#cat("\n")
+		
+		if (parallel) {
+			cat("The stack:\n") # nevim jak ho vypsat, nic nefacha:
+			#recover() # nic nevypise
+			#browser() # nic nevypise
+			#traceback() # vyhodi no traceback available! # trochu me stve, ze to nedava ten samy stack format jako recover()... mozna todo: vykuchat to z recover()...
+			traceback(sys.calls()) # this works!!! 
+		}
+		
 		if (!is.null(dump.fn)) {
 			dump.fn <- expand_special(dump.fn)
 			cat("dumping stack, variables etc. to ", dump.fn, "\n")
 			dump.frames(dumpto = dump.fn, to.file = TRUE, include.GlobalEnv = TRUE) # use debugger(loadVar("*", dump.fn)) to debug...
-			#cat("The stack:\n") # nevim jak ho vypsat, nic nefacha:
-			#recover() # nic nevypise
-			#browser() # nic nevypise
-			#traceback() # vyhodi no traceback available! # trochu me stve, ze to nedava ten samy stack format jako recover()... mozna todo: vykuchat to z recover()...
 		}
 	})
 	gc() # free up the memory because e.g. doRedis workers don't call gc() after it finishes (they should!!)
@@ -215,12 +222,12 @@ parallelJobWrapper <- function (parallel = TRUE, working.dir = NULL, masterPID =
 #'		Keep in mind that in some setups, e.g. with \code{library(doRedis)}, one might have the workers running on different machine.
 #' @param .working.dir working directory to be set before the job is executed. Will override \code{.pass.wd} if set.
 #' @param .log.fn if not \code{NULL}, standard and error output of the job will be saved into a log file with this file name. 
-#' 		Special \code{\%} sequences can be used, e.g. \code{"log-%h_%p.txt"}, see Details below. 
+#' 		Special \code{\%} sequences can be used, e.g. \code{"log-\%h_\%p.txt"}, see Details below. 
 #'		Note that this parameter is evaluated in the context of the inner loop, 
 #' (!!! o to jsem se snazil ale to nefunguje bohuzel), so you might happily use the 
 #' 		foreach2() iterator variables in the expression!
 #' @param .dump.fn if not \code{NULL}, debug dump will be saved upon an error, with this file name (the .rda extension will be added to it). 
-#' 		Special \code{\%} sequences can be used, e.g. \code{"dump-%h_%p"}, see Details below.
+#' 		Special \code{\%} sequences can be used, e.g. \code{"dump-\%h_\%p"}, see Details below.
 #' Note that this parameter is evaluated in the context of the inner loop (!!! o to jsem se snazil ale to nefunguje bohuzel), 
 #'	so you might happily might use the \code{foreach2()} iterator variables in the expression!
 #' @param ... arguments passed to \code{\link[foreach]{foreach}()}.
@@ -228,12 +235,12 @@ parallelJobWrapper <- function (parallel = TRUE, working.dir = NULL, masterPID =
 #'     - \%h - hostname, i.e. the name of the machine where the worker job runs
 #'	   - \%p - process ID of the worker job
 #' @export
-foreach2 <- function (.parallel = TRUE, .pass.wd = TRUE, .working.dir = NULL, .log.fn = NULL, .dump.fn = NULL, ...)
+foreach2 <- function (.pass.wd = TRUE, .working.dir = NULL, .log.fn = NULL, .dump.fn = NULL, .parallel = TRUE, ...)
 {
 	obj <- foreach(...)
 	masterPID <- Sys.getpid()
 	if (is.null(.working.dir) && .pass.wd) {
-		.working.dir <- getwd.true()
+		.working.dir <- getwd.keepsym()
 	}
 	obj$foreach2 <- list(
 		parallel = .parallel,
