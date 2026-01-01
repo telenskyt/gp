@@ -131,8 +131,8 @@ expand_special <- function (fn)
 	hostname <- Sys.info()["nodename"]
 	#hostname.abbrev <- sub("telensky-vypocty-?", "", hostname)
 	#if (hostname.abbrev == "") hostname.abbrev <- "1"	
-	#fn <- gsub("%h", hostname.abbrev, fixed = TRUE, fn)
-	fn <- gsub("%H", hostname, fixed = TRUE, fn)
+	#fn <- gsub("%H", hostname.abbrev, fixed = TRUE, fn)
+	fn <- gsub("%h", hostname, fixed = TRUE, fn)
 	fn <- gsub("%p", Sys.getpid(), fixed = TRUE, fn)
 	fn
 }
@@ -151,8 +151,11 @@ expand_special <- function (fn)
 #'
 #' @param working.dir working directory
 #' @param masterPID the PID (process ID) of the process that is dispatching this parallel computation
-#' @param log.fn filename of the standard and error output log file
-#' @param dump.fn filename for the debug dump upon an error - without the .rda extension, that one will be added
+#' @param log.fn filename of the standard and error output log file. Special \code{\%} sequences can be used, see Details below. 
+#' @param dump.fn filename for the debug dump upon an error - without the .rda extension, that one will be added. Special \code{\%} sequences can be used, see Details below. 
+#' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:\cr
+#'     - \%h - hostname, i.e. the name of the machine where the worker job runs
+#'	   - \%p - process ID of the worker job
 #' @export
 parallelJobWrapper <- function (parallel = TRUE, working.dir = NULL, masterPID = NULL, log.fn = "log-%h_%p.txt", dump.fn = "dump-%h_%p", expr)
 
@@ -211,7 +214,15 @@ parallelJobWrapper <- function (parallel = TRUE, working.dir = NULL, masterPID =
 #' @param .pass.wd should the worker process set the same working directory as is on the master, before the job is executed? In most cases, \code{TRUE} will be the desired value (default).
 #'		Keep in mind that in some setups, e.g. with \code{library(doRedis)}, one might have the workers running on different machine.
 #' @param .working.dir working directory to be set before the job is executed. Will override \code{.pass.wd} if set.
-#' @param ... arguments passed to \link[foreach]{foreach}. Or \code{\link[foreach]{foreach}}. Or \code{foreach()}.
+#' @param .log.fn filename of the standard and error output log file. Special \code{\%} sequences can be used, see Details below. Note that this parameter is evaluated in the context of the inner loop, 
+#' (!!! o to jsem se snazil ale to nefunguje bohuzel), so you might happily use the 
+#' 		foreach2() iterator variables in the expression!
+#' @param .dump.fn filename for the debug dump upon an error - without the .rda extension, that one will be added. Special \code{\%} sequences can be used, see Details below. Note that this parameter is evaluated in the context of the inner loop (!!! o to jsem se snazil ale to nefunguje bohuzel), 
+#'	so you might happily might use the \code{foreach2()} iterator variables in the expression!
+#' @param ... arguments passed to \code{\link[foreach]{foreach}()}.
+#' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:\cr
+#'     - \%h - hostname, i.e. the name of the machine where the worker job runs
+#'	   - \%p - process ID of the worker job
 #' @export
 foreach2 <- function (.parallel = TRUE, .pass.wd = TRUE, .working.dir = NULL, .log.fn = "log-%h_%p.txt", .dump.fn = "dump-%h_%p", ...)
 {
@@ -224,8 +235,10 @@ foreach2 <- function (.parallel = TRUE, .pass.wd = TRUE, .working.dir = NULL, .l
 		parallel = .parallel,
 		working.dir = .working.dir,
 		masterPID = masterPID,
-		log.fn = .log.fn,
-		dump.fn = .dump.fn
+		log.fn = .log.fn, # evaluate this in the context of the loop
+		dump.fn = .dump.fn # evaluate this in the context of the loop
+		#log.fn = quote(.log.fn), # evaluate this in the context of the loop
+		#dump.fn = quote(.dump.fn) # evaluate this in the context of the loop
 	)
 	obj
 }
@@ -234,6 +247,9 @@ foreach2 <- function (.parallel = TRUE, .pass.wd = TRUE, .working.dir = NULL, .l
 #' 
 #' 	Enhanced version of \code{\%dopar\%} that works with \code{foreach2()} and takes care of setting correct working directory, logging standard and error output to a log file, and dumping debug info upon error.
 #' @export
+#
+#
+# tato implementace sice funguje, ale jen bohuzel prasacky, ze jsem zkopiroval a upravil kod z foreach::`%dopar%`... a navic by to nefungovalo pro `%do_as_needed%` <- `%do%`
 `%dopar2%` <- function (obj, ex)
 {
 	args <- obj$foreach2
@@ -242,8 +258,28 @@ foreach2 <- function (.parallel = TRUE, .pass.wd = TRUE, .working.dir = NULL, .l
 	else
 		`%do_as_needed%` <- `%do%`
 
+	if (0) {
 	obj %do_as_needed% {
-		args <- c(args, list(expr = ex))
+		args <- c(args, list(expr = quote(ex)))
 		do.call(parallelJobWrapper, args)
 	}
+	}
+	
+	#obj %do_as_needed% quote(ex) # doesn't work either
+	#obj %do_as_needed% substitute(ex, parent.frame())
+	#obj %dopar% ex
+
+    e <- foreach:::getDoPar()
+    e$fun(obj, substitute({
+		#ex
+		#args <- c(args, list())
+		gp::parallelJobWrapper(
+			parallel = args$parallel,
+			working.dir = args$working.dir,
+			masterPID = args$masterPID,
+			log.fn = args$log.fn, # evaluate this in the context of the loop
+			dump.fn = args$dump.fn, # evaluate this in the context of the loop		
+			expr = ex)
+	}), parent.frame(), e$data)	
+	#e$fun(obj, substitute(ex), parent.frame(), e$data)	
 }
