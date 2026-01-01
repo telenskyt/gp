@@ -9,3 +9,7 @@ tmp/
 new/
 _legacy_model/
 inst/doc
+log*.txt
+*.bak
+*.R[0-9]
+dump-*.rda
