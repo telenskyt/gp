@@ -97,17 +97,19 @@ gpHyperparDefaults <- function (gp)
 #		date.ls = 8,
 #		time.ls = 2,
 #		!
-		
+
+#' import hyperparameter vector \code{h}, given by the optimizer, into our hyperparameter table.
+#'		
 #' @export
-# import hyperparameter vector `h`, given by the optimizer, into our hyperparameter table.
 gpHyperparImportVector <- function(gp, h, col = "value")
 {
 	gp$hyperpar[!gp$hyperpar$fixed, col] <- h
 	gp$hyperpar
 }
 
+#' export a column from hyperparameter table, for passing it to optimizer (thus skipping the fixed parameters)
+#
 #' @export
-# export a column from hyperparameter table, for passing it to optimizer (thus skipping the fixed parameters)
 gpHyperparExportVector <- function(gp, col = "value")
 {
 	gp$hyperpar[!gp$hyperpar$fixed, col, drop = TRUE]
@@ -124,8 +126,8 @@ gpHyperparIdx <- function (gp, i)
 	which(!gp$hyperpar$fixed)[i]
 }
 
+#' Converts a single column of the hyperparameter table to hierarchically structured list of lists of vectors (for each component and hyperparameter)
 #' @export
-# converts a single column of the hyperparameter table to hierarchically structured list of lists of vectors (for each component and hyperparameter)
 gpHyperparList <- function (gp, col = "value")
 {
 	# https://stackoverflow.com/questions/46616791/split-data-frame-by-two-factors
@@ -210,7 +212,7 @@ gpHyperparCheck <- function(gp, h, tol = sqrt(.Machine$double.eps))
 	stopifnot(all(h <= gp$hyperpar$up + tol))
 }
 
-#' Check consistency of the hyperp
+#' Check consistency of the hyperparameters
 #'
 #' @export
 gpHyperparCheckAll <- function (gp)
@@ -219,11 +221,18 @@ gpHyperparCheckAll <- function (gp)
 	gpHyperparCheck(gp, gp$hyperpar$value)
 }
 
-# get the starting values from another model (gp0) wherever possible
-# will set the hyperpar columns `start` and `value` based on `value` from model gp0 wherever it will match the component, hyperparameter name and variable name
+#' Get the starting values of the hyperparameters from another model (gp0) wherever possible
+#'
+#' Will set the hyperpar columns \code{start} and \code{value} based on \code{value} from model \code{gp0} wherever it will match the component, hyperparameter name and variable name.
+#' The starting values that are not available in the model \code{gp0} will be kept as they were.
+#' @param gp  GP model object to modify
+#' @param gp0 GP model to take the starting values from
+#' @return modified GP model object
 #' @export
 gpHyperparStartFromModel <- function(gp, gp0)
 {
+	stopifnot(class(gp) == "gp")
+	stopifnot(class(gp0) == "gp")
 	hy <- gp$hyperpar
 	prev_hy <- gp0$hyperpar	
 	hy2 <- hy %>% 
