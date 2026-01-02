@@ -19,6 +19,6 @@ If the grouping factor \code{fact} is specified, the size unit is this grouping 
 the function returns number of levels of this grouping factor in the data.
 If there is no grouping factor specified (fact = "1", the default),
 the dimension is given by the main table, or, if the main table is not present, simply by
-all tables (since if the main table is not present, all tables necessarily have the same number
+all tables (since in that case, all the tables necessarily have the same number
 of rows).
 }

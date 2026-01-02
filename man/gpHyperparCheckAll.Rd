@@ -2,10 +2,10 @@
 % Please edit documentation in R/gpHyperpar.R
 \name{gpHyperparCheckAll}
 \alias{gpHyperparCheckAll}
-\title{Check consistency of the hyperp}
+\title{Check consistency of the hyperparameters}
 \usage{
 gpHyperparCheckAll(gp)
 }
 \description{
-Check consistency of the hyperp
+Check consistency of the hyperparameters
 }

@@ -36,9 +36,9 @@ so you might happily might use the \code{foreach2()} iterator variables in the e
 Enhanced version of \code{foreach()} that takes care of setting correct working directory, logging standard and error output to a log file, and dumping debug info upon error.
 }
 \details{
-The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:\cr
-- \\%h - hostname, i.e. the name of the machine where the worker job runs
+The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:
 \itemize{
-\item \\%p - process ID of the worker job
+\item \code{\%h} - hostname, i.e. the name of the machine where the worker job runs
+\item \code{\%p} - process ID of the worker job
 }
 }

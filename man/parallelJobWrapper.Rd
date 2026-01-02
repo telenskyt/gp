@@ -34,9 +34,9 @@ It will make sure the working directory is set correctly, standard and error out
 error, a dump file will be saved for debugging purposes.
 }
 \details{
-The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:\cr
-- \\%h - hostname, i.e. the name of the machine where the worker job runs
+The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:
 \itemize{
-\item \\%p - process ID of the worker job
+\item \code{\%h} - hostname, i.e. the name of the machine where the worker job runs
+\item \code{\%p} - process ID of the worker job
 }
 }

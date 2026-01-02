@@ -98,5 +98,5 @@ and confidence intervals will be calculated, which makes the prediction much fas
 calculated - because for this, the standard error of the latent GP \code{f} is needed.)). Default is 0.95.}
 }
 \description{
-Predict from a fitted Gaussian process model
+Predict from a fitted Gaussian process model. Predictions are done at the level of the Gaussian Process, i.e. along the factor specified by \code{gp$GP_factor}.
 }
