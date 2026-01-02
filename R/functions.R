@@ -154,9 +154,9 @@ expand_special <- function (fn)
 #' @param parallel should be set to \code{TRUE} for the wrapper to work normally. The \code{FALSE} setting is just for some perhaps
 #' debugging purposes, when we want to run the job in non-parallel, interactive mode, in which case most of the wrapper function (logging, setting working directory)
 #' will be disabled.
-#' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:\cr
-#'     - \%h - hostname, i.e. the name of the machine where the worker job runs
-#'	   - \%p - process ID of the worker job
+#' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:
+#' - \code{\%h} - hostname, i.e. the name of the machine where the worker job runs
+#' - \code{\%p} - process ID of the worker job
 #' @export
 parallelJobWrapper <- function (expr, working.dir = NULL, masterPID = NULL, log.fn = NULL, dump.fn = NULL, parallel = TRUE)
 
@@ -231,9 +231,9 @@ parallelJobWrapper <- function (expr, working.dir = NULL, masterPID = NULL, log.
 #' Note that this parameter is evaluated in the context of the inner loop (!!! o to jsem se snazil ale to nefunguje bohuzel), 
 #'	so you might happily might use the \code{foreach2()} iterator variables in the expression!
 #' @param ... arguments passed to \code{\link[foreach]{foreach}()}.
-#' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:\cr
-#'     - \%h - hostname, i.e. the name of the machine where the worker job runs
-#'	   - \%p - process ID of the worker job
+#' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:
+#' - \code{\%h} - hostname, i.e. the name of the machine where the worker job runs
+#' - \code{\%p} - process ID of the worker job
 #' @export
 foreach2 <- function (.pass.wd = TRUE, .working.dir = NULL, .log.fn = NULL, .dump.fn = NULL, .parallel = TRUE, ...)
 {
