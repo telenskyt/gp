@@ -3,12 +3,13 @@
 #' Function will fit the GP model for each of the N cross-validation folds, and evaluate cross-validation prediction for the whole training data set.
 #'
 #' @param gp GP model object
-#' @param fold.col either a character containing the name a column in the main table, or a vector along factor \code{fold.fact}.
-#'		The value of the column (or vector) must be vector of integers from \code{1} to \code{N} specifying the number of the cross-validation fold the given record belongs to.
+#' @param fold.col either a name of a column in the main table, or a vector along factor \code{fold.fact}.
+#'		The column (or the supplied vector) must be a vector of integers from \code{1} to \code{N} (\code{N} being the number of folds), 
+#'		specifying the number of the cross-validation fold the given record belongs to.
 #' @param fold.fact a factor along which the cross-validation folds (\code{fold.col}) are specified. Factor \code{"1"} means the folds are specified for the rows of the main table.
 #' @param folds integer vector of folds to fit; if \code{NULL} (the default), all folds are fit
 #' @param start.from.model an object of class \code{gp} to take the starting values from. If specified, then for each cross-validation fold model to be fit, 
-#' 		the starting values of the hyperparameters will be taken from the corresponding fold from the given model wherever possible.
+#' 		the starting values of the hyperparameters will be taken from the corresponding fold model wherever possible.
 #' @param parallel should the cross-validation models be run in parallel? Uses foreach(), and requires parallel background for foreach() to be already registered.
 #' @param fn.prefix character; prefix of file names for log files (\code{log.fn}) and dump files (\code{dump.fn}), in case these are not \code{NULL}
 #' @param log.fn if not \code{NULL}, standard and error output of each fold model job will be saved into a log file with this file name. Special \code{\%} sequences can be used, see Details below. 
