@@ -10,7 +10,9 @@ new/
 _legacy_model/
 inst/doc
 log*.txt
+*-log-*.txt
+dump-*.rda
+*-dump-*.rda
 *.bak
 *.R[0-9]
-dump-*.rda
 .cd.Rdata
