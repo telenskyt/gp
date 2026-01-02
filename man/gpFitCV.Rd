@@ -20,15 +20,16 @@ gpFitCV(
 \arguments{
 \item{gp}{GP model object}
 
-\item{fold.col}{either a character containing the name a column in the main table, or a vector along factor \code{fold.fact}.
-The value of the column (or vector) must be vector of integers from \code{1} to \code{N} specifying the number of the cross-validation fold the given record belongs to.}
+\item{fold.col}{either a name of a column in the main table, or a vector along factor \code{fold.fact}.
+The column (or the supplied vector) must be a vector of integers from \code{1} to \code{N} (\code{N} being the number of folds),
+specifying the number of the cross-validation fold the given record belongs to.}
 
 \item{fold.fact}{a factor along which the cross-validation folds (\code{fold.col}) are specified. Factor \code{"1"} means the folds are specified for the rows of the main table.}
 
 \item{folds}{integer vector of folds to fit; if \code{NULL} (the default), all folds are fit}
 
 \item{start.from.model}{an object of class \code{gp} to take the starting values from. If specified, then for each cross-validation fold model to be fit,
-the starting values of the hyperparameters will be taken from the corresponding fold from the given model wherever possible.}
+the starting values of the hyperparameters will be taken from the corresponding fold model wherever possible.}
 
 \item{parallel}{should the cross-validation models be run in parallel? Uses foreach(), and requires parallel background for foreach() to be already registered.}
 
