@@ -1,5 +1,7 @@
 #' Predict from a fitted Gaussian process model
 #' 
+#' Predict from a fitted Gaussian process model. Predictions are done at the level of the Gaussian Process, i.e. along the factor specified by \code{gp$GP_factor}.
+#' 
 #' @param newdata object of class gpData, ***unscaled*** (i.e. not passed through \code{gpDataPrepare()}) data! They must be on the same scale as 
 #' the unscaled training dataset used for fitting the model. If \code{NULL} (the default), predictions will be made on the training dataset (which
 #' is going to be super fast if CI = NULL)
