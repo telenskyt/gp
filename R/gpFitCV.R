@@ -55,7 +55,9 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 		stopifnot(class(start.from.model) == "gp")
 		stopifnot(!is.null(start.from.model$fitCV))
 		stopifnot(!is.null(start.from.model$fitCV$models))
-		stopifnot(all(folds %in% names(start.from.model$fitCV$models)))
+		start.from.model.folds <- which(!sapply(start.from.model$fitCV$models, is.null))
+			# we can't just do names(start.from.model$fitCV$models) since it is not named list, because the list indices are integers
+		stopifnot(all(folds %in% start.from.model.folds))
 	}
 	
 	ndigits <- floor(log10(max(fold.col))) + 1
