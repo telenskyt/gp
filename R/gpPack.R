@@ -8,7 +8,8 @@
 #' @export
 gpPack <- function(gp, maximum = FALSE)
 {
-	gp$fit <- gpPackFit(gp$fit, maximum = maximum)
+	# have to use gp[["fit"]] instead of gp$fit due to the damn partial matching!! Because it matched $fitCV instead!!! Sucks as fuck!!!
+	gp[["fit"]] <- gpPackFit(gp[["fit"]], maximum = maximum)
 	gp$data <- NULL
 	gp
 }
