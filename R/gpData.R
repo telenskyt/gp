@@ -346,7 +346,9 @@ gpDataPrepare <- function(gp, gpData)
 		#int <- sapply(gpData[[m]], is.integer)
 		#if (any(int))
 		#	warning("Integer columns in table `", m, "`: ", paste(colnames(gpData[[m]])[int], collapse = ", "))
+		
 		# convert to matrix now
+		fact_attr <- attr(gpData[[m]], "fact") # first, remember the "fact" attribute to preserve it! (Will be NULL if not present, so it is robust to that)
 		if (!gp$dataReq$mats[[m]]$scaling)
 			gpData[[m]] <- as.matrix(gpData[[m]])
 		else { # scale
@@ -356,6 +358,8 @@ gpDataPrepare <- function(gp, gpData)
 			else 					# take scaling from the training dataset
 				gpData[[m]] <- scale(as.matrix(gpData[[m]]), center = attr(gp$data[[m]], "scaled:center"), scale = attr(gp$data[[m]], "scaled:scale"))
 		}
+		# don't forget to restore the "fact" attribute!
+		attr(gpData[[m]], "fact") <- fact_attr
 	}
 	attr(gpData, "gpDataPrepared") <- TRUE
 	return(gpData)
