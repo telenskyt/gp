@@ -44,7 +44,7 @@ startLog <- function (filename, tee = FALSE, all_or_nothing = TRUE, add_timestam
 	conn1 <- NULL
 	if (autoWarn1 && getOption("warn") == 0) {
 		options(warn = 1)
-		warning("options(warn) was 0, setting to 1")
+		#warning("options(warn) was 0, setting to 1")
 	}
 	if (!tee) {
 		if (add_timestamp && .Platform$OS.type == "unix") {
