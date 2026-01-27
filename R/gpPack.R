@@ -48,10 +48,13 @@ gpUnpack <- function (gp, compute = TRUE, need.K = compute, need.L = compute)
 {
 	gp$data <- gpDataPrepare(gp, gp$obsdata)
 
+	if (is.null(gp[["fit"]]))
+		return(gp)
+		
 	if (!compute) {
 		stopifnot(!need.K)
 		stopifnot(!need.L)
-		return(x)
+		return(gp)
 	}
 
 	mstart(id = "K")
