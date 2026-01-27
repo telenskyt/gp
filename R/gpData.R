@@ -441,7 +441,15 @@ gpDetermineSize <- function (gp)
 		# intentionally getting them from the component table rather than from gp$dataReq, just in case I want to generalize it later for particular component selection
 	if (length(factors) == 1 && all(!is.na(comps$fact) & comps$fact == factors[1])) {
 		# vsechny komponenty formule krom interceptu pouzivaji tento jeden faktor
-		size <- attr(data, "factors")[[factors[1]]]$nrow
+		if (factors[1] %in% names(attr(data, "factors")))
+			size <- attr(data, "factors")[[factors[1]]]$nrow
+		else {
+			# it is a factor that is not used for indexing of any table
+			# take it from the main table
+			stopifnot(gpDataHasMainTable(data))
+			stopifnot(factors[1] %in% colnames(data[[1]]))
+			size <- length(unique(data[[1]][[factors[1]]]))
+		}
 		fact <- factors[1]
 	} else {
 		size <- nrow(data[[1]])
