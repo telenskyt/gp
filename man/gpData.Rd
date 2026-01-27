@@ -4,11 +4,14 @@
 \alias{gpData}
 \title{gpData constructor}
 \usage{
-gpData(x)
+gpData(x, has.main.table = NULL)
 }
 \arguments{
 \item{x}{Named list of tables (data.frame's). Tables may carry an attribute \code{"fact"} naming a grouping
 factor column; the column must exist and be a unique identification of the table's rows. See Details below.}
+
+\item{has.main.table}{logical; allows to explictly specify that the first table in the list is main table. Default is \code{NULL}, which means autodetect, however, in certain cases,
+it might be needed to explicitly specify \code{has.main.table = TRUE} (e.g. when there are grouping factors that don't act as primary keys - unique row IDs - for any table)}
 }
 \value{
 An object of class \code{gpData}
