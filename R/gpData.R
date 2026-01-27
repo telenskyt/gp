@@ -32,6 +32,9 @@
 #' @param x Named list of tables (data.frame's). Tables may carry an attribute \code{"fact"} naming a grouping
 #' factor column; the column must exist and be a unique identification of the table's rows. See Details below.
 #'
+#' @param has.main.table logical; allows to explictly specify that the first table in the list is main table. Default is \code{NULL}, which means autodetect, however, in certain cases,
+#' it might be needed to explicitly specify \code{has.main.table = TRUE} (e.g. when there are grouping factors that don't act as primary keys - unique row IDs - for any table)
+#'
 #' @return An object of class \code{gpData}
 #'
 #' @details
@@ -100,7 +103,7 @@
 
 # todo: zmenit ten check na zacatku a rict is.data.frame() nebo is.matrix a hotovo.
 
-gpData <- function(x)
+gpData <- function(x, has.main.table = NULL)
 {
 	factors <- list()
 	stopifnot(is.list(x))
@@ -150,9 +153,9 @@ gpData <- function(x)
 		first <- FALSE
 	}
 	all.factors <- factors # possibly including "1" for tables with no grouping factor
-	factors[["1"]] <- NULL # now, here keep only the "true" grouping factors
+	factors[["1"]] <- NULL # here, remove "1" from the grouping factors, to keep just true grouping factors there
 	main_name <- NULL
-	if (length(all.factors) >= 2) { # if there two tables with different grouping factors
+	if (length(all.factors) >= 2 || (!is.null(has.main.table) && has.main.table)) { # if there two tables with different grouping factors (including "1")
 		main <- x[[1]] # this must be the main table
 		main_name <- names(x)[1]
 		if (!is.data.frame(main))
