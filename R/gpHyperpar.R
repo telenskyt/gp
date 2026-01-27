@@ -202,14 +202,20 @@ gpPriorGradient <- function (gp, h)
 }
 
 #' @export
-gpHyperparCheck <- function(gp, h, tol = sqrt(.Machine$double.eps))
+gpHyperparCheck <- function(gp, h, tol = sqrt(.Machine$double.eps), incl.fixed = FALSE)
 {
-	stopifnot(length(h) == nrow(gp$hyperpar))
-	stopifnot(all(h >= gp$hyperpar$low - tol))
-	#stopifnot(all(h >= gp$hyperpar$low))
-		#stop("all(h >= gp$hyperpar$low) is not TRUE, see indices ", which(!(h >= gp$hyperpar$low)))
-	#stopifnot(all(h <= gp$hyperpar$up))
-	stopifnot(all(h <= gp$hyperpar$up + tol))
+	if (incl.fixed) {
+		stopifnot(length(h) == nrow(gp$hyperpar))
+		stopifnot(all(h >= gp$hyperpar$low - tol))
+		#stopifnot(all(h >= gp$hyperpar$low))
+			#stop("all(h >= gp$hyperpar$low) is not TRUE, see indices ", which(!(h >= gp$hyperpar$low)))
+		#stopifnot(all(h <= gp$hyperpar$up))
+		stopifnot(all(h <= gp$hyperpar$up + tol))
+	} else {
+		stopifnot(length(h) == sum(!gp$hyperpar$fixed))
+		stopifnot(all(h >= gp$hyperpar$low[!gp$hyperpar$fixed] - tol))
+		stopifnot(all(h <= gp$hyperpar$up[!gp$hyperpar$fixed] + tol))	
+	}
 }
 
 #' Check consistency of the hyperparameters
@@ -217,8 +223,8 @@ gpHyperparCheck <- function(gp, h, tol = sqrt(.Machine$double.eps))
 #' @export
 gpHyperparCheckAll <- function (gp)
 {
-	gpHyperparCheck(gp, gp$hyperpar$start)
-	gpHyperparCheck(gp, gp$hyperpar$value)
+	gpHyperparCheck(gp, gp$hyperpar$start, incl.fixed = TRUE)
+	gpHyperparCheck(gp, gp$hyperpar$value, incl.fixed = TRUE)
 }
 
 #' Get the starting values of the hyperparameters from another model (gp0) wherever possible
