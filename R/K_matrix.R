@@ -194,6 +194,10 @@ K_matrix <- function (gp, hyperpar = gpHyperparList(gp), x1 = gp$data, x2 = NULL
 				# 2025-12-08: neslo by totez zajistit pomoci normalni te reindexace nize, spolu s normalni cov.I?
 				#
 				# !!! XYZ546: [[1]] a netestuje na existenci main table jako u reindex v K_matrix() - to nebude fungovat
+				# tak to aspon overim provizorne:
+				stopifnot(fact %in% colnames(x1[[1]]))
+				if (!is.null(x2)) 
+					stopifnot(fact %in% colnames(x2[[1]]))
 			reindex_needed <- FALSE
 		} else {
 			mat <- gp$covComp[[cc]]$mat
