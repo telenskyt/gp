@@ -32,6 +32,9 @@
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu"><li>
+      <a href="../articles/a-simple-example.html">A simple example</a>
+    </li>
+    <li>
       <a href="../articles/pok.html">pok</a>
     </li>
   </ul></li>
@@ -54,7 +57,7 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gp</span><span class="op">(</span><span class="va">f</span>, <span class="va">data</span>, <span class="va">logLik</span>, logLik.reindex2main <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gp</span><span class="op">(</span><span class="va">f</span>, <span class="va">data</span>, <span class="va">negLogLik</span>, negLogLik.reindex2main <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -69,13 +72,13 @@
 <dd><p>object of class gpData, created by the gpData() function</p></dd>
 
 
-<dt id="arg-loglik">logLik<a class="anchor" aria-label="anchor" href="#arg-loglik"></a></dt>
-<dd><p>likelihood function taking two parameters: <code>data</code> (object of class gpData), and <code>f</code>, a numeric vector - result of the gaussian process.
-The <code>f</code> vector can be either of the dimension of the gaussian process, or the main table - see the <code>logLik.reindex2main</code> parameter.</p></dd>
+<dt id="arg-negloglik">negLogLik<a class="anchor" aria-label="anchor" href="#arg-negloglik"></a></dt>
+<dd><p>user-defined negative log likelihood function, taking two parameters: <code>data</code> (object of class gpData), and <code>f</code>, a numeric vector - result of the gaussian process.
+The <code>f</code> vector can be either of the dimension of the gaussian process, or the main table - see the <code>negLogLik.reindex2main</code> parameter.</p></dd>
 
 
-<dt id="arg-loglik-reindex-main">logLik.reindex2main<a class="anchor" aria-label="anchor" href="#arg-loglik-reindex-main"></a></dt>
-<dd><p>should the <code>f</code> parameter of the <code>logLik</code> function be reindexed to the rows of the main table?
+<dt id="arg-negloglik-reindex-main">negLogLik.reindex2main<a class="anchor" aria-label="anchor" href="#arg-negloglik-reindex-main"></a></dt>
+<dd><p>should the <code>f</code> parameter of the <code>negLogLik</code> function be reindexed to the rows of the main table?
 If <code>FALSE</code>, the <code>f</code> parameter will be kept at the dimension of the Gaussian Process (as reported by <code><a href="gpDetermineSize.html">gpDetermineSize()</a></code>).
 If the Gaussian process is running at the dimension of the main table, then it does not matter.</p></dd>
 

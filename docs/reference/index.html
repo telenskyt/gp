@@ -32,6 +32,9 @@
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu"><li>
+      <a href="../articles/a-simple-example.html">A simple example</a>
+    </li>
+    <li>
       <a href="../articles/pok.html">pok</a>
     </li>
   </ul></li>
@@ -52,9 +55,21 @@
           <p class="section-desc"></p>
         </th>
       </tr></tbody><tbody><tr><td>
+          <p><code><a href="cv_eval_bern.html">cv_eval_bern()</a></code> </p>
+        </td>
+        <td><p>Evaluation of cross-validation statistics for bernoulli (0/1) response variable and predicted probability</p></td>
+      </tr><tr><td>
           <p><code><a href="endLog.html">endLog()</a></code> </p>
         </td>
         <td><p>Stop logging started by startLog()</p></td>
+      </tr><tr><td>
+          <p><code><a href="foreach2.html">foreach2()</a></code> </p>
+        </td>
+        <td><p>Enhanced version of foreach()</p></td>
+      </tr><tr><td>
+          <p><code><a href="getwd.keepsym.html">getwd.keepsym()</a></code> </p>
+        </td>
+        <td><p>Get working directory as user specified it (keeping symbolic links in the path)</p></td>
       </tr><tr><td>
           <p><code><a href="gp.html">gp()</a></code> </p>
         </td>
@@ -92,9 +107,29 @@
         </td>
         <td><p>Fit a Gaussian process model</p></td>
       </tr><tr><td>
+          <p><code><a href="gpFitCV.html">gpFitCV()</a></code> </p>
+        </td>
+        <td><p>Perform an N-fold cross-validation of a Gaussian process model</p></td>
+      </tr><tr><td>
           <p><code><a href="gpHyperparCheckAll.html">gpHyperparCheckAll()</a></code> </p>
         </td>
-        <td><p>Check consistency of the hyperp</p></td>
+        <td><p>Check consistency of the hyperparameters</p></td>
+      </tr><tr><td>
+          <p><code><a href="gpHyperparExportVector.html">gpHyperparExportVector()</a></code> </p>
+        </td>
+        <td><p>export a column from hyperparameter table, for passing it to optimizer (thus skipping the fixed parameters)</p></td>
+      </tr><tr><td>
+          <p><code><a href="gpHyperparImportVector.html">gpHyperparImportVector()</a></code> </p>
+        </td>
+        <td><p>import hyperparameter vector <code>h</code>, given by the optimizer, into our hyperparameter table.</p></td>
+      </tr><tr><td>
+          <p><code><a href="gpHyperparList.html">gpHyperparList()</a></code> </p>
+        </td>
+        <td><p>Converts a single column of the hyperparameter table to hierarchically structured list of lists of vectors (for each component and hyperparameter)</p></td>
+      </tr><tr><td>
+          <p><code><a href="gpHyperparStartFromModel.html">gpHyperparStartFromModel()</a></code> </p>
+        </td>
+        <td><p>Get the starting values of the hyperparameters from another model (gp0) wherever possible</p></td>
       </tr><tr><td>
           <p><code><a href="gpPack.html">gpPack()</a></code> </p>
         </td>
@@ -104,6 +139,10 @@
         </td>
         <td><p>Unpack the model - prepare it for computations (mostly predictions)</p></td>
       </tr><tr><td>
+          <p><code><a href="grapes-dopar2-grapes.html">`%dopar2%`</a></code> </p>
+        </td>
+        <td><p>Enhanced version of <code>%dopar%</code></p></td>
+      </tr><tr><td>
           <p><code><a href="K_matrix.html">K_matrix()</a></code> </p>
         </td>
         <td><p>Construct covariance matrix (K) for given data and hyperparameters</p></td>
@@ -111,6 +150,10 @@
           <p><code><a href="mnfun.html">mnfun()</a></code> </p>
         </td>
         <td><p>Compute mean of the Gaussian Process</p></td>
+      </tr><tr><td>
+          <p><code><a href="parallelJobWrapper.html">parallelJobWrapper()</a></code> </p>
+        </td>
+        <td><p>Wrapper for parallel/background jobs</p></td>
       </tr><tr><td>
           <p><code><a href="pred.html">pred()</a></code> </p>
         </td>

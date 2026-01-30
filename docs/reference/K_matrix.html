@@ -32,6 +32,9 @@
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu"><li>
+      <a href="../articles/a-simple-example.html">A simple example</a>
+    </li>
+    <li>
       <a href="../articles/pok.html">pok</a>
     </li>
   </ul></li>
@@ -56,7 +59,7 @@
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">K_matrix</span><span class="op">(</span></span>
 <span>  <span class="va">gp</span>,</span>
-<span>  hyperpar <span class="op">=</span> <span class="fu">gpHyperparList</span><span class="op">(</span><span class="va">gp</span><span class="op">)</span>,</span>
+<span>  hyperpar <span class="op">=</span> <span class="fu"><a href="gpHyperparList.html">gpHyperparList</a></span><span class="op">(</span><span class="va">gp</span><span class="op">)</span>,</span>
 <span>  x1 <span class="op">=</span> <span class="va">gp</span><span class="op">$</span><span class="va">data</span>,</span>
 <span>  x2 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  K.cache <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -75,7 +78,7 @@
 
 
 <dt id="arg-hyperpar">hyperpar<a class="anchor" aria-label="anchor" href="#arg-hyperpar"></a></dt>
-<dd><p>(optional) lists of hyperparameter values, as returned by <code>gpHyperparList()</code>; default is to use the hyperparameters from the <code>gp</code> object.</p></dd>
+<dd><p>(optional) lists of hyperparameter values, as returned by <code><a href="gpHyperparList.html">gpHyperparList()</a></code>; default is to use the hyperparameters from the <code>gp</code> object.</p></dd>
 
 
 <dt id="arg-x-">x1<a class="anchor" aria-label="anchor" href="#arg-x-"></a></dt>
@@ -97,7 +100,7 @@ It is supposed to be correctly scaled already! (see <code>gpDataPrepare()</code>
 <dt id="arg-components">components<a class="anchor" aria-label="anchor" href="#arg-components"></a></dt>
 <dd><p>of the covariance formula. One of the following:</p><ul><li><p>NULL : all components will be selected (the default)</p></li>
 <li><p>character vector: components to be selected</p></li>
-<li><p>formula: additive formula specifying components, same syntax as in <a href="https://rdrr.io/r/stats/update.formula.html" class="external-link">update.formula</a>, e.g.</p><table class="table table"><tr><td><code>~.</code></td><td>all components</td></tr><tr><td><code>~.-env-spat</code></td><td>all components except <code>env</code> and <code>spat</code></td></tr><tr><td><code>~spat+year</code></td><td>only components <code>spat</code> and <code>year</code></td></tr></table></li>
+<li><p>formula: additive formula specifying components, same syntax as in <a href="https://rdrr.io/r/stats/update.formula.html" class="external-link">update.formula</a>, e.g.</p><table class="table table"><tr><td><code>~.</code>          <code>   </code></td><td>all components</td></tr><tr><td><code>~.-env-spat</code> <code>   </code></td><td>all components except <code>env</code> and <code>spat</code></td></tr><tr><td><code>~spat+year</code>  <code>   </code></td><td>only components <code>spat</code> and <code>year</code></td></tr></table></li>
 </ul></dd>
 
 
@@ -114,14 +117,12 @@ in the <code>predict</code> method.</p>
 </ul></dd>
 
 </dl></div>
-    <div id="details">
-    <h2>Details</h2>
-    <p>If <code>x2</code> is not supplied, the covariance matrix is square and symmetric, representing the covariances among all rows in <code>x1</code>.</p>
-<p>The dimension of the resultant covariance matrix: the number of rows will be determined by <code>gpDataSize(x1, gp$GP_factor)</code>,
-where <code>gp$GP_factor</code> is the grouping factor corresponding to the dimension of the Gaussian process.</p>
-<p>Analogically, if <code>x2</code> is supplied, the number of columns will be determined by
-<code>gpDataSize(x2, gp$GP_factor)</code>.</p>
-    </div>
+    <div id="value">
+    <h2>Value</h2>
+    <p>Covariance matrix K:</p><ul><li><p>Number of rows will be equal to <code>gpDataSize(x1, gp$GP_factor)</code>, where <code>gp$GP_factor</code> is the grouping factor corresponding to the dimension of the Gaussian process.</p></li>
+<li><p>Analogically, if <code>x2</code> is supplied, the number of columns will be equal to <code>gpDataSize(x2, gp$GP_factor)</code>.</p></li>
+<li><p>If <code>x2</code> is not supplied, the covariance matrix is square and symmetric, representing the covariances among all rows in <code>x1</code>.</p></li>
+</ul></div>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

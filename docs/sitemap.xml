@@ -1,11 +1,16 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>/404.html</loc></url>
+<url><loc>/articles/a-simple-example.html</loc></url>
 <url><loc>/articles/index.html</loc></url>
 <url><loc>/articles/pok.html</loc></url>
 <url><loc>/authors.html</loc></url>
+<url><loc>/copilot-instructions.html</loc></url>
 <url><loc>/index.html</loc></url>
 <url><loc>/LICENSE-text.html</loc></url>
+<url><loc>/reference/cv_eval_bern.html</loc></url>
 <url><loc>/reference/endLog.html</loc></url>
+<url><loc>/reference/foreach2.html</loc></url>
+<url><loc>/reference/getwd.keepsym.html</loc></url>
 <url><loc>/reference/gp.html</loc></url>
 <url><loc>/reference/gpData.html</loc></url>
 <url><loc>/reference/gpDataCheckReq.html</loc></url>
@@ -15,12 +20,19 @@
 <url><loc>/reference/gpDataSubset.html</loc></url>
 <url><loc>/reference/gpDetermineSize.html</loc></url>
 <url><loc>/reference/gpFit.html</loc></url>
+<url><loc>/reference/gpFitCV.html</loc></url>
 <url><loc>/reference/gpHyperparCheckAll.html</loc></url>
+<url><loc>/reference/gpHyperparExportVector.html</loc></url>
+<url><loc>/reference/gpHyperparImportVector.html</loc></url>
+<url><loc>/reference/gpHyperparList.html</loc></url>
+<url><loc>/reference/gpHyperparStartFromModel.html</loc></url>
 <url><loc>/reference/gpPack.html</loc></url>
 <url><loc>/reference/gpUnpack.html</loc></url>
+<url><loc>/reference/grapes-dopar2-grapes.html</loc></url>
 <url><loc>/reference/index.html</loc></url>
 <url><loc>/reference/K_matrix.html</loc></url>
 <url><loc>/reference/mnfun.html</loc></url>
+<url><loc>/reference/parallelJobWrapper.html</loc></url>
 <url><loc>/reference/pipe.html</loc></url>
 <url><loc>/reference/pred.html</loc></url>
 <url><loc>/reference/predict.gp.html</loc></url>

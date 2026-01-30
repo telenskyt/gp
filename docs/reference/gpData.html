@@ -32,6 +32,9 @@
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu"><li>
+      <a href="../articles/a-simple-example.html">A simple example</a>
+    </li>
+    <li>
       <a href="../articles/pok.html">pok</a>
     </li>
   </ul></li>
@@ -54,7 +57,7 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gpData</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gpData</span><span class="op">(</span><span class="va">x</span>, has.main.table <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -64,6 +67,11 @@
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>Named list of tables (data.frame's). Tables may carry an attribute <code>"fact"</code> naming a grouping
 factor column; the column must exist and be a unique identification of the table's rows. See Details below.</p></dd>
+
+
+<dt id="arg-has-main-table">has.main.table<a class="anchor" aria-label="anchor" href="#arg-has-main-table"></a></dt>
+<dd><p>logical; allows to explictly specify that the first table in the list is main table. Default is <code>NULL</code>, which means autodetect, however, in certain cases,
+it might be needed to explicitly specify <code>has.main.table = TRUE</code> (e.g. when there are grouping factors that don't act as primary keys - unique row IDs - for any table)</p></dd>
 
 </dl></div>
     <div id="value">
