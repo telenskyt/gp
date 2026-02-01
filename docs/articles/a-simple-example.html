@@ -99,7 +99,9 @@ package.</p>
 <span><span class="va">c3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">30</span>, size <span class="op">=</span> <span class="fl">40</span>, prob <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="fl">0.8</span>, length.out <span class="op">=</span> <span class="fl">30</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">count</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">c1</span>, <span class="va">c2</span>, <span class="va">c3</span><span class="op">)</span></span></code></pre></div>
-<p>Now, lets bundle the data for the <code>gp</code> package:</p>
+<p>These are binomial counts; <code>count</code> might represent
+e.g. number of occupied sites out of the total number of sites. Now,
+lets bundle the data for the <code>gp</code> package:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>    y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>count <span class="op">=</span> <span class="va">count</span>, total <span class="op">=</span> <span class="va">total</span><span class="op">)</span>,</span>
@@ -113,11 +115,50 @@ package.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
 <p><img src="a-simple-example_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="480" style="display: block; margin: auto;"></p>
 <p>Now, let us fit a simple Gaussian process. We start by writing a
-binomial likelihood function for our data.</p>
-<p>``` nll &lt;- function (data, f) { getAll(data, warn=FALSE) p &lt;-
-plogis(f)</p>
-<pre><code><span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">dbinom</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">y</span><span class="op">$</span><span class="va">count</span>, size <span class="op">=</span> <span class="va">y</span><span class="op">$</span><span class="va">total</span>, prob <span class="op">=</span> <span class="va">p</span>, log <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></code></pre>
-<p>}</p>
+binomial likelihood function for our data, that is, defining the
+probability <code>p(y|f)</code>, where <code>f</code> is the Gaussian
+process. The likelihood is specified the same way as in the package
+(apart from RTMB’s docs, see also <a href="https://github.com/bbolker/rtmb_tips" class="external-link">Ben Bolker’s RTMB tips</a>
+for a guideline on what to take care about when writing this
+function):</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">nll</span> <span class="op">&lt;-</span> <span class="kw">function</span> <span class="op">(</span><span class="va">data</span>, <span class="va">f</span><span class="op">)</span> <span class="co"># p(y|f) = function returning negative log-likelihood of the data, given f</span></span>
+<span><span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/RTMB/man/TMB-interface.html" class="external-link">getAll</a></span><span class="op">(</span><span class="va">data</span>, warn<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span>
+<span>    <span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span></span>
+<span></span>
+<span>    <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">dbinom</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">y</span><span class="op">$</span><span class="va">count</span>, size <span class="op">=</span> <span class="va">y</span><span class="op">$</span><span class="va">total</span>, prob <span class="op">=</span> <span class="va">p</span>, log <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<p>Now, we bundle the data and prepare the model:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">xx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gpData.html">gpData</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="co"># bundle the data</span></span>
+<span></span>
+<span><span class="va">g</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gp.html">gp</a></span><span class="op">(</span>f <span class="op">=</span> <span class="op">~</span> <span class="va">i</span><span class="op">:</span><span class="fl">1</span> <span class="op">+</span> <span class="va">envN</span><span class="op">:</span><span class="fu">cov.SE</span><span class="op">(</span><span class="va">env</span><span class="op">)</span>, <span class="va">xx</span>, negLogLik <span class="op">=</span> <span class="va">nll</span><span class="op">)</span> <span class="co"># create model object</span></span></code></pre></div>
+<p>We have used a simple squared exponential covariance function. Now,
+let’s run the model fit - can take a bit of time:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">g</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gpFit.html">gpFit</a></span><span class="op">(</span><span class="va">g</span><span class="op">)</span> <span class="co"># run the model fit (can take longer)</span></span></code></pre></div>
+<p>Now, after the model has been fit, it is a good idea to save it to
+the disk. But we need to pack it first, to remove some big cached
+matrices that are useful for predictions, but would unnecessarily take
+up space on a disk:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/object.size.html" class="external-link">object.size</a></span><span class="op">(</span><span class="va">g</span><span class="op">)</span> <span class="co"># model size before packing</span></span>
+<span><span class="co"># 256912 bytes</span></span>
+<span></span>
+<span><span class="va">gpp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gpPack.html">gpPack</a></span><span class="op">(</span><span class="va">g</span><span class="op">)</span> <span class="co"># pack the model for saving</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/object.size.html" class="external-link">object.size</a></span><span class="op">(</span><span class="va">gpp</span><span class="op">)</span> <span class="co"># model size after packing</span></span>
+<span><span class="co"># 85600 bytes</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/save.html" class="external-link">save</a></span><span class="op">(</span><span class="va">gpp</span>, file <span class="op">=</span> <span class="st">"simple_example-model.Rdata"</span><span class="op">)</span> <span class="co"># save the packed model</span></span></code></pre></div>
+<p>In this case, the space saved by packing is small, but only because
+of small data size.</p>
+<p>Later on, perhaps in a new R session, when we want to load the model,
+we will have to unpack it if we want to compute predictions:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/load.html" class="external-link">load</a></span><span class="op">(</span>file <span class="op">=</span> <span class="st">"simple_example-model.Rdata"</span><span class="op">)</span> <span class="co"># load the packed model</span></span>
+<span><span class="va">g</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gpUnpack.html">gpUnpack</a></span><span class="op">(</span><span class="va">gpp</span><span class="op">)</span> <span class="co"># unpack the model</span></span></code></pre></div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
