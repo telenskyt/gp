@@ -1,6 +1,6 @@
 Package: gp
 Type: Package
-Title: Gaussian Process in R
+Title: Gaussian Process models in R
 Version: 0.1.0
 Authors@R: c(
     person(
@@ -9,8 +9,7 @@ Authors@R: c(
       role = c("aut", "cre")
     )
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
+Description: Engine for fitting Gaussian Process (GP) models, where the GP can act as a latent variable as a part of arbitrary user-defined likelihood. User defines the GP using a formula, as a sum of covariance functions. The GP thus can have multiple components and make predictions, including standard errors, for the whole model, or for each component separately. User defines the likelihood the same way as in the RTMB package, which is used for automatic differentiation (not for model fitting though). The fitting engine uses Laplace approximation.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
