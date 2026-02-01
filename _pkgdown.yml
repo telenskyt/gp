@@ -1,0 +1,15 @@
+url: https://telenskyt.github.io/gp
+
+
+home:
+
+  sidebar:
+    structure: [custom, license, authors, dev]
+    components:
+      custom:
+        title: Links
+        text: |
+          [Browse source code](https://github.com/telenskyt/gp)
+          
+          [Report a bug](https://github.com/telenskyt/gp/issues)
+
