@@ -1,0 +1,110 @@
+---
+title: "A simple example"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{a-simple-example}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r eval=FALSE}
+library(gp)
+library(RTMB)
+```
+
+In this very simple example, we demonstrate basic use of the package.
+
+First, let us generate some training data:
+
+```{r}
+forest <- seq(0.3,0.6, length.out = 100)
+total <- rep(40, 100)
+
+c1 <- rbinom(n = 20, size = 40, prob = seq(0.4, 0.2, length.out = 20))
+c2 <- rbinom(n = 50, size = 40, prob = seq(0.2, 0.8, length.out = 50))
+c3 <- rbinom(n = 30, size = 40, prob = seq(0.8, 0.8, length.out = 30))
+
+count <- c(c1, c2, c3)
+```
+
+These are binomial counts; `count` might represent e.g. number of occupied sites out of the total number of sites. Now, lets bundle the data for the `gp` package:
+
+```{r}
+x <- list(
+	y = data.frame(count = count, total = total),
+	env = data.frame(forest = forest)
+)
+```
+
+We can now plot the data, with a simple regression line houno:
+
+```{r, fig.align = "center", fig.dim = c(5,5)}
+plot(forest[1:length(count)], count, ylim = c(0,40), xlim = c(0.2,0.7), xlab = "forest", ylab = "count")
+
+m <- lm(count ~ forest, data = cbind(x$y, x$env))
+abline(m)
+```
+
+
+Now, let us fit a simple Gaussian process. We start by writing a binomial likelihood function for our data, that is, defining the probability `p(y|f)`, where `f` is the Gaussian process. The likelihood is specified the same way as in the package \pkg{RTMB} (apart from RTMB's docs, see also [Ben Bolker's RTMB tips](https://github.com/bbolker/rtmb_tips) for a guideline on what to take care about when writing this function):
+
+```{r}
+nll <- function (data, f) # p(y|f) = function returning negative log-likelihood of the data, given f
+{
+	getAll(data, warn=FALSE)
+	p <- plogis(f)
+
+	-sum(dbinom(x = y$count, size = y$total, prob = p, log = TRUE))
+}
+
+```
+
+Now, we bundle the data and prepare the model:
+
+```{r, eval = FALSE}
+xx <- gpData(x) # bundle the data
+
+g <- gp(f = ~ i:1 + envN:cov.SE(env), xx, negLogLik = nll) # create model object
+```
+
+We have used a simple squared exponential covariance function. Now, let's run the model fit - can take a bit of time:
+
+```{r, eval = FALSE}
+g <- gpFit(g) # run the model fit (can take longer)
+```
+
+Now, after the model has been fit, it is a good idea to save it to the disk. But we need to pack it first, to remove some big cached matrices that are useful for predictions, but would unnecessarily take up space on a disk:
+
+```{r, eval = FALSE, comment = "#"}
+object.size(g) # model size before packing
+# 256912 bytes
+
+gpp <- gpPack(g) # pack the model for saving
+
+object.size(gpp) # model size after packing
+# 85600 bytes
+
+save(gpp, file = "simple_example-model.Rdata") # save the packed model
+```
+
+In this case, the space saved by packing is small, but only because of small data size.
+
+Later on, perhaps in a new R session, when we want to load the model, we will have to unpack it if we want to compute predictions:
+
+```{r, eval = FALSE}
+load(file = "simple_example-model.Rdata") # load the packed model
+g <- gpUnpack(gpp) # unpack the model
+```
+
+
+
+
+
+
