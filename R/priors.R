@@ -30,7 +30,7 @@ inverse_halft_CDF_lp <- function (x, p = NULL) log(inverse_halft_CDF(x, df = 4, 
 inverse_halft_CDF_lpg <- function (x, p = NULL) 1/inverse_halft_CDF(x, df = 4, scale = 1)*inverse_halft_PDF(x, df = 4, scale = 1)
 
 # penalizacni fce podle Yi et al 2011!
-# oni to maji definovane na w coz je 1/length-scale^2, so here x corresponds to length-scale^2
+# in that paper they use w, which is 1/length-scale^2
 # zde pouzivam "LASSO" v tom spravnem vyznamu
 # magn = 2.077589 je spoctena tak aby byla ekvivalentni magn = 1 u inverse_halft_CDF_lp na mych datech (vypocet viz priors_Vanhatalo.R)
 #
@@ -38,6 +38,7 @@ inverse_halft_CDF_lpg <- function (x, p = NULL) 1/inverse_halft_CDF(x, df = 4, s
 #lasso_ls <- function (x, magn = 2.077589) -magn*1/x
 #lasso_lsg <- function (x, magn = 2.077589) magn*1/x^2
 # version for when x corresponds to length-scale (not squared):
+# improper prior
 lasso_ls <- function (x, magn = 2.077589) -magn*1/x^2
 lasso_lsg <- function (x, magn = 2.077589) magn*2/x^3
 
@@ -69,6 +70,7 @@ exp_x_lpg <- function (x, magn = 0.4, scale = 7) magn*(-0.75*(x/scale)^-0.25/sca
 # zde s logaritmem:
 ls_pcmatern_lp <- function (x, lambda, d = 2) log(d) - log(2) + log(lambda) + log(x)*(-d/2-1) - lambda*x^(-d/2)
 ls_pcmatern_lpg <- function (x, lambda, d = 2) (-d/2-1)/x - lambda*(-d/2)*x^(-d/2-1)
+# it is a proper prior it seems, for any lambda and d > 0!
 
 # a zde je prior pro sigmu, ktery je soucasti "joint PC prioru" inla.spde2.pcmatern (viz ls_pcmatern_lp)
 # sel by pouzit i zvlast pro jine sigma promenne
@@ -81,8 +83,11 @@ ls_pcmatern_lpg <- function (x, lambda, d = 2) (-d/2-1)/x - lambda*(-d/2)*x^(-d/
 sigma2_pcmatern_lp <- function (sigma2, lambda) sigma2_exp_lp(sigma2, lambda)
 sigma2_pcmatern_lpg <- function (sigma2, lambda) sigma2_exp_lpg(sigma2, lambda)
 
+# not proper in sigma2, but it is proper in sigma (see exp_lp)
 sigma2_exp_lp <- function (sigma2, lambda) exp_lp(sqrt(sigma2), lambda)
 sigma2_exp_lpg <- function (sigma2, lambda) exp_lpg(sqrt(sigma2), lambda)/(2*sqrt(sigma2))
 
+# This prior is proper in x for any lambda
+# (integrate(function(x) exp(gp:::exp_lp(x, lambda = 3)), 0, Inf) == 1)
 exp_lp <- function (x, lambda) log(lambda) - lambda*x
 exp_lpg <- function (x, lambda) -lambda
