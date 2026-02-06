@@ -25,10 +25,12 @@ Imports:
 	magrittr,
 	bayesmeta,
 	WeightedROC,
-	ecospat
+	ecospat,
+	Rdpack
 Suggests: 
     knitr,
     rmarkdown
 VignetteBuilder: knitr
 URL: https://telenskyt.github.io/gp, https://github.com/telenskyt/gp
 BugReports: https://github.com/telenskyt/gp/issues
+RdMacros: Rdpack
