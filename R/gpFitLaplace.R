@@ -104,6 +104,8 @@ gc()
 		obj.old <- obj
 		W <- -(wt * d2(gp, f, y, hyperpar))
 		if (any(W < 0)) {
+			# (2026 note: going through the log files of my models, it looks like this didn't actually work. 
+			# It happened in q_extend models, which didn't work out, only once it happened in normal model (O-tsc,sitesm/Picus_viridis), resulting in an error and core dump anyways.)
 			# moje bastloidni osetreni!
 			# zkusim remedy!! Posunout se po tech f tak, abych byl v te concave casti! 
 			# (nemusi pak fungovat approx. marginal likelihood ale... ale to zatim neresim...)
