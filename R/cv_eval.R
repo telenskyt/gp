@@ -1,26 +1,69 @@
 
 
 #' Evaluation of cross-validation statistics for bernoulli (0/1) response variable and predicted probability
-#' 
-#' Calculates AUC, TSS, and R2_dev (binomial deviance)
+#'
 #'@param p numeric vector - predicted probability
 #'@param y bernoulli response variable (vector of 0s and 1s)
-#'@returns list with the calculated metrics
+#'@param p.null the probability predicted by a null model (with intercept only)
+#'@returns list with the calculated metrics:
+#'	- AUC - scale from 0 to 1, random prediction is 0.5
+#'
+#'	- TSS - True skill statistics - scale from 0 to 1, random prediction is 0 \insertCite{allouche_assessing_2006}{gp}
+#'
+#'	- R2_dev - pseudo R-squared based on binomial deviance. Scale from 0 to 1, 0 is null model (with intercept only)
+#'
+#'  - R2_LR - McFadden's pseudo R-squared based on likelihood ratio. Scale from 0 to 1, 0 is null model (with intercept only) \insertCite{office_of_advanced_research_computing_university_of_california_los_angeles_faq_2011}{gp}
+#'
+#'	- R2_LRNCU - Nagelkerke, Cragg & Uhler’s pseudo R-squared based on likelihood ratio, corrected for sample size. Scale from 0 to 1, 0 is null model (with intercept only) \insertCite{office_of_advanced_research_computing_university_of_california_los_angeles_faq_2011}{gp}
+#'
+#' Perfect prediction (the limit) has always value 1 in all these statistics.
+#'
+#' Note that the AUC and TSS scale relative to random prediction, while the pseudo R-squared statistics scale relative to a null model (with intercept only).
+#' Since the null model has already more information than the completely random prediction, it can scale with relatively high AUC and TSS, while showing up as 0 in the R2 statistics.
+#' This is the reason why the AUC and TSS statistics will always "look better" than the R2 statistcs.
+#'
+#' Note that for models with more complicated likelihood the AUC and TSS might not have sense. The R2* statistics are more general, and thus more robust sense-wise.
 #'
 #'@importFrom WeightedROC WeightedAUC WeightedROC
 #'@importFrom ecospat ecospat.max.tss
+#'@importFrom Rdpack reprompt
 #'@export
-cv_eval_bern <- function(p, y)
+#'@references
+#'	\insertAllCited{}
+#
+# Notes: 2026-01: 
+#	- I see that the p.null is necessary, in the case of Lapwing nest survival, even in the null model, the `p` probability will need to have different number of days based on length
+# 	  of the time period the nest failed!
+#	- I don't provide Cox & Snell variant, since it is not correctly scaled (the NCU variant is the correction)
+cv_eval_bern <- function(p, y, p.null)
 {
 	AUC <- WeightedAUC(WeightedROC(p, y)) # same as in the Czech Atlas (Stastny et al., 2021)
 	TSS <- ecospat.max.tss(p, y)$max.TSS
 
-	p_Null <- sum(y)/length(y) # for TSS, it is searching for optimal threshold; here, to get the "null deviance", we just estimate it!!
-	dev <- devianceBin(y, 1, p)
-	nullDev <- devianceBin(y, 1, p_Null)
-	R2_dev <- 1 - dev / nullDev # same as the R2_dev in the Czech Atlas (Stastny et al., 2021)
+	if (is.null(p.null)) {
+		p.null <- sum(y)/length(y) # for TSS, it is searching for optimal threshold; here, to get the "null deviance", we just estimate it!!
+	}
+	stopifnot(length(y) == length(p))
+	stopifnot(length(y) == length(p.null) || length(p.null) == 1)
 	
-	list(AUC = AUC, TSS = TSS, R2_dev = R2_dev)
+	dev <- devianceBin(y, 1, p)
+	nullDev <- devianceBin(y, 1, p.null)
+	
+	NLL <- -sum(dbinom(x = y, size = 1, prob = p, log = TRUE))
+	nullNLL <- -sum(dbinom(x = y, size = 1, prob = p.null, log = TRUE))
+	N <- length(y)
+	
+	
+	list(
+		AUC = AUC, 
+		TSS = TSS, 
+		R2_dev = 1 - dev / nullDev, # same as the R2_dev in the Czech Atlas (Stastny et al., 2021)
+		R2_LR = 1 - NLL/nullNLL, # McFadden's, see also https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-what-are-pseudo-r-squareds/ and also package rsq
+		R2_LRNCU = (1 - exp(-2/N*(nullNLL - NLL)))/(1 - exp(-2/N*nullNLL)) # Nagelkerke / Cragg & Uhler’s, see also https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-what-are-pseudo-r-squareds/ and also package rsq.
+			# likelihood ratios:
+			#	0 = null model (with intercept only)
+			#	1 = perfect prediction 
+	)
 }
 
 

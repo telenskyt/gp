@@ -4,16 +4,36 @@
 \alias{cv_eval_bern}
 \title{Evaluation of cross-validation statistics for bernoulli (0/1) response variable and predicted probability}
 \usage{
-cv_eval_bern(p, y)
+cv_eval_bern(p, y, p.null)
 }
 \arguments{
 \item{p}{numeric vector - predicted probability}
 
 \item{y}{bernoulli response variable (vector of 0s and 1s)}
+
+\item{p.null}{the probability predicted by a null model (with intercept only)}
 }
 \value{
-list with the calculated metrics
+list with the calculated metrics:
+\itemize{
+\item AUC - scale from 0 to 1, random prediction is 0.5
+\item TSS - True skill statistics - scale from 0 to 1, random prediction is 0 \insertCite{allouche_assessing_2006}{gp}
+\item R2_dev - pseudo R-squared based on binomial deviance. Scale from 0 to 1, 0 is null model (with intercept only)
+\item R2_LR - McFadden's pseudo R-squared based on likelihood ratio. Scale from 0 to 1, 0 is null model (with intercept only) \insertCite{office_of_advanced_research_computing_university_of_california_los_angeles_faq_2011}{gp}
+\item R2_LRNCU - Nagelkerke, Cragg & Uhler’s pseudo R-squared based on likelihood ratio, corrected for sample size. Scale from 0 to 1, 0 is null model (with intercept only) \insertCite{office_of_advanced_research_computing_university_of_california_los_angeles_faq_2011}{gp}
+}
+
+Perfect prediction (the limit) has always value 1 in all these statistics.
+
+Note that the AUC and TSS scale relative to random prediction, while the pseudo R-squared statistics scale relative to a null model (with intercept only).
+Since the null model has already more information than the completely random prediction, it can scale with relatively high AUC and TSS, while showing up as 0 in the R2 statistics.
+This is the reason why the AUC and TSS statistics will always "look better" than the R2 statistcs.
+
+Note that for models with more complicated likelihood the AUC and TSS might not have sense. The R2* statistics are more general, and thus more robust sense-wise.
 }
 \description{
-Calculates AUC, TSS, and R2_dev (binomial deviance)
+Evaluation of cross-validation statistics for bernoulli (0/1) response variable and predicted probability
+}
+\references{
+\insertAllCited{}
 }
