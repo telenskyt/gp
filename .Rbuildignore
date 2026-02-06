@@ -6,3 +6,5 @@
 ^new/
 ^_legacy_model/
 ^\.github$
+^doc$
+^Meta$

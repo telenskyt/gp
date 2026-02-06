@@ -16,3 +16,5 @@ dump-*.rda
 *.bak
 *.R[0-9]
 .cd.Rdata
+/doc/
+/Meta/
