@@ -17,8 +17,7 @@
 	options(warnPartialMatchAttr = TRUE)
 	options(warnPartialMatchArgs = FALSE)
 
-	#cat("Here 123!\n")
-	#print("We are here")
+	#cat("package ", pkgname, " loaded! :)\n")
 	
 	#library(memoise)
 	environment(memoise_seq_bastl) <<- asNamespace("memoise")
