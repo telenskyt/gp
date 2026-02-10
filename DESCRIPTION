@@ -1,7 +1,7 @@
 Package: gp
 Type: Package
 Title: Gaussian Process models in R
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person(
       "Tomáš", "Telenský",
