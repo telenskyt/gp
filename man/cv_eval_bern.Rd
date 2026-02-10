@@ -20,16 +20,16 @@ list with the calculated metrics:
 \item TSS - True skill statistics - scale from 0 to 1, random prediction is 0 \insertCite{allouche_assessing_2006}{gp}
 \item R2_dev - pseudo R-squared based on binomial deviance. Scale from 0 to 1, 0 is null model (with intercept only)
 \item R2_LR - McFadden's pseudo R-squared based on likelihood ratio. Scale from 0 to 1, 0 is null model (with intercept only) \insertCite{office_of_advanced_research_computing_university_of_california_los_angeles_faq_2011}{gp}
-\item R2_LRNCU - Nagelkerke, Cragg & Uhler’s pseudo R-squared based on likelihood ratio, corrected for sample size. Scale from 0 to 1, 0 is null model (with intercept only) \insertCite{office_of_advanced_research_computing_university_of_california_los_angeles_faq_2011}{gp}
+\item R2_LRNCU - Nagelkerke, Cragg & Uhler's pseudo R-squared based on likelihood ratio, corrected for sample size. Scale from 0 to 1, 0 is null model (with intercept only) \insertCite{office_of_advanced_research_computing_university_of_california_los_angeles_faq_2011}{gp}
 }
 
 Perfect prediction (the limit) has always value 1 in all these statistics.
 
 Note that the AUC and TSS scale relative to random prediction, while the pseudo R-squared statistics scale relative to a null model (with intercept only).
 Since the null model has already more information than the completely random prediction, it can scale with relatively high AUC and TSS, while showing up as 0 in the R2 statistics.
-This is the reason why the AUC and TSS statistics will always "look better" than the R2 statistcs.
+This is the reason why the AUC and TSS statistics will always "look better" than the R2_* statistics.
 
-Note that for models with more complicated likelihood the AUC and TSS might not have sense. The R2* statistics are more general, and thus more robust sense-wise.
+Note that for models with more complicated likelihood the AUC and TSS might not make sense. The R2_* statistics are more general, and thus more robust sense-wise.
 }
 \description{
 Evaluation of cross-validation statistics for bernoulli (0/1) response variable and predicted probability
