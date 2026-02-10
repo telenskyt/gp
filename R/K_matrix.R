@@ -199,6 +199,17 @@ K_matrix <- function (gp, hyperpar = gpHyperparList(gp), x1 = gp$data, x2 = NULL
 				if (!is.null(x2)) 
 					stopifnot(fact %in% colnames(x2[[1]]))
 			reindex_needed <- FALSE
+		} else if (cov_fun_name == "cov.I.factor.sigma2") { # as cov.I.factor, but has separate sigma2 for each factor level
+			stopifnot(gp$GP_factor == "1") # jiny pripad neni zatim osetreny, jsou tam challenges, viz GP_factor-k_rozreseni.docx
+			Kc <- cov.I.factor.sigma2(x1[[1]][[fact]], if (is.null(x2)) NULL else x2[[1]][[fact]], sigma2_cat = hyperpar[[cc]][["sigma2_cat"]])
+				# 2025-12-08: neslo by totez zajistit pomoci normalni te reindexace nize, spolu s normalni cov.I?
+				#
+				# !!! XYZ546: [[1]] a netestuje na existenci main table jako u reindex v K_matrix() - to nebude fungovat
+				# tak to aspon overim provizorne:
+				stopifnot(fact %in% colnames(x1[[1]]))
+				if (!is.null(x2)) 
+					stopifnot(fact %in% colnames(x2[[1]]))
+			reindex_needed <- FALSE			
 		} else {
 			mat <- gp$covComp[[cc]]$mat
 			#cov_funcs[[cov_fun_name]]
@@ -342,6 +353,10 @@ dK_dhi <- function (gp, hyperpar, x1, i, K.cache = NULL)
 		stopifnot(!is.na(mat))
 		x1m <- x1[[mat]]		
 		K <- hyperpar[[cc]]$sigma2 * cov.SE.d1(K = K.cache$components[[cc]], x1 = x1m, ls = hyperpar[[cc]]$ls, der_wrt_i = der_wrt$i)
+	} else if (cov_fun_name == "cov.I.factor.sigma2") {
+		stopifnot(gp$GP_factor == "1") # jiny pripad neni zatim osetreny, jsou tam challenges, viz GP_factor-k_rozreseni.docx
+		K <- do.call(cov_fun_name_d1, c(list(x1 = x1[[1]][[fact]], der_wrt = der_wrt$hyperpar, der_wrt_i = der_wrt$i), cov_fn_args))
+		reindex_needed <- FALSE
 	} else { # derivative of generic cov.* functions w.r.t. one their internal hyperparameter
 		stopifnot(!cov_fun_name %in% c("1", "cov.I", "cov.I.factor"))
 		stopifnot(!is.na(mat))

@@ -16,42 +16,49 @@ gpHyperparDefaults <- function (gp)
 		ccomp <- gp$covComp[[cc]] # current covariance component
 		stopifnot(ccomp$cov_fun %in% names(cov_funcs))
 		cov_fun <- cov_funcs[[ccomp$cov_fun]]
-		# insert sigma2 of that component (everyone has it)
-		R <- rbind(R, tibble(
-			component = cc, 
-			cov_fun = NA, 
-			hyperpar = "sigma2",
-			len = 1,
-			i = 1,
-			table = NA,
-			var = NA,
-			start = 1, 
-			low = 1e-7, # stage 1: 1e-2 !!!
-			up = 100,
-			value = 1,
-			fixed = FALSE,
-			optim.link = "log",
-			prior = if (ccomp$cov_fun == "1") 
-						list(quote(uniform_lp(x))) # for intercept
-					else
-						list(quote(sigma2_exp_lp(x, lambda = 3)))
-			#prior.lambda = 
-			#?? related table name?
-		))		
+		# insert sigma2 of that component (every covariance function has it, with the exception of cov.I.factor.sigma2)
+		if (ccomp$cov_fun != "cov.I.factor.sigma2")
+			R <- rbind(R, tibble(
+				component = cc, 
+				cov_fun = NA, 
+				hyperpar = "sigma2",
+				len = 1,
+				i = 1,
+				table = NA,
+				var = NA,
+				start = 1, 
+				low = 1e-7, # stage 1: 1e-2 !!!
+				up = 100,
+				value = 1,
+				fixed = FALSE,
+				optim.link = "log",
+				prior = if (ccomp$cov_fun == "1") 
+							list(quote(uniform_lp(x))) # for intercept
+						else
+							list(quote(sigma2_exp_lp(x, lambda = 3)))
+				#prior.lambda = 
+				#?? related table name?
+			))		
 		# insert cov_fun-specific hyperparameters
 		for (h_name in names(cov_fun$hyperpar)) {
 			h <- cov_fun$hyperpar[[h_name]]
 			len <- 1 # need to determine manually here
 			var <- NA
-			stopifnot(!is.null(ccomp$mat) && nchar(ccomp$mat) > 0 && ccomp$mat %in% names(gp$obsdata))
-			if (h_name %in% c("ls", "sigma2_int", "sigma2_slope")) {
-				# TODO: zautomatizovat len & var, aby se daly definovat v cov_funcs.R
-				len <- ncol(gp$obsdata[[ccomp$mat]])
-				var <- colnames(gp$obsdata[[ccomp$mat]]) # mozna bude potreba otestovat ze existujou ty colnames? !!!
-			} else if (h_name == "sigma2_diag") {
-				len <- ncol(gp$obsdata[[ccomp$mat]]) + 1
-				var <- c("1", colnames(gp$obsdata[[ccomp$mat]])) # !!! or "(Intercept)"?
-					# mozna bude potreba otestovat ze existujou ty colnames? !!!
+			if (ccomp$cov_fun == "cov.I.factor.sigma2" && h_name == "sigma2_cat") {
+				stopifnot(gpDataHasMainTable(gp$data))
+				len <- length(levels(gp$data[[1]][[ccomp$fact]]))
+				var <- levels(gp$data[[1]][[ccomp$fact]])
+			} else {
+				stopifnot(!is.null(ccomp$mat) && nchar(ccomp$mat) > 0 && ccomp$mat %in% names(gp$obsdata))
+				if (h_name %in% c("ls", "sigma2_int", "sigma2_slope")) {
+					# TODO: zautomatizovat len & var, aby se daly definovat v cov_funcs.R
+					len <- ncol(gp$obsdata[[ccomp$mat]])
+					var <- colnames(gp$obsdata[[ccomp$mat]]) # mozna bude potreba otestovat ze existujou ty colnames? !!!
+				} else if (h_name == "sigma2_diag") {
+					len <- ncol(gp$obsdata[[ccomp$mat]]) + 1
+					var <- c("1", colnames(gp$obsdata[[ccomp$mat]])) # !!! or "(Intercept)"?
+						# mozna bude potreba otestovat ze existujou ty colnames? !!!
+				}
 			}
 			R <- rbind(R, tibble(
 				component = cc, 

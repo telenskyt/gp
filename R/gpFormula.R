@@ -57,6 +57,14 @@ gpFormula <- function (f)
 			mat = NA,
 			fact = "1"
 		)
+	} else if (length(t[[3]]) == 1) { # <name>:fact
+		fact <- deparse(t[[3]])
+		cc <- list()
+		cc[[name]] <- list(
+			cov_fun = "cov.I.factor.sigma2",
+			mat = NA,
+			fact = fact
+		)		
 	} else if (t[[c(3,1)]] == '(') { # <name>:(I|fact)
 		stopifnot(length(t[[c(3,2)]]) == 3)
 		if (t[[c(3,2,1)]] != '|') 

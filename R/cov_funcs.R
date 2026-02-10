@@ -43,6 +43,20 @@ cov_funcs <- list(
 		hyperpar = list(),
 		scaling = NA # there is no matrix here
 	),
+	cov.I.factor.sigma2 = list( # like (I|factor), but with separate sigma2 for each category (factor level)
+		hyperpar = list(
+			sigma2_cat = list(
+				#len = "ncol",
+				start = 1, # ??? tady nevim kde zacit? Davam kompromis mezi slope a intercept u cov.NN.add
+				low = 1e-7,
+				up = 100,
+				optim.link = "log",
+				prior = quote(uniform_lp(x))
+				#prior.lambda = 
+			)
+		),
+		scaling = NA # there is no matrix here
+	),	
 	cov.NN = list(
 		hyperpar = list(
 			sigma2_diag = list(
