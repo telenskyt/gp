@@ -10,7 +10,7 @@ d0 <- function (gp, f, data = gp$data, hyperpar)
 	}
 	par <- c(hyperpar[[".lik"]], list(f = f))
 	res <- gp$negLogLik(data, par)
-	if (!is.numeric(res) || !all(is.finite(res)))
+	if (!is.numeric(res)) # don't do check of is.finite() here! Infinite values have special resolution in the gpFitLaplace() function (can be caused by f_start = TRUE and need fallback)
 		stop("result of user defined likelihood (negLogLik parameter to gp()) is not numeric: ", res)
 	if (length(res) != 1)
 		stop("length of the result of user defined likelihood (negLogLik parameter to gp()) is ", length(res), ", should be 1")
