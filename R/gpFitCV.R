@@ -23,13 +23,16 @@
 #' - \code{\%p} - process ID of the worker job
 #'
 #' @export
+#' @importFrom foreach foreach
+#' @importFrom foreach %do%
+#' @importFrom foreach %dopar%
 # startingValuesFromModel = NULL
 # starting.values.from.model = NULL
 # startFromModel = NULL
 # start.from.model
 
 gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.model = NULL,
-	parallel = TRUE, fn.prefix = "", log.fn = "log-fold%f-%h-%p.txt", dump.fn = "dump-fold%f-%h_%p",
+	parallel = TRUE, fn.prefix = "", log.fn = if (parallel) "log-fold%f-%h-%p.txt" else NULL, dump.fn = if (parallel) "dump-fold%f-%h_%p"  else NULL,
 	...)
 {
 	if (gp$GP_factor != "1")
