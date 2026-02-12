@@ -12,8 +12,8 @@ gpFitCV(
   start.from.model = NULL,
   parallel = TRUE,
   fn.prefix = "",
-  log.fn = "log-fold\%f-\%h-\%p.txt",
-  dump.fn = "dump-fold\%f-\%h_\%p",
+  log.fn = if (parallel) "log-fold\%f-\%h-\%p.txt" else NULL,
+  dump.fn = if (parallel) "dump-fold\%f-\%h_\%p" else NULL,
   ...
 )
 }
