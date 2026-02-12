@@ -20,7 +20,8 @@ gpFit(
   weights = NULL,
   grad.computation = TRUE,
   warn.exclude = NULL,
-  recursive = FALSE
+  recursive = FALSE,
+  ...
 )
 }
 \arguments{
@@ -61,6 +62,8 @@ note that stage 2 doesn't start from \code{gp$hyperpar$start}, but from \code{gp
 \item{warn.exclude}{character vector; vector of warnings that should be disabled. Allowed values are: \code{"warn.stage2.start"}. Default \code{NULL}.}
 
 \item{recursive}{internal option; do not use.}
+
+\item{...}{further arguments to be passed to fitting method (e.g. \code{gpFitLaplace()})}
 }
 \value{
 Returns the input \code{gp} object with the model fit (stored in \code{gp$fit}) and updated hyperparameters.

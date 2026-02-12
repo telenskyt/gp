@@ -23,6 +23,7 @@
 #'   \code{opt.h = TRUE}).
 #' @param warn.exclude character vector; vector of warnings that should be disabled. Allowed values are: \code{"warn.stage2.start"}. Default \code{NULL}.
 #' @param recursive internal option; do not use.
+#' @param ... further arguments to be passed to fitting method (e.g. \code{gpFitLaplace()})
 #'
 #' @return Returns the input \code{gp} object with the model fit (stored in \code{gp$fit}) and updated hyperparameters.
 #'
@@ -79,7 +80,8 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 				  weights = NULL,
 				  grad.computation = TRUE,
 				  warn.exclude = NULL,
-				  recursive = FALSE #internal option only, don't use!
+				  recursive = FALSE, #internal option only, don't use!
+				  ...
 				  )
 {
 	method <- match.arg(method)
@@ -98,6 +100,9 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 
 		# remove any unexpected arguments
 		args <- args[names(args) %in% expected_args]
+		
+		# add the ...
+		args <- c(args, list(...))
 
 		cat("\n\n=====================\nABSOLUTE START\n\n")
 		args2print <- args
@@ -130,6 +135,7 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 			# determine the components to be staged (i.e. those that have also other hyper-parameters apart from sigma2)
 			hy <- gp$hyperpar
 			staged_components <- hy %>%
+				filter(component != ".lik") %>% # this is not a kernel component, this is for likelihood hyperparameters, exclude it
 				summarize(.by = component, nhyp = n_distinct(hyperpar), with_sigma2 = any(hyperpar == "sigma2")) %>%
 				filter(nhyp > 1 & with_sigma2) %>%
 				pull(component)
@@ -222,7 +228,7 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 	if (method == 'Laplace') {
 		# by Laplace approximation
 		fit <- gpFitLaplace(gp, h = h, wt = weights, e = NULL, verbose = verbose, use_f_start = use_f_start,
-			grad.computation = grad.computation)
+			grad.computation = grad.computation, ...)
 	} else {
 		stop("Not implemented")
 	}
