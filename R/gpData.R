@@ -110,8 +110,8 @@ gpData <- function(x, has.main.table = NULL)
 	first <- TRUE
 	for (name in names(x)) {
 		d <- x[[name]]
-		if (!(is.data.frame(d))) {
-			warning("List item `", name, "` - only data.frame's are allowed.")
+		if (!is.data.frame(d) && !is.matrix(d)) {
+			stop("List item `", name, "` - only data.frame's are allowed.")
 		}
 		fact <- attr(d, "fact")
 		if (!is.null(fact)) {
