@@ -6,6 +6,9 @@
 \usage{
 gpHyperparCheckAll(gp)
 }
+\arguments{
+\item{gp}{GP model object}
+}
 \description{
 Check consistency of the hyperparameters
 }
