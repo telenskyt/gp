@@ -81,7 +81,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 	#fold.run <- foreach (f = folds, .packages = c("gp")) %do_as_needed% {
 	#fold.run <- foreach (f = folds, .packages = c("gp", "RTMB")) %do_as_needed% {	
 	fold.run <- foreach (f = folds, .packages = .packages()) %do_as_needed% {	
-		options(warn = 2) # tady veskere options() musi byt znova, protoze na worker/cluster se to neexportuje
+		options(warn = 1) # tady veskere options() musi byt znova, protoze na worker/cluster se to neexportuje
 		options(show.error.locations = TRUE)
 		options(keep.source = TRUE)	
 		
