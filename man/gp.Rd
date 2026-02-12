@@ -4,18 +4,32 @@
 \alias{gp}
 \title{Construct gaussian process model}
 \usage{
-gp(f, data, negLogLik, negLogLik.reindex2main = TRUE)
+gp(
+  f,
+  data,
+  negLogLik,
+  negLogLik.hyperpar = NULL,
+  negLogLik.formula = NULL,
+  negLogLik.reindex2main = TRUE
+)
 }
 \arguments{
 \item{f}{formula for the covariance matrix}
 
 \item{data}{object of class gpData, created by the gpData() function}
 
-\item{negLogLik}{user-defined negative log likelihood function, taking two parameters: \code{data} (object of class gpData), and \code{f}, a numeric vector - result of the gaussian process.
-The \code{f} vector can be either of the dimension of the gaussian process, or the main table - see the \code{negLogLik.reindex2main} parameter.}
+\item{negLogLik}{user-defined negative log likelihood function, taking two parameters: \code{data} (object of class gpData), and \code{par}, a list of parameters (numeric scalars or vectors).
+The \code{par} parameters list always includes \code{f}, a numeric vector - result of the gaussian process. The \code{par$f} vector can be either of the dimension of the gaussian process,
+or the main table - see the \code{negLogLik.reindex2main} parameter. The \code{par} parameters list can optionally include other parameters, see the \code{negLogLik.hyperpar} argument below.}
 
-\item{negLogLik.reindex2main}{should the \code{f} parameter of the \code{negLogLik} function be reindexed to the rows of the main table?
-If \code{FALSE}, the \code{f} parameter will be kept at the dimension of the Gaussian Process (as reported by \code{gpDetermineSize()}).
+\item{negLogLik.hyperpar}{optional, a named list of extra hyperparameters for the \code{negLogLik} function (named list of numeric scalars or vectors); this doesn't include the special
+parameter \code{f} (the Gaussian process).}
+
+\item{negLogLik.formula}{optional, formula related to the supplied \code{negLogLik} function. This is not used in any way, except it is stored in the object and printed in the summary,
+so it has only informational purpose.}
+
+\item{negLogLik.reindex2main}{should the \code{par$f} parameter of the \code{negLogLik} function be reindexed to the rows of the main table?
+If \code{FALSE}, the \code{par$f} parameter will be kept at the dimension of the Gaussian Process (as reported by \code{gpDetermineSize()}).
 If the Gaussian process is running at the dimension of the main table, then it does not matter.}
 }
 \value{
