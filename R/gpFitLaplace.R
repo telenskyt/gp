@@ -5,7 +5,8 @@
 # h - vector of hyperparameters that are being optimized (not fixed), optim.link funkci musi resit volajici, zde se uz okolo tohoto nic neresi
 # wt - weights. !!! They are not implemented properly now!!! In good design they should be parameters to d0, d1, d2, etc. functions
 # grad.computation - TRUE (computes all), FALSE (computes none), vector of indices - computes just those
-
+# num.correct.W.tol - numerical correction of W - if not NULL, values of W (hessian diagonal) will be corrected for small negative numbers, within given tolerance
+#
 # Value:
 # h_grads jsou: d marginal log likelihood / d h (!!!! pozor neni to derivace mnll, ale -mnll!!!!!!)
 #
@@ -40,8 +41,9 @@
 #
 
 gpFitLaplace <- function (gp, h, mn = NULL, wt = 1, e = NULL, tol = 10 ^ -6, itmax = 50,
-            verbose = FALSE, use_f_start = FALSE, grad.computation = TRUE, mem_verbose = FALSE) 
+            verbose = FALSE, use_f_start = FALSE, grad.computation = TRUE, mem_verbose = FALSE, num.correct.W.tol = 10*sqrt(.Machine$double.eps)) 
 {
+	print(match.call())
 	wt <- 1 # currently weights are not supported
 	x <- gp$data # alias for **scaled** data; but there is also y in there....
 	y <- gp$data
@@ -103,9 +105,18 @@ gc()
 		it <- it + 1
 		obj.old <- obj
 		W <- -(wt * d2(gp, f, y, hyperpar))
+		
+		if (any(W < 0) && !is.null(num.correct.W.tol) && is.finite(num.correct.W.tol)) { # 2026 osetreni - jen drobne numericke chybky muzem zarovnat na 0, s ohledem na komentar nize
+			W[W < 0 & W >= -num.correct.W.tol] <- 0
+			warning("corrected small negative values of W (within tolerance num.correct.W.tol)")
+		}
+			
 		if (any(W < 0)) {
 			# (2026 note: going through the log files of my models, it looks like this didn't actually work. 
 			# It happened in q_extend models, which didn't work out, only once it happened in normal model (O-tsc,sitesm/Picus_viridis), resulting in an error and core dump anyways.)
+			stop("some W < 0, i.e. the diagonal of the hessian has negative values (range: ", paste(range(W), collapse=" to "),
+				"),\n\tmeaning the hessian of the neg. log likelihood is not positive definite.\n\tIncreasing num.correct.W.tol can help, but use with caution!")
+			
 			# moje bastloidni osetreni!
 			# zkusim remedy!! Posunout se po tech f tak, abych byl v te concave casti! 
 			# (nemusi pak fungovat approx. marginal likelihood ale... ale to zatim neresim...)
@@ -239,13 +250,15 @@ gc()
 	# recompute key components
 	cf <- f - mn
 	W <- -(wt * d2(gp, f, y, hyperpar))
+	if (any(W < 0) && !is.null(num.correct.W.tol) && is.finite(num.correct.W.tol)) { # 2026 osetreni - jen drobne numericke chybky muzem zarovnat na 0, s ohledem na komentar nize
+		W[W < 0 & W >= -num.correct.W.tol] <- 0
+		warning("corrected small negative values of W (within tolerance num.correct.W.tol)")
+	}	
 	if (!all(W >= 0)) {
 		# set options(error = recover) and debug it using likelihood_concavity.R
-		if (!is.null(hyperpar$q)) { # @@@@!!! the message below is specific for TSC likelihood, remove later!
-			minQconcave <- uniroot(function (q) { hyperpar$q <- q ; min(-d2(f, y, hyperpar)) }, interval = c(0.1, 1))$root
-			cat("some W < 0 - log likelihood not concave. hyperpar$q is now ", hyperpar$q, ", would need to be ", minQconcave, " for all(W >= 0).\n")
-		}
-		stop("log likelihood isn't concave function in the optimum f, and trivial remedy failed.")
+		stop("even in the optimum f, some W < 0, i.e. the diagonal of the hessian has negative values (range: ", paste(range(W), collapse=" to "),
+			"),\n\tmeaning the hessian of the neg. log likelihood is not positive definite, meaning log likelihood isn't concave function in the optimum f.",
+			"\n\tIncreasing num.correct.W.tol can help, but use with caution!")
 	}
 	mstart(id = "L")	
 	rW <- sqrt(W)
