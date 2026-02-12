@@ -333,14 +333,12 @@ gc()
 
 	#KR <- K %*% R
 	
-	first.lik <- hyperpar_first_likelihood_ind(gp)
-    
     for (i in grad.computation.idx) {
 		#cat("  computing marginal likelihood gradient for hyperparameter i = ", i, "\n")
 		if (mem_verbose)
 			mstart(id = "graf_grad_i", mem_precise = TRUE)
 
-		if (i < first.lik) { # kernel hyperparameter
+		if (gp$hyperpar[gpHyperparIdx(gp, i), "component"] != ".lik") { # kernel hyperparameter
 			# gradient for each parameter h[i]: dK/dl[i] (this is what cov.SE.d1() computes, but optimized memory- and cpu- wise)
 			dK_i <- dK_dhi(gp, hyperpar, x, i, K.cache)
 		  
@@ -351,8 +349,8 @@ gc()
 			#grad <- s1 + t(s2) %*% (cbind(KR, b) %*% c(-b, 1)) # h_grads computation time: 160.560s; mem: 4198.2Mb. # 2x slower and more memory
 			h_grads[i] <- s1 + t(s2) %*% (b - K %*% (R %*% b))
 		} else { # likelihood hyperparameter! Finally possible!! Celebration!! This I implemented using formulas in Groot et al 2014! Otestovano a proslo!
-			s1 <- d0_dhyp(f, y, hyperpar, i) + t(diag_posterior_cov) %*% d2_dhyp(f, y, hyperpar, i) / 2
-			b <- K %*% d1_dhyp(f, y, hyperpar, i)
+			s1 <- d0_dhyp(gp, f, y, hyperpar, i) + t(diag_posterior_cov) %*% d2_dhyp(gp, f, y, hyperpar, i) / 2
+			b <- K %*% d1_dhyp(gp, f, y, hyperpar, i)
 			h_grads[i] <- s1 + t(s2) %*% (b - K %*% (R %*% b))
 		}
 		der_wrt <- gp$hyperpar[gpHyperparIdx(gp, i),] # which var we derivate w.r.t to :-)

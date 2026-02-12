@@ -39,9 +39,10 @@ gpFormula <- function (f)
 	}
 
 	name <- deparse(t[[2]]) # component name
-	if (name %in% names(covComp)) {
+	if (name == ".lik")
+		stop("Component cannot be named '.lik' - this is reserved for likelihood hyperparameters.")
+	if (name %in% names(covComp))
 		stop("Component name '", name, "' used twice. Can't use the same name for multiple components.")
-	}
 
 	if (deparse(t[[3]]) == "1") { # intercept - <name>:1
 		cc <- list()

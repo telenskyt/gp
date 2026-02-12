@@ -81,6 +81,32 @@ gpHyperparDefaults <- function (gp)
 			))
 		}
 	}
+	# likelihood hyperparameters, if any
+	likHyperparList <- gp$negLogLik.hyperpar
+	for (par in names(likHyperparList)) {
+		stopifnot(is.numeric(likHyperparList[[par]]))
+		len <- length(likHyperparList[[par]])
+		var <- names(likHyperparList[[par]])
+		if (is.null(var)) 
+			var <- NA_character_
+		var[var == ""] <- NA_character_
+		R <- rbind(R, tibble(
+			component = ".lik", 
+			cov_fun = NA, 
+			hyperpar = par,
+			len = len,
+			i = 1:len,
+			table = NA, # likelihood function has to know where to get it
+			var = var,
+			start = likHyperparList[[par]], 
+			low = -1e7,
+			up = 1e7,
+			value = likHyperparList[[par]],
+			fixed = FALSE,
+			optim.link = "identity",
+			prior = list(quote(uniform_lp(x)))
+		))
+	}
 	# Make sure the prior is nicely printed (see https://stackoverflow.com/a/79761799/):
 	ctl_new_pillar.nice_list_tbl <<- function(controller, x, width, ..., title = NULL) {
 		if (!is.list(x)) { # might want to add &!is.data.frame(x) etc.
@@ -123,8 +149,10 @@ gpHyperparExportVector <- function(gp, col = "value")
 }
 
 
-# get index of i-th optimized (non-fixed) hyperparameter (numbered from 1) within all hyperparameters
-# i: index of the hyperparameter within non-fixed (optimized) hyperparameters
+#' Get the index of i-th optimized (non-fixed) hyperparameter (numbered from 1) in the table of hyperparameters
+#'
+#' @param gp GP model object 
+#' @param i index of the hyperparameter within non-fixed (optimized) hyperparameters
 #' @export
 gpHyperparIdx <- function (gp, i)
 {
@@ -208,6 +236,12 @@ gpPriorGradient <- function (gp, h)
 	res	
 }
 
+#' Check that hyperparameter vector \code{h} is within the limits \code{low} and \code{up}
+#'
+#' @param gp GP model object 
+#' @param h numeric vector to be checked
+#' @param tol tolerance for numeric comparisons
+#' @param incl.fixed does the vector \code{h} include the non-optimized (fixed) hyperparameters?
 #' @export
 gpHyperparCheck <- function(gp, h, tol = sqrt(.Machine$double.eps), incl.fixed = FALSE)
 {
@@ -227,11 +261,13 @@ gpHyperparCheck <- function(gp, h, tol = sqrt(.Machine$double.eps), incl.fixed =
 
 #' Check consistency of the hyperparameters
 #'
+#' @param gp GP model object 
 #' @export
 gpHyperparCheckAll <- function (gp)
 {
 	gpHyperparCheck(gp, gp$hyperpar$start, incl.fixed = TRUE)
 	gpHyperparCheck(gp, gp$hyperpar$value, incl.fixed = TRUE)
+	stopifnot(!is.unsorted(gp$hyperparcomponent == ".lik")) # check that the likelihood hyperparameters are at the end of the table
 }
 
 #' Get the starting values of the hyperparameters from another model (gp0) wherever possible
