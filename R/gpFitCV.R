@@ -15,6 +15,7 @@
 #' @param fn.prefix character; prefix of file names for log files (\code{log.fn}) and dump files (\code{dump.fn}), in case these are not \code{NULL}
 #' @param log.fn if not \code{NULL}, standard and error output of each fold model job will be saved into a log file with this file name. Special \code{\%} sequences can be used, see Details below. 
 #' @param dump.fn if not \code{NULL}, debug dump of given fold model will be saved upon an error, with this file name (the .rda extension will be added to it). Special \code{\%} sequences can be used, see Details below. 
+#' @param tr.max.lines the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs
 #' @param ... options to be passed to the \code{\link[gpFit]{gpFit()}} method.
 #'
 #' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:
@@ -33,6 +34,7 @@
 
 gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.model = NULL,
 	parallel = TRUE, fn.prefix = "", log.fn = if (parallel) "log-fold%f-%h-%p.txt" else NULL, dump.fn = if (parallel) "dump-fold%f-%h_%p"  else NULL,
+	tr.max.lines = 5, 
 	...)
 {
 	if (gp$GP_factor != "1")
@@ -87,6 +89,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 		options(warn = 1) # tady veskere options() musi byt znova, protoze na worker/cluster se to neexportuje
 		options(show.error.locations = TRUE)
 		options(keep.source = TRUE)	
+		options(traceback.max.lines = tr.max.lines)
 		
 #library(gp)
 #library(RTMB)		
@@ -104,7 +107,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 			dump.fn2 <- gsub("%f", formatC(f, width = ndigits, flag = "0"), fixed = TRUE, dump.fn)
 			dump.fn2 <- paste0(fn.prefix, dump.fn2)
 		}
-		parallelJobWrapper(working.dir = wd, masterPID = masterPID, log.fn = log.fn2, dump.fn = dump.fn2, 
+		parallelJobWrapper(working.dir = wd, masterPID = masterPID, log.fn = log.fn2, dump.fn = dump.fn2, tr.max.lines = tr.max.lines,
 		{
 			gpcv <- gpPack(gp, maximum = TRUE)
 			gpcv$fit <- NULL # delete the whole $fit object

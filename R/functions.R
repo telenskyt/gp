@@ -154,11 +154,12 @@ expand_special <- function (fn)
 #' @param parallel should be set to \code{TRUE} for the wrapper to work normally. The \code{FALSE} setting is just for some perhaps
 #' debugging purposes, when we want to run the job in non-parallel, interactive mode, in which case most of the wrapper function (logging, setting working directory)
 #' will be disabled.
+#' @param tr.max.lines the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs
 #' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:
 #' - \code{\%h} - hostname, i.e. the name of the machine where the worker job runs
 #' - \code{\%p} - process ID of the worker job
 #' @export
-parallelJobWrapper <- function (expr, working.dir = NULL, masterPID = NULL, log.fn = NULL, dump.fn = NULL, parallel = TRUE)
+parallelJobWrapper <- function (expr, working.dir = NULL, masterPID = NULL, log.fn = NULL, dump.fn = NULL, parallel = TRUE, tr.max.lines = 5)
 
 #myParallel
 #jobWrapper
@@ -201,7 +202,7 @@ parallelJobWrapper <- function (expr, working.dir = NULL, masterPID = NULL, log.
 			#recover() # nic nevypise
 			#browser() # nic nevypise
 			#traceback() # vyhodi no traceback available! # trochu me stve, ze to nedava ten samy stack format jako recover()... mozna todo: vykuchat to z recover()...
-			traceback(sys.calls()) # this works!!! 
+			traceback(sys.calls(), max.lines = tr.max.lines) # this works!!! 
 		}
 		
 		if (!is.null(dump.fn)) {
