@@ -37,23 +37,10 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 	tr.max.lines = 5, 
 	...)
 {
-	if (gp$GP_factor != "1")
-		if (fold.fact != gp$GP_factor)
-			stop("If the factor corresponding to the GP (gp$GP_factor) is some real grouping factor (!= \"1\"), then the fold.fact must be that factor")
-	if (is.character(fold.col) && length(fold.col) == 1) { # it is a name of a column in the main table
-		if (fold.fact != "1")
-			stop("Specifying fold.col by column name only works for fold.fact == '1'")
-		stopifnot(gpDataHasMainTable(gp$obsdata))
-		if (!fold.col %in% colnames(gp$obsdata[[1]]))
-			stop("column ", fold.col, " does not exist in the main table of the gp$obsdata.")
-		fold.col <- gp$obsdata[[1]][[fold.col]]
-	}
-	# fold.col is now a vector along fold.fact
-	# check it now
-	stopifnot(length(fold.col) == gpDataSize(gp$obsdata, fold.fact))
-	# it should be a vector of integer numbers from 1 to N, where N is the number of folds
-	stopifnot(is.integer(fold.col))
-	stopifnot(all(1:max(fold.col) == sort(unique(fold.col))))
+	args <- list(fold.col = fold.col, fold.fact = fold.fact)
+	fold.col <- gpFitCV__validate_and_get_fold_col(gp, fold.col, fold.fact)
+		# validate fold.col and fold.fact arguments and get evaluated fold.col (as a vector)
+
 	# now, init or check folds variable
 	if (is.null(folds)) {
 		folds <- sort(unique(fold.col))
@@ -111,6 +98,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 		{
 			gpcv <- gpPack(gp, maximum = TRUE)
 			gpcv$fit <- NULL # delete the whole $fit object
+			gpcv$fitCV <- NULL # don't forget also the $fitCV object!
 
 			train_data <- gpDataSubset(gp$obsdata, fact = fold.fact, ind = (fold.col != f))
 			test_data <- gpDataSubset(gp$obsdata, fact = fold.fact, ind = (fold.col == f))
@@ -137,6 +125,8 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 			# pack it even more! :
 			m$obsdata <- NULL
 			m$fit$a <- NULL
+			if (!is.null(m$fit$stage1))
+				m$fit$stage1$a <- NULL
 			
 			list(
 				fold = f,
@@ -145,7 +135,9 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 			)
 		})
 	}
+	args$folds <- folds
 	gp$fitCV <- list(
+		args = args,
 		models = list(), # list of models for each fold
 		predCV = NULL, # cross-validated prediction for the training dataset
 		stats = NULL # CV stats		
@@ -172,5 +164,66 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 	}
 	#gp$fitCV$stats <- ... !!!
 	gp
+}
+
+# internal helper function that validates fold.col and fold.fact arguments and returns evaluated fold.col (as a vector)
+gpFitCV__validate_and_get_fold_col <- function (gp, fold.col, fold.fact)
+{
+	if (gp$GP_factor != "1")
+		if (fold.fact != gp$GP_factor)
+			stop("If the factor corresponding to the GP (gp$GP_factor) is some real grouping factor (!= \"1\"), then the fold.fact must be that factor")
+	if (is.character(fold.col) && length(fold.col) == 1) { # it is a name of a column in the main table
+		if (fold.fact != "1")
+			stop("Specifying fold.col by column name only works for fold.fact == '1'")
+		stopifnot(gpDataHasMainTable(gp$obsdata))
+		if (!fold.col %in% colnames(gp$obsdata[[1]]))
+			stop("column ", fold.col, " does not exist in the main table of the gp$obsdata.")
+		fold.col <- gp$obsdata[[1]][[fold.col]]
+	}
+	# fold.col is now a vector along fold.fact
+	# check it now
+	stopifnot(length(fold.col) == gpDataSize(gp$obsdata, fold.fact))
+	# it should be a vector of integer numbers from 1 to N, where N is the number of folds
+	stopifnot(is.integer(fold.col))
+	stopifnot(all(1:max(fold.col) == sort(unique(fold.col))))
+	return(fold.col)
+}
+
+#' Get the cross-validation model for given fold
+#'
+#' @param gp GP model object
+#' @param fold integer, number of the cross-validation fold
+#' @return GP model object for the fold \code{fold}
+#' @export
+gpGetCVModel <- function(gp, fold)
+{
+	stopifnot(!is.null(gp[["fitCV"]]))
+	stopifnot(!is.null(gp$fitCV[["models"]]))
+	stopifnot(!is.null(gp$fitCV[["args"]]))
+	stopifnot(is.numeric(fold))
+	stopifnot(fold >= 1)
+	stopifnot(fold <= length(gp$fitCV$models))
+	
+	fold.fact <- gp$fitCV$args$fold.fact
+	fold.col <- gpFitCV__validate_and_get_fold_col(gp, gp$fitCV$args$fold.col, gp$fitCV$args$fold.fact)
+		# validate fold.col and fold.fact arguments and get evaluated fold.col (as a vector)
+	
+	m <- gp$fitCV$models[[fold]]
+	m$obsdata <- gpDataSubset(gp$obsdata, fact = fold.fact, ind = (fold.col != fold))
+	
+	m <- gpUnpack(m, compute = FALSE)
+	# would need to call gpFitLaplace() or something to calculate `a`, we don't even have that!
+	
+	return(m)
+}
+
+gpGetFoldCol <- function(gp)
+{
+	stopifnot(!is.null(gp[["fitCV"]]))
+	stopifnot(!is.null(gp$fitCV[["args"]]))
+	fold.fact <- gp$fitCV$args$fold.fact
+	fold.col <- gpFitCV__validate_and_get_fold_col(gp, gp$fitCV$args$fold.col, gp$fitCV$args$fold.fact)
+		# validate fold.col and fold.fact arguments and get evaluated fold.col (as a vector)
+	return (fold.col)
 }
 
