@@ -65,15 +65,11 @@
 # ... - passed to model_expand_predictions()
 
 predict.gp <- function(gp, newdata = NULL, hyperpar = gpHyperparList(gp), components = NULL, comp_missing = c("avg", "none"), w = NULL, groupMeans = NULL, 
-						type = c('latent', 'response'),	se.fit = FALSE, cov.fit = FALSE, CI = 0.95, link = NULL, parname = NULL, maxn = NULL, pred.sims = 100000, 
+						type = c('latent', 'response'),	se.fit = FALSE, cov.fit = FALSE, CI = 0.95, predictor.fun = NULL, link = NULL, parname = NULL, maxn = NULL, pred.sims = 100000, 
 						Kx.cache = NULL, Kxx.cache = NULL, ...)  
 {
 	if (is.null(gp$fit))
 		stop("Model object has not been fit yet: you need to call gpFit() first")
-	if (type == "response") {
-		stopifnot(is.character(link))
-		stopifnot(is.character(parname) && nchar(parname) > 0)	
-	}
 	comp_missing <- match.arg(comp_missing)
 	need <- function (object, x) if (is.null(object[[x]])) stop("Model object is missing the `", x, "` element - try to call gpUnpack() on it")
 	
@@ -167,8 +163,21 @@ predict.gp <- function(gp, newdata = NULL, hyperpar = gpHyperparList(gp), compon
 				mstop(id = "missing")			
 			}
 		}
+		if (is.null(link))
+			link <- gp[["link"]]
+		if (is.null(parname))
+			parname <- gp[["response.parname"]]
+		if (is.null(predictor.fun))
+			predictor.fun <- gp[["predictor.fun"]]
 		# calculate model specific response from the latent
-		ans <- predict_expand_link(pred = ans, link = link, parname = parname)
+		stopifnot(is.character(parname) && nchar(parname) > 0)		
+		if (!is.null(predictor.fun))	
+			ans <- predict_expand_fun(gp, newdata, pred = ans, pred_fun = predictor.fun, parname)
+		else {
+			stopifnot(!is.null(link))
+			stopifnot(is.character(link))
+			ans <- predict_expand_link(pred = ans, link = link, parname = parname)
+		}
 	}
 	cat("returning memory - gc() took ")
 	mstart(id = "gc")

@@ -16,6 +16,7 @@
   se.fit = FALSE,
   cov.fit = FALSE,
   CI = 0.95,
+  predictor.fun = NULL,
   link = NULL,
   parname = NULL,
   maxn = NULL,

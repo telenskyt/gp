@@ -10,7 +10,10 @@ gp(
   negLogLik,
   negLogLik.hyperpar = NULL,
   negLogLik.formula = NULL,
-  negLogLik.reindex2main = TRUE
+  negLogLik.reindex2main = TRUE,
+  predictor.fun = NULL,
+  response.parname = NULL,
+  link = NULL
 )
 }
 \arguments{

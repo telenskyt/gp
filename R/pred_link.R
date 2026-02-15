@@ -28,3 +28,16 @@ predict_expand_link <- function (pred, link = "logit", parname)
 	cbind(pred, pred_e)
 }
 
+
+# zatim bez pridani CI, SE!
+predict_expand_fun <- function(gp, newdata, pred, pred_fun, parname)
+{
+	hyperpar <- gpHyperparList(gp)
+	par <- c(hyperpar[[".lik"]], list(f = pred[,'f']))
+	xx <- pred_fun(newdata, par)
+	if (is.vector(xx)) {
+		xx <- t(t(xx))
+		colnames(xx) <- parname
+	}
+	cbind(pred, xx)
+}

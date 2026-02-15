@@ -131,7 +131,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 				gpcv <- gpHyperparStartFromModel(gpcv, start.from.model$fitCV$models[[f]])
 					
 			m <- gpFit(gpcv, ...)
-			predCV <- predict(m, test_data, type = "latent", se.fit = TRUE)
+			predCV <- predict(m, test_data, type = "response", se.fit = TRUE)
 			
 			m <- gpPack(m, maximum = TRUE)
 			# pack it even more! :

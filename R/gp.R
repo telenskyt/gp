@@ -21,10 +21,14 @@
 #'  \item{$data}{training data prepared for model fit - converted to matrices, and scaled (standardized) where appropriate}
 #'}
 #' @export
-gp <- function(f, data, negLogLik, negLogLik.hyperpar = NULL, negLogLik.formula = NULL, negLogLik.reindex2main = TRUE)
+gp <- function(f, data, negLogLik, negLogLik.hyperpar = NULL, negLogLik.formula = NULL, negLogLik.reindex2main = TRUE,
+	predictor.fun = NULL, response.parname = NULL, link = NULL)
 {
 	gp <- gpFormula(f)
 	gp$covFormula <- f
+	gp$predictor.fun <- predictor.fun
+	gp$response.parname <- response.parname
+	gp$link <- link
 
 	stopifnot(class(data) == "gpData")
 
