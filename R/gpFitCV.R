@@ -24,7 +24,7 @@
 #' - \code{\%p} - process ID of the worker job
 #'
 #' @export
-#' @importFrom foreach foreach
+#' @importFrom foreach foreach getDoParRegistered getDoParName
 #' @importFrom foreach %do%
 #' @importFrom foreach %dopar%
 # startingValuesFromModel = NULL
@@ -107,7 +107,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 			dump.fn2 <- gsub("%f", formatC(f, width = ndigits, flag = "0"), fixed = TRUE, dump.fn)
 			dump.fn2 <- paste0(fn.prefix, dump.fn2)
 		}
-		parallelJobWrapper(working.dir = wd, masterPID = masterPID, log.fn = log.fn2, dump.fn = dump.fn2, tr.max.lines = tr.max.lines,
+		parallelJobWrapper(working.dir = wd, masterPID = masterPID, log.fn = log.fn2, dump.fn = dump.fn2, parallel = parallel, tr.max.lines = tr.max.lines,
 		{
 			gpcv <- gpPack(gp, maximum = TRUE)
 			gpcv$fit <- NULL # delete the whole $fit object
