@@ -99,7 +99,7 @@ gc()
 	it <- 0
 	LAiter <- c()
 	f_start_was_reset <- FALSE
-	while ((obj.old == Inf || obj < obj.old - tol) && it < itmax) { 
+	while ((obj.old == Inf || obj == Inf || obj < obj.old - tol) && it < itmax) { 
 		cat("Iteration ", it+1, "...\n")
 		#print(gc())
 		it <- it + 1
@@ -185,22 +185,53 @@ gc()
 		a_new_proposed <- b - rW * backsolve(L, forwardsolve(t(L), rW * (K %*% b)))
 		rm(L) # jeste vice usetri pameti!
 gc()
+		step_size <- 1
 		if (a_doesnt_correspond_with_f) {
 			a <- as.vector(a_new_proposed)
-			cat("a_doesnt_correspond_with_f, doing just simple method\n")
+			cat("a_doesnt_correspond_with_f, doing just simple method\n") # "simple method" basically means step_size = 1 :-)
 
 		} else {
 			adiff <- a_new_proposed - a 
 			dim(adiff) <- NULL
 			# find optimum step size using Brent's method
-			res <- optimise(psiline, c(0, 2), gp, adiff, a, as.matrix(K), y, mn, wt, hyperpar)
-			a <- a + res$minimum * adiff # toto `a` je takovy kouzelny vektor... K %*% a dá f a Kx (pro predikce) dá f predikcí!
+			step_size_range <- c(0, 2)
+			max_attempts <- 10
+			repeat {
+				res <- optimise(psiline, step_size_range, gp, adiff, a, as.matrix(K), y, mn, wt, hyperpar)
+				if (is.finite(res$objective) || using_f_start_now) 
+					break # in the case of using_f_start_now, we will prefer fallback to using_f_start_now <- FALSE (handled below)
+					
+				# !! Now, optimise() couldn't find optimum step size because of infinite psi() - let's try to see if there is a finite region of psi for some step_size's
+				# NOTE: this mambo jambo is supposed to happen only in the first LA iteration(s), due to bad numerical conditions with the starting f. It shouldn't happen in the last LA iteration(s).
+				max_attempts <- max_attempts - 1
+				if (max_attempts < 1) 
+					stop("optimise() couldn't find optimum step size because of infinite psi(); our remedy: maximum number of attempts reached")
+				step_sizes <- seq(step_size_range[1], step_size_range[2], length.out = 21)
+				psi_vals <- sapply(step_sizes, psiline, gp, adiff, a, as.matrix(K), y, mn, wt, hyperpar)
+				if (!any(is.finite(psi_vals)))
+					stop("optimise() couldn't find optimum step size because of infinite psi(); and our remedy failed: couldn't find region of step_size that would have finite psi")
+				finite_idx_rg <- range(which(is.finite(psi_vals)))
+				if (!all(is.finite(psi_vals[finite_idx_rg[1]:finite_idx_rg[2]])))
+					stop("optimise() couldn't find optimum step size because of infinite psi(); and our remedy failed: there seem to be two different finite regions separated by infinite values: ",
+						capture.output(print(psi_vals)))
+
+				# now, extend the finite region on both sides, if possible, to have the borders in the infinite values - this is to make sure
+				# that we don't miss the optimum. We will hope optimise() will deal with that, if not, we will fall back here with narrower range :)
+				if (finite_idx_rg[1] > 1)
+					finite_idx_rg[1] <- finite_idx_rg[1] - 1
+				if (finite_idx_rg[2] < length(step_sizes))
+					finite_idx_rg[2] <- finite_idx_rg[2] + 1
+				step_size_range <- step_sizes[c(finite_idx_rg[1], finite_idx_rg[2])]
+				warning("optimise() couldn't find optimum step size because of infinite psi(); our remedy: now restricting the region of step_size to ", step_size_range[1], " to ", step_size_range[2])
+			}
+			step_size <- res$minimum
+			a <- a + step_size * adiff # toto `a` je takovy kouzelny vektor... K %*% a dá f a Kx (pro predikce) dá f predikcí!
 		}
 		f <- K %*% a + mn
 		a_doesnt_correspond_with_f <- FALSE
 		obj <- psi(gp, a, f, mn, y, wt, hyperpar)
-		LAiter <- rbind(LAiter, data.frame(LAiter = it, obj = obj, using_f_start_now = using_f_start_now))
-		cat("\tminimized obj = -psi = ", obj, "\n")
+		LAiter <- rbind(LAiter, data.frame(LAiter = it, obj = obj, step_size = step_size, using_f_start_now = using_f_start_now))
+		cat("\tminimized obj = -psi = ", obj, ", step_size = ", step_size, "\n")
 		if (!is.finite(obj)) {	
 			# tato vec se v jednom pripade stala (obj = Inf) kvuli tomu, ze f melo v jednom miste extremni hodnotu (cca 200) 
 			# a d0(f,y) ve fci psi() vratil -Inf
@@ -225,7 +256,7 @@ gc()
 				# zde je treba vyhodit chybu, protoze by to stejne spadlo ve funkci optim
 				# a pokud toto bude problem, bude asi potreba to resit vice principialneji a delat nejaky numericky osetreni ve fci psi()
 				options(error = recover) # tady chci debug rovnou :-)
-				stop("gpFitLaplace: -PSI = obj is not finite:", obj, ", and f_start not used")
+				stop("gpFitLaplace: -PSI = obj is not finite:", obj, ", and f_start not used") # 2026-02: this shouldn't happen now! We are handling this case above by restricting the range for optimise()
 				# bohuzel spousta promennych co pouzivam jako globalnich jsou jen v environmentu v optimise.graf()
 			}
 		} else if (obj > obj.old + tol) {
@@ -246,6 +277,8 @@ gc()
 		
 		#print(gc())
 	}
+	if (!is.finite(obj))
+		stop("Now we have a problem :-)")
   
 	# recompute key components
 	cf <- f - mn
@@ -398,8 +431,8 @@ gc()
 				LAiter = LAiter, lastLAObjDiff = obj - obj.old, f_start_was_reset = f_start_was_reset)
 	fit
 }
-  
-# res <- optimise(psiline, c(0, 2), gp, adiff, a, as.matrix(K), y, d0, mn, wt, hyperpar)
+
+# res <- optimise(psiline, c(0, 2), gp, adiff, a, as.matrix(K), y, mn, wt, hyperpar)
 psiline <- function(s, gp, adiff, a, K, y, mn = 0, wt, hyperpar) 
 {
 	a <- a + s * as.vector(adiff)
