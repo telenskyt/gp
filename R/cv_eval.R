@@ -59,10 +59,12 @@ cv_eval_bern <- function(p, y, p.null)
 		TSS = TSS, 
 		R2_dev = 1 - dev / nullDev, # same as the R2_dev in the Czech Atlas (Stastny et al., 2021)
 		R2_LR = 1 - NLL/nullNLL, # McFadden's, see also https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-what-are-pseudo-r-squareds/ and also package rsq
-		R2_LRNCU = (1 - exp(-2/N*(nullNLL - NLL)))/(1 - exp(-2/N*nullNLL)) # Nagelkerke / Cragg & Uhler’s, see also https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-what-are-pseudo-r-squareds/ and also package rsq.
+		R2_LRNCU = (1 - exp(-2/N*(nullNLL - NLL)))/(1 - exp(-2/N*nullNLL)), # Nagelkerke / Cragg & Uhler’s, see also https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-what-are-pseudo-r-squareds/ and also package rsq.
 			# likelihood ratios:
 			#	0 = null model (with intercept only)
 			#	1 = perfect prediction 
+		NLL = NLL,
+		nullNLL = nullNLL
 	)
 }
 
