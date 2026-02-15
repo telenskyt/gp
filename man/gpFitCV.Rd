@@ -14,6 +14,7 @@ gpFitCV(
   fn.prefix = "",
   log.fn = if (parallel) "log-fold\%f-\%h-\%p.txt" else NULL,
   dump.fn = if (parallel) "dump-fold\%f-\%h_\%p" else NULL,
+  tr.max.lines = 5,
   ...
 )
 }
@@ -39,6 +40,8 @@ the starting values of the hyperparameters will be taken from the corresponding 
 \item{log.fn}{if not \code{NULL}, standard and error output of each fold model job will be saved into a log file with this file name. Special \code{\%} sequences can be used, see Details below.}
 
 \item{dump.fn}{if not \code{NULL}, debug dump of given fold model will be saved upon an error, with this file name (the .rda extension will be added to it). Special \code{\%} sequences can be used, see Details below.}
+
+\item{tr.max.lines}{the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs}
 
 \item{...}{options to be passed to the \code{\link[gpFit]{gpFit()}} method.}
 }
