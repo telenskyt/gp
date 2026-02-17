@@ -1,6 +1,14 @@
 url: https://telenskyt.github.io/gp
 
+news:
+  navbar: false
 
+navbar:
+  components:
+    news:
+      text: News
+      href: news/index.html
+      
 home:
 
   sidebar:
