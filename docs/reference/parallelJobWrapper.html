@@ -19,7 +19,7 @@ error, a dump file will be saved for debugging purposes."><!-- mathjax --><scrip
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
       </span>
     </div>
 
@@ -37,6 +37,9 @@ error, a dump file will be saved for debugging purposes."><!-- mathjax --><scrip
       <a href="../articles/a-simple-example.html">A simple example</a>
     </li>
   </ul></li>
+<li>
+  <a href="../news/index.html">News</a>
+</li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
   <a href="https://github.com/telenskyt/gp/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
@@ -70,7 +73,8 @@ error, a dump file will be saved for debugging purposes.</p>
 <span>  masterPID <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  log.fn <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dump.fn <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  parallel <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  parallel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  tr.max.lines <span class="op">=</span> <span class="fl">5</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -102,6 +106,10 @@ error, a dump file will be saved for debugging purposes.</p>
 <dd><p>should be set to <code>TRUE</code> for the wrapper to work normally. The <code>FALSE</code> setting is just for some perhaps
 debugging purposes, when we want to run the job in non-parallel, interactive mode, in which case most of the wrapper function (logging, setting working directory)
 will be disabled.</p></dd>
+
+
+<dt id="arg-tr-max-lines">tr.max.lines<a class="anchor" aria-label="anchor" href="#arg-tr-max-lines"></a></dt>
+<dd><p>the <code>max.lines</code> parameter for <code>traceback</code>, i.e. the maximum number of lines printed per call when error occurs</p></dd>
 
 </dl></div>
     <div id="details">

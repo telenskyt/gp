@@ -2,10 +2,10 @@
 <url><loc>https://telenskyt.github.io/gp/404.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/articles/a-simple-example.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/articles/index.html</loc></url>
-<url><loc>https://telenskyt.github.io/gp/articles/pok.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/authors.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/index.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/LICENSE-text.html</loc></url>
+<url><loc>https://telenskyt.github.io/gp/news/index.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/reference/cv_eval_bern.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/reference/endLog.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/reference/foreach2.html</loc></url>
@@ -20,8 +20,11 @@
 <url><loc>https://telenskyt.github.io/gp/reference/gpDetermineSize.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/reference/gpFit.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/reference/gpFitCV.html</loc></url>
+<url><loc>https://telenskyt.github.io/gp/reference/gpGetCVModel.html</loc></url>
+<url><loc>https://telenskyt.github.io/gp/reference/gpHyperparCheck.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/reference/gpHyperparCheckAll.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/reference/gpHyperparExportVector.html</loc></url>
+<url><loc>https://telenskyt.github.io/gp/reference/gpHyperparIdx.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/reference/gpHyperparImportVector.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/reference/gpHyperparList.html</loc></url>
 <url><loc>https://telenskyt.github.io/gp/reference/gpHyperparStartFromModel.html</loc></url>

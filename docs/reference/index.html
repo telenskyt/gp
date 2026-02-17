@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
       </span>
     </div>
 
@@ -35,6 +35,9 @@
       <a href="../articles/a-simple-example.html">A simple example</a>
     </li>
   </ul></li>
+<li>
+  <a href="../news/index.html">News</a>
+</li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
   <a href="https://github.com/telenskyt/gp/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
@@ -114,6 +117,14 @@
         </td>
         <td><p>Perform an N-fold cross-validation of a Gaussian process model</p></td>
       </tr><tr><td>
+          <p><code><a href="gpGetCVModel.html">gpGetCVModel()</a></code> </p>
+        </td>
+        <td><p>Get the cross-validation model for given fold</p></td>
+      </tr><tr><td>
+          <p><code><a href="gpHyperparCheck.html">gpHyperparCheck()</a></code> </p>
+        </td>
+        <td><p>Check that hyperparameter vector <code>h</code> is within the limits <code>low</code> and <code>up</code></p></td>
+      </tr><tr><td>
           <p><code><a href="gpHyperparCheckAll.html">gpHyperparCheckAll()</a></code> </p>
         </td>
         <td><p>Check consistency of the hyperparameters</p></td>
@@ -121,6 +132,10 @@
           <p><code><a href="gpHyperparExportVector.html">gpHyperparExportVector()</a></code> </p>
         </td>
         <td><p>export a column from hyperparameter table, for passing it to optimizer (thus skipping the fixed parameters)</p></td>
+      </tr><tr><td>
+          <p><code><a href="gpHyperparIdx.html">gpHyperparIdx()</a></code> </p>
+        </td>
+        <td><p>Get the index of i-th optimized (non-fixed) hyperparameter (numbered from 1) in the table of hyperparameters</p></td>
       </tr><tr><td>
           <p><code><a href="gpHyperparImportVector.html">gpHyperparImportVector()</a></code> </p>
         </td>

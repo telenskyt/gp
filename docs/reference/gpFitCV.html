@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
       </span>
     </div>
 
@@ -35,6 +35,9 @@
       <a href="../articles/a-simple-example.html">A simple example</a>
     </li>
   </ul></li>
+<li>
+  <a href="../news/index.html">News</a>
+</li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
   <a href="https://github.com/telenskyt/gp/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
@@ -68,8 +71,9 @@
 <span>  start.from.model <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  fn.prefix <span class="op">=</span> <span class="st">""</span>,</span>
-<span>  log.fn <span class="op">=</span> <span class="st">"log-fold%f-%h-%p.txt"</span>,</span>
-<span>  dump.fn <span class="op">=</span> <span class="st">"dump-fold%f-%h_%p"</span>,</span>
+<span>  log.fn <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="va">parallel</span><span class="op">)</span> <span class="st">"log-fold%f-%h-%p.txt"</span> <span class="kw">else</span> <span class="cn">NULL</span>,</span>
+<span>  dump.fn <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="va">parallel</span><span class="op">)</span> <span class="st">"dump-fold%f-%h_%p"</span> <span class="kw">else</span> <span class="cn">NULL</span>,</span>
+<span>  tr.max.lines <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -116,6 +120,10 @@ the starting values of the hyperparameters will be taken from the corresponding 
 
 <dt id="arg-dump-fn">dump.fn<a class="anchor" aria-label="anchor" href="#arg-dump-fn"></a></dt>
 <dd><p>if not <code>NULL</code>, debug dump of given fold model will be saved upon an error, with this file name (the .rda extension will be added to it). Special <code>%</code> sequences can be used, see Details below.</p></dd>
+
+
+<dt id="arg-tr-max-lines">tr.max.lines<a class="anchor" aria-label="anchor" href="#arg-tr-max-lines"></a></dt>
+<dd><p>the <code>max.lines</code> parameter for <code>traceback</code>, i.e. the maximum number of lines printed per call when error occurs</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

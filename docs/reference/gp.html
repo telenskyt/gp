@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
       </span>
     </div>
 
@@ -35,6 +35,9 @@
       <a href="../articles/a-simple-example.html">A simple example</a>
     </li>
   </ul></li>
+<li>
+  <a href="../news/index.html">News</a>
+</li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
   <a href="https://github.com/telenskyt/gp/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
@@ -60,7 +63,17 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gp</span><span class="op">(</span><span class="va">f</span>, <span class="va">data</span>, <span class="va">negLogLik</span>, negLogLik.reindex2main <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gp</span><span class="op">(</span></span>
+<span>  <span class="va">f</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  <span class="va">negLogLik</span>,</span>
+<span>  negLogLik.hyperpar <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  negLogLik.formula <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  negLogLik.reindex2main <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  predictor.fun <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  response.parname <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  link <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -76,13 +89,24 @@
 
 
 <dt id="arg-negloglik">negLogLik<a class="anchor" aria-label="anchor" href="#arg-negloglik"></a></dt>
-<dd><p>user-defined negative log likelihood function, taking two parameters: <code>data</code> (object of class gpData), and <code>f</code>, a numeric vector - result of the gaussian process.
-The <code>f</code> vector can be either of the dimension of the gaussian process, or the main table - see the <code>negLogLik.reindex2main</code> parameter.</p></dd>
+<dd><p>user-defined negative log likelihood function, taking two parameters: <code>data</code> (object of class gpData), and <code>par</code>, a list of parameters (numeric scalars or vectors).
+The <code>par</code> parameters list always includes <code>f</code>, a numeric vector - result of the gaussian process. The <code>par$f</code> vector can be either of the dimension of the gaussian process,
+or the main table - see the <code>negLogLik.reindex2main</code> parameter. The <code>par</code> parameters list can optionally include other parameters, see the <code>negLogLik.hyperpar</code> argument below.</p></dd>
+
+
+<dt id="arg-negloglik-hyperpar">negLogLik.hyperpar<a class="anchor" aria-label="anchor" href="#arg-negloglik-hyperpar"></a></dt>
+<dd><p>optional, a named list of extra hyperparameters for the <code>negLogLik</code> function (named list of numeric scalars or vectors); this doesn't include the special
+parameter <code>f</code> (the Gaussian process).</p></dd>
+
+
+<dt id="arg-negloglik-formula">negLogLik.formula<a class="anchor" aria-label="anchor" href="#arg-negloglik-formula"></a></dt>
+<dd><p>optional, formula related to the supplied <code>negLogLik</code> function. This is not used in any way, except it is stored in the object and printed in the summary,
+so it has only informational purpose.</p></dd>
 
 
 <dt id="arg-negloglik-reindex-main">negLogLik.reindex2main<a class="anchor" aria-label="anchor" href="#arg-negloglik-reindex-main"></a></dt>
-<dd><p>should the <code>f</code> parameter of the <code>negLogLik</code> function be reindexed to the rows of the main table?
-If <code>FALSE</code>, the <code>f</code> parameter will be kept at the dimension of the Gaussian Process (as reported by <code><a href="gpDetermineSize.html">gpDetermineSize()</a></code>).
+<dd><p>should the <code>par$f</code> parameter of the <code>negLogLik</code> function be reindexed to the rows of the main table?
+If <code>FALSE</code>, the <code>par$f</code> parameter will be kept at the dimension of the Gaussian Process (as reported by <code><a href="gpDetermineSize.html">gpDetermineSize()</a></code>).
 If the Gaussian process is running at the dimension of the main table, then it does not matter.</p></dd>
 
 </dl></div>
