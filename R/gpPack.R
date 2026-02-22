@@ -57,6 +57,25 @@ gpUnpack <- function (gp, compute = TRUE, need.K = compute, need.L = compute)
 		return(gp)
 	}
 
+	if (is.null(gp$fit[["f"]])) {
+		cat("gpUnpack: $fit$f is missing: need to re-run the gpFitLaplace() for the last iteration\n")
+		
+		gf <- gpFit(gp, h = gpHyperparExportVector(gp, "value"), opt.h = FALSE, grad.computation = FALSE) 
+			# !! there should be an option to avoid mnll computation, too, but perhaps that wouldn't help us anyway, since we need the L too...
+		stopifnot(!is.null(gf[["fit"]]))
+		stopifnot(!is.null(gf$fit[["f"]]))
+		stopifnot(!is.null(gf$fit[["a"]]))
+		stopifnot(!is.null(gf$fit[["K"]]))
+		stopifnot(!is.null(gf$fit[["L"]]))
+		stopifnot(!is.null(gf$fit[["W"]]))
+		gp$fit$f <- gf$fit$f
+		gp$fit$a <- gf$fit$a
+		gp$fit$K <- gf$fit$K
+		gp$fit$L <- gf$fit$L
+		gp$fit$W <- gf$fit$W
+		return(gp)
+	}
+	
 	mstart(id = "K")
 cat("Re-creating covariance matrix... ")
 	gp$fit$K <- K_matrix(gp, comp_means = TRUE)
@@ -65,7 +84,7 @@ cat("Re-creating covariance matrix... ")
 #mstop()
 #mstart()
 	n <- nrow(gp$fit$K)
-
+	
 	hyperpar <- gpHyperparList(gp)
 
 	mn <- mnfun(gp, hyperpar = hyperpar)
