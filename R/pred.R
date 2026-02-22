@@ -217,7 +217,7 @@ pred <- function(gp, predx, same = FALSE, hyperpar = gpHyperparList(gp), compone
 				stopifnot(all(diag(predvar) >= 0, na.rm = TRUE)) # allow NA/NaN, e.g. with NaN weights
 				prediction <- cbind(prediction, sqrt(diag(predvar)))
 				colnames(prediction) <- c("f", "f_SE")
-				if (cov) { # vrat covariancni matici celou - do glob promenne, temporary dirty hack!
+				if (cov.fit) { # vrat covariancni matici celou - do glob promenne, temporary dirty hack!
 					#cat(" I am here")
 					prediction <- list(pred = prediction, cov = predvar)
 					# drive vracel pred.cov do glob. promenne
