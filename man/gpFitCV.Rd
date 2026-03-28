@@ -30,7 +30,8 @@ Note that if the GP dimension is given by some real grouping factor (i.e. \code{
 
 \item{folds}{integer vector of folds to fit; if \code{NULL} (the default), all folds are fit}
 
-\item{start.from.model}{an object of class \code{gp} to take the starting values from. If specified, then for each cross-validation fold model to be fit,
+\item{start.from.model}{an object of class \code{gp} to take the starting values from (from the \code{value} column in the hyperparameter table,
+see \code{link[gpHyperparStartFromModel]}). If specified, then for each cross-validation fold model to be fit,
 the starting values of the hyperparameters will be taken from the corresponding fold model wherever possible.}
 
 \item{parallel}{should the cross-validation models be run in parallel? Uses foreach(), and requires parallel background for foreach() to be already registered.}
