@@ -2,7 +2,8 @@
 #'
 #' @param gp GP model object.
 #' @param h optional; a numeric vector of starting values of hyperparameters (untransformed, i.e. on their most natural scale). If \code{NULL},
-#'   the starting values are taken from \code{gp} hyperparameter table (\code{gp$hyperpar[,"start"]}).
+#'   the starting values are taken from \code{gp} hyperparameter table - from the \code{gp$hyperpar[,"start"]} column when \code{opt.h = TRUE}, or from 
+#'	 the \code{gp$hyperpar[,"value"]} column when \code{opt.h = FALSE}.
 #' @param opt.h logical; should hyperparameters be optimised? Default TRUE; Only rarely you may want to say FALSE.
 #' @param two.stage logical; if TRUE (the default), the two-stage optimization method will be applied (see Details below).
 #' @param stages numerical vector - the optimization stages to be performed. Only relevant for \code{two.stage = TRUE}. Default is \code{1:2}, i.e. both stages.
@@ -206,7 +207,7 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 	} else if (!recursive) { # direct call, no optim
 		# initiate the starting value of h, if needed
 		if (is.null(h)) {
-			h <- gpHyperparExportVector(gp, "start")
+			h <- gpHyperparExportVector(gp, "value")
 		}
 		if (use_f_start) {
 		#	warning("use_f_start works only for opt.h = TRUE")
