@@ -28,7 +28,8 @@ gpFit(
 \item{gp}{GP model object.}
 
 \item{h}{optional; a numeric vector of starting values of hyperparameters (untransformed, i.e. on their most natural scale). If \code{NULL},
-the starting values are taken from \code{gp} hyperparameter table (\code{gp$hyperpar[,"start"]}).}
+the starting values are taken from \code{gp} hyperparameter table - from the \code{gp$hyperpar[,"start"]} column when \code{opt.h = TRUE}, or from
+the \code{gp$hyperpar[,"value"]} column when \code{opt.h = FALSE}.}
 
 \item{opt.h}{logical; should hyperparameters be optimised? Default TRUE; Only rarely you may want to say FALSE.}
 
