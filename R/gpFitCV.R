@@ -18,6 +18,7 @@
 #' @param log.fn if not \code{NULL}, standard and error output of each fold model job will be saved into a log file with this file name. Special \code{\%} sequences can be used, see Details below. 
 #' @param dump.fn if not \code{NULL}, debug dump of given fold model will be saved upon an error, with this file name (the .rda extension will be added to it). Special \code{\%} sequences can be used, see Details below. 
 #' @param tr.max.lines the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs
+#' @param pred.options list of options to be passed to the \code{\link{predict.gp}} method.
 #' @param ... options to be passed to the \code{\link{gpFit}} method.
 #'
 #' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:
@@ -36,7 +37,7 @@
 
 gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.model = NULL,
 	parallel = TRUE, fn.prefix = "", log.fn = if (parallel) "log-fold%f-%h-%p.txt" else NULL, dump.fn = if (parallel) "dump-fold%f-%h_%p"  else NULL,
-	tr.max.lines = 5, 
+	tr.max.lines = 5, pred.options = list(type = "response", se.fit = TRUE),
 	...)
 {
 	args <- list(fold.col = fold.col, fold.fact = fold.fact)
@@ -121,7 +122,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 				gpcv <- gpHyperparStartFromModel(gpcv, start.from.model$fitCV$models[[f]])
 					
 			m <- gpFit(gpcv, ...)
-			predCV <- predict(m, test_data, type = "response", se.fit = TRUE)
+			predCV <- do.call(predict, c(list(m, test_data), pred.options))
 			
 			m <- gpPack(m, maximum = TRUE)
 			# pack it even more! :

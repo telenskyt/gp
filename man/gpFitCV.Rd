@@ -15,6 +15,7 @@ gpFitCV(
   log.fn = if (parallel) "log-fold\%f-\%h-\%p.txt" else NULL,
   dump.fn = if (parallel) "dump-fold\%f-\%h_\%p" else NULL,
   tr.max.lines = 5,
+  pred.options = list(type = "response", se.fit = TRUE),
   ...
 )
 }
@@ -44,6 +45,8 @@ must have already been fitted by gpFitCV with the exact same folds.}
 \item{dump.fn}{if not \code{NULL}, debug dump of given fold model will be saved upon an error, with this file name (the .rda extension will be added to it). Special \code{\%} sequences can be used, see Details below.}
 
 \item{tr.max.lines}{the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs}
+
+\item{pred.options}{list of options to be passed to the \code{\link{predict.gp}} method.}
 
 \item{...}{options to be passed to the \code{\link{gpFit}} method.}
 }
