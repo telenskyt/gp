@@ -31,8 +31,9 @@ Note that if the GP dimension is given by some real grouping factor (i.e. \code{
 \item{folds}{integer vector of folds to fit; if \code{NULL} (the default), all folds are fit}
 
 \item{start.from.model}{an object of class \code{gp} to take the starting values from (from the \code{value} column in the hyperparameter table,
-see \code{link[gpHyperparStartFromModel]}). If specified, then for each cross-validation fold model to be fit,
-the starting values of the hyperparameters will be taken from the corresponding fold model wherever possible.}
+see \code{\link{gpHyperparStartFromModel}}). If specified, then for each cross-validation fold model to be fit,
+the starting values of the hyperparameters will be taken from the corresponding fold model wherever possible. This implies that the object specified in this argument
+must have already been fitted by gpFitCV with the exact same folds.}
 
 \item{parallel}{should the cross-validation models be run in parallel? Uses foreach(), and requires parallel background for foreach() to be already registered.}
 
@@ -44,7 +45,7 @@ the starting values of the hyperparameters will be taken from the corresponding 
 
 \item{tr.max.lines}{the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs}
 
-\item{...}{options to be passed to the \code{\link[gpFit]{gpFit()}} method.}
+\item{...}{options to be passed to the \code{\link{gpFit}} method.}
 }
 \description{
 Function will fit the GP model for each of the N cross-validation folds, and evaluate cross-validation prediction for the whole training data set.

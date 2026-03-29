@@ -9,14 +9,16 @@
 #' @param fold.fact a factor along which the cross-validation folds (\code{fold.col}) are specified. Factor \code{"1"} means the folds are specified for the rows of the main table.
 #'		Note that if the GP dimension is given by some real grouping factor (i.e. \code{p$GP_factor != "1"}), then the \code{fold.fact} must be that factor.
 #' @param folds integer vector of folds to fit; if \code{NULL} (the default), all folds are fit
-#' @param start.from.model an object of class \code{gp} to take the starting values from. If specified, then for each cross-validation fold model to be fit, 
-#' 		the starting values of the hyperparameters will be taken from the corresponding fold model wherever possible.
+#' @param start.from.model an object of class \code{gp} to take the starting values from (from the \code{value} column in the hyperparameter table, 
+#'		see \code{\link{gpHyperparStartFromModel}}). If specified, then for each cross-validation fold model to be fit, 
+#' 		the starting values of the hyperparameters will be taken from the corresponding fold model wherever possible. This implies that the object specified in this argument
+#'		must have already been fitted by gpFitCV with the exact same folds.
 #' @param parallel should the cross-validation models be run in parallel? Uses foreach(), and requires parallel background for foreach() to be already registered.
 #' @param fn.prefix character; prefix of file names for log files (\code{log.fn}) and dump files (\code{dump.fn}), in case these are not \code{NULL}
 #' @param log.fn if not \code{NULL}, standard and error output of each fold model job will be saved into a log file with this file name. Special \code{\%} sequences can be used, see Details below. 
 #' @param dump.fn if not \code{NULL}, debug dump of given fold model will be saved upon an error, with this file name (the .rda extension will be added to it). Special \code{\%} sequences can be used, see Details below. 
 #' @param tr.max.lines the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs
-#' @param ... options to be passed to the \code{\link[gpFit]{gpFit()}} method.
+#' @param ... options to be passed to the \code{\link{gpFit}} method.
 #'
 #' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:
 #' - \code{\%f} - number of the cross-validation fold
