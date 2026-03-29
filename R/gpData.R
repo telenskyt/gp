@@ -383,6 +383,7 @@ gpDataPrepare <- function(gp, gpData)
 #' @return Integer. Size of the dataset along the given grouping factor.
 #' @export
 #'
+# !!! nemel by se zde osetrit ten pripad NOTE-001-size viz nize??
 gpDataSize <- function(gpData, fact = "1")
 {
 	if (fact == "1")
@@ -433,6 +434,9 @@ gpDataSize <- function(gpData, fact = "1")
 # 2025-10-18: ?? nevrati to presne totez co gpDataSize(gp$data, gp$GP_factor), jak to pouzivam v K_matrix()?
 #				asi jo, ale je to cirkularni definice, protoze to gp$GP_factor se inicializuje na zaklade teto funkce!
 #		- tj. prejmenovat ji spis na gpDetermineSize() a prezentovat spis jako one time function?
+# 2026-03-29: nemelo by tohle jen determinovat factor, a vsechno ohledne size nechat na gpDataSize?
+#		a to co je v NOTE-001-size, je pripad neosetreny v gpDataSize! otestovat jestli takovy pripad vubec muze existovat (???) a pripadne ho tam presunout!
+
 gpDetermineSize <- function (gp)
 {
 	data <- gp$data
@@ -449,6 +453,7 @@ gpDetermineSize <- function (gp)
 		else {
 			# it is a factor that is not used for indexing of any table
 			# take it from the main table
+			# (!!!NOTE-001-size)
 			stopifnot(gpDataHasMainTable(data))
 			stopifnot(factors[1] %in% colnames(data[[1]]))
 			size <- length(unique(data[[1]][[factors[1]]]))
