@@ -17,6 +17,24 @@ gpLoo <- function (gp)
 	data.frame(f = f.loo, f_SE = sqrt(v.loo))
 }
 
+
+# GPStuff implementation
+gpLoo2 <- function (gp)
+{
+	pr <- predict(gp, type = "latent", se.fit = TRUE)
+	pr.cov <- pr[,"f_SE"]^2 # diagonal of the predicted posterior distribution covariance matrix
+	v.loo <- 1/(1/pr.cov - gp$fit$W) 
+		# ?? hele, neni to v.loo
+		# protoze pr.cov = (K^-1 + W)^-1 # vynecham to diag() a udelam ho az na konci
+		# takze 1(1/pr.cov - W), kdyz zobecnim = (pr.cov^-1 - W)^-1 = (K^-1)^-1 = K !!! 
+		# takze je to totez jako vzit diag(K)???
+		#
+		# jenze trik je asi v tom, ze 1/diag(A) neni totez co diag(A^-1) - ANO! Presne!
+	#d1 <- d1(gp, f = gp$fit$f, hyperpar = gpHyperparList(gp)) # this is the same as gp$fit$a
+	f.loo <- gp$fit$f - v.loo * gp$fit$a
+	data.frame(f = f.loo, f_SE = sqrt(v.loo))
+}
+
 #' @export
 gpLooExact <- function (gp, fold.fact = g$GP_factor, ...)
 {
