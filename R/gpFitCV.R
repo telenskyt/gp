@@ -75,8 +75,9 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 	masterPID <- Sys.getpid()
 	#fold.run <- foreach (f = folds, .packages = c("gp")) %do_as_needed% {
 	#fold.run <- foreach (f = folds, .packages = c("gp", "RTMB")) %do_as_needed% {	
-	fold.run <- foreach (f = folds, .packages = .packages()) %do_as_needed% {	
-		options(warn = 1) # tady veskere options() musi byt znova, protoze na worker/cluster se to neexportuje
+	fold.run <- foreach (f = folds, .packages = .packages()) %do_as_needed% {
+		if (getOption("warn") < 1)
+			options(warn = 1) # tady veskere options() musi byt znova, protoze na worker/cluster se to neexportuje
 		options(show.error.locations = TRUE)
 		options(keep.source = TRUE)	
 		options(traceback.max.lines = tr.max.lines)
@@ -109,7 +110,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 			{ ### Integrate the newly subsetted data into the CV model
 			  ### !! This code is duplicated with gp() - perhaps a sign that the interface should have been different, not passing data to gp() but to gpFit() and gpFitCV()?
 			gpcv$obsdata <- train_data
-			gpcv$data <- gpDataPrepare(gpcv, gpcv$obsdata)
+			gpcv$data <- gpDataPrepare(gpcv, gpcv$obsdata) # NOTE-002-scaling-chytak!!! Pokud existuje gpcv$data, tak gpDataPrepare by pouzil scaling z nej! asi by se to melo explicitne specifikovat argumentem!
 
 			gpcv$covComp_df <- gp:::gpComponentsTable(gpcv)
 
