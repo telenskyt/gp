@@ -330,6 +330,8 @@ gpDataIsScaled <- function (gpData)
 #		- if the gp object already has scaled training data (gp$data), this function will take scaling from there, and
 # It issues an error, if there are any non-numeric columns,
 #'@export
+#
+# NOTE-002-scaling-chytak!!
 gpDataPrepare <- function(gp, gpData)
 {
 	stopifnot(class(gp) == "gp")
@@ -355,11 +357,20 @@ gpDataPrepare <- function(gp, gpData)
 		if (!gp$dataReq$mats[[m]]$scaling)
 			gpData[[m]] <- as.matrix(gpData[[m]])
 		else { # scale
-			if (is.null(gp[["data"]]))  # training dataset not yet present
-										# have to use gp[["data"]] instead of gp$data due to the damn partial matching
+			if (is.null(gp[["data"]]))	# training dataset not yet present
+										# have to use gp[["data"]] instead of gp$data due to the damn partial matching						 
 				gpData[[m]] <- scale(as.matrix(gpData[[m]]))
 			else 					# take scaling from the training dataset
 				gpData[[m]] <- scale(as.matrix(gpData[[m]]), center = attr(gp$data[[m]], "scaled:center"), scale = attr(gp$data[[m]], "scaled:scale"))
+				
+			if (any(attr(gpData[[m]], "scaled:scale") == 0)) {
+				zero.var.cols <- which(attr(gpData[[m]], "scaled:scale") == 0)
+				warning("These columns in table '", m, "' have zero variation: ", paste(names(zero.var.cols), collapse = ", "))
+				# correct NaN's produced by scale() to zeros
+				stopifnot(all(!is.finite(gpData[[m]][,zero.var.cols]))) # not necessary, just a check, if they fix scale() and this will not trigger any more, you can just remove this
+				gpData[[m]][,zero.var.cols] <- 0
+				# rescaling back will work, since scaled:center is alright!
+			}
 		}
 		# don't forget to restore the "fact" attribute!
 		attr(gpData[[m]], "fact") <- fact_attr
