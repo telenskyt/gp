@@ -14,6 +14,14 @@
 #'			If \code{FALSE}, the \code{par$f} parameter will be kept at the dimension of the Gaussian Process (as reported by \code{gpDetermineSize()}).
 #'			If the Gaussian process is running at the dimension of the main table, then it does not matter.
 #'
+#' @param W.type the type of the hessian matrix (\code{W}) of the user-defined negative log likelihood function (\code{negLogLik})"
+#' \describe{
+#' \item{\code{"diag"}}{(default) - the hessian matrix (\code{W}) is diagonal. Most common case, fastest computation.}
+#' \item{\code{"bdiag"}}{the hessian matrix (\code{W}) is block-diagonal}
+#' \item{\code{"other"}}{the hessian matrix (\code{W}) is a general matrix.}
+#' }
+#' One should keep the setting as specific as possible to keep the computation efficient.
+#'
 #' @returns object of class gp - the gaussian process model. Some important slots:
 #'\describe{
 #'  \item{$hyperpar}{hyperparameter table (see XXX). User is invited to tweak these settings.}
@@ -22,6 +30,7 @@
 #'}
 #' @export
 gp <- function(f, data, negLogLik, negLogLik.hyperpar = NULL, negLogLik.formula = NULL, negLogLik.reindex2main = TRUE,
+	W.type = c("diag", "bdiag", "other"),
 	predictor.fun = NULL, response.parname = NULL, link = NULL)
 {
 	gp <- gpFormula(f)
@@ -58,6 +67,7 @@ gp <- function(f, data, negLogLik, negLogLik.hyperpar = NULL, negLogLik.formula 
 			stop("The parameter negLogLik.reindex2main = TRUE, but I cannot reindex from the factor ", gp$GP_factor, ", at which gaussian process is running, to the main table, since it is missing in the training data. Supply the main table or consider setting negLogLik.reindex2main = FALSE.")
 	}
 
+	gp$W.type <- match.arg(W.type)
 	gp$hyperpar <- gpHyperparDefaults(gp)
 	gpHyperparCheckAll(gp)
 
