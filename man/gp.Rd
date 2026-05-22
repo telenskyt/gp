@@ -11,6 +11,7 @@ gp(
   negLogLik.hyperpar = NULL,
   negLogLik.formula = NULL,
   negLogLik.reindex2main = TRUE,
+  W.type = c("diag", "bdiag", "other"),
   predictor.fun = NULL,
   response.parname = NULL,
   link = NULL
@@ -21,9 +22,30 @@ gp(
 
 \item{data}{object of class gpData, created by the gpData() function}
 
-\item{negLogLik}{user-defined negative log likelihood function, taking two parameters: \code{data} (object of class gpData), and \code{par}, a list of parameters (numeric scalars or vectors).
-The \code{par} parameters list always includes \code{f}, a numeric vector - result of the gaussian process. The \code{par$f} vector can be either of the dimension of the gaussian process,
-or the main table - see the \code{negLogLik.reindex2main} parameter. The \code{par} parameters list can optionally include other parameters, see the \code{negLogLik.hyperpar} argument below.}
+\item{negLogLik}{either a single function, or a named list of three functions (three-stage template); these are two ways to supply the user-defined negative log likelihood function p(y|f):
+\enumerate{
+\item \code{negLogLik} is a single function \code{f(data, par)}, taking two parameters:
+\describe{
+\item{data}{object of class \code{gpData}, containing both predictors and a response variable}
+\item{\code{par}}{a list of parameters (numeric scalars or vectors).
+Always includes \code{f}, a numeric vector - result of the gaussian process. The \code{par$f} vector can be either of the dimension of the gaussian process,
+or the main table - see the \code{negLogLik.reindex2main} parameter. The \code{par} parameters list can optionally include other parameters, see the \code{negLogLik.hyperpar} argument below.
+}
+}
+\item Logic is similar as in the previous case, but the \code{negLogLik} is supplied as a chain of three consecutive functions (three-stage template). Then, \code{negLogLik} is a named list of three functions:
+\describe{
+\item{\code{pred.link}}{either character or \code{function(data, par)}. This is predictor & link component. Processes the parameters into other parameters;
+is also used by \code{predict(type = "response")} for predictions,
+therefore, the \code{data} might not contain the response variable (thus, the response variable must not be used by this function). Should be either a character string representing
+the name of a link function    (this will be the most frequent case; see !!! for supported link functions), or a \code{function(data, par)} (see above for parameter description !!!).
+This function will return a named list of parameters \code{par} that will be passed on to the next stage.}
+\item{\code{process}}{\code{function(data, par)}, this function processes the parameters and the \code{data} (which always contain the response variable here) and shapes both
+parameters and data for particular likelihood function. This function should return a named list required by particular likelihood function (see !!!).
+This component is used by cross-validation and Laplace-Fisher approximation.}
+\item{\code{lik}}{function evaluating the likelihood. Either character representing name of likelihood function (see !!! for supported values), or custom \code{function(x)} taking \code{x} from
+the previous stage.}
+}
+}}
 
 \item{negLogLik.hyperpar}{optional, a named list of extra hyperparameters for the \code{negLogLik} function (named list of numeric scalars or vectors); this doesn't include the special
 parameter \code{f} (the Gaussian process).}
@@ -34,6 +56,14 @@ so it has only informational purpose.}
 \item{negLogLik.reindex2main}{should the \code{par$f} parameter of the \code{negLogLik} function be reindexed to the rows of the main table?
 If \code{FALSE}, the \code{par$f} parameter will be kept at the dimension of the Gaussian Process (as reported by \code{gpDetermineSize()}).
 If the Gaussian process is running at the dimension of the main table, then it does not matter.}
+
+\item{W.type}{the type of the hessian matrix (\code{W}) of the user-defined negative log likelihood function (\code{negLogLik})"
+\describe{
+\item{\code{"diag"}}{(default) - the hessian matrix (\code{W}) is diagonal. Most common case, fastest computation. This is usually the case when the user-defined likelihood factorizes over individual \eqn{f_i}'s.}
+\item{\code{"bdiag"}}{the hessian matrix (\code{W}) is block-diagonal. This is usually the case when the user-defined likelihood factorizes over groups of \eqn{f_i}'s.}
+\item{\code{"other"}}{the hessian matrix (\code{W}) is a general matrix.}
+}
+One should keep the setting as specific as possible to keep the computation efficient.}
 }
 \value{
 object of class gp - the gaussian process model. Some important slots:
