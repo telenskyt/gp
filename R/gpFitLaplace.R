@@ -350,17 +350,11 @@ if (grad.computation) {
     
 	mstart(id = "graf_grad_common", mem_precise = TRUE)
     # gradient components
-    W12 <- matrix(rep(rW, n), n)
+	LTinv.rW <- backsolve(L, diag(rW), transpose = TRUE) # L^T^-1 chol(W)^T
 gc()
-	fw <- forwardsolve(t(L), diag(rW)) 
-gc()
-    R <- W12 * backsolve(L, fw)
-rm(fw)
-gc()
-    W12 <- W12 * K
-gc()
-    colSums_C2 <- colSums(forwardsolve(t(L), W12)^2)
-    rm(W12)
+    R <- crossprod(LTinv.rW) 
+    diag.CT.C <- colSums((LTinv.rW %*% K)^2) # diag(C^T C)
+    rm(LTinv.rW)
 gc()
 	cat("gpFitLaplace(): common gradient computations took ")
 	mstop(id = "graf_grad_common")
