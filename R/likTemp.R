@@ -2,7 +2,6 @@
 #library(methods)
 
 #' @import methods
-#' xxx@importFrom methods setRefClass
 #' @export likTempPhased
 #' @exportClass likTempPhased
 likTempPhased <- setRefClass(
@@ -37,17 +36,28 @@ initialize = function(
 
 
 ### template interface
-
-# par - a list of vectors or matrices
+#
+# par - a list of vectors or matrices, contains the data as well as the parameters, in the format required for this given likelihood
+# optional parameters:
+#	log		return logarithm? Must be FALSE by default
+#	sum		sum the logarithms? Must be FALSE by default
+#
+# returns: likelihood, as a probability, kept elementwise! 
+#
 # assumption - each vector element (or matrix row) behaves independently
-lik = function(par, log = FALSE)
+lik = function(par, ...)
+{
+	lik.getfun()(par, ...)
+},
+
+lik.getfun = function ()
 {
 	if (!is.null(likFun))
-		return(likFun(par))
+		return(likFun)
 
 	if (!is.null(likType))
-		return(do.call(paste0("lik", capFirst(likType)), list(par = par, log = log)))
-
+		return(match.fun(paste0("lik", capFirst(likType))))
+		
 	stop("error")
 },
 
@@ -84,10 +94,18 @@ stages = function (data, par, stages = 1:5)
 		par <- link(data, par)
 	if (3 %in% stages)
 		par <- process(data, par)
-	if (4 %in% stages)
-		par <- lik(par)
-	if (5 %in% stages)
-		par <- -sum(log(par))
+	if (all(4:5 %in% stages) && "log" %in% names(formals(lik.getfun()))) {
+		# both stages to be run; then it is better to calculate the log likelihood directly, if possible (for numerical reasons)
+		if ("sum" %in% names(formals(lik.getfun())))
+			par <- -lik(par, log = TRUE, sum = TRUE) # in some cases, even summing directly might optimize things (especially RTMB::MakeTape), see e.g. likBern
+		else
+			par <- -sum(lik(par, log = TRUE))
+	} else {
+		if (4 %in% stages)
+			par <- lik(par)
+		if (5 %in% stages)
+			par <- -sum(log(par))
+	}
 	return(par)
 }
 
