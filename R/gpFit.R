@@ -17,7 +17,16 @@
 #' @param hessian logical; compute and return the Hessian during the optimization. Warning: may be heavy on CPU time! Default FALSE.
 #' @param opt.control list of control parameters passed to the \code{optim(control = )}
 #' @param verbose logical
-#' @param method character; fitting method. Currently \code{"Laplace"} supported (Laplace approximation).
+#' @param method character; fitting method. Either \code{"Laplace"} (Laplace approximation), or \code{"Laplace-Fisher"} (Laplace-Fisher approximation).
+#'		See \code{fisher.options} for the latter method.
+#'		Laplace-Fisher approximation is the solution for when the hessian of the negative log likelihood is not positive semi-definite.
+#'
+#' @param fisher.options list of the following options specifying how to generate the Fisher information matrix:
+#' \describe{
+#' \item{\code{sampling}}{should sampling be used to create the Fisher information matrix? If \code{FALSE} (the default), likelihood-specific method must be implemented.
+#'							Sampling can be used when no such method is implemented (but it is slower).}
+#' \item{\code{samples}}{how many samples should be generated for the sampling method?}
+#' }
 #' @param use_f_start logical; internal optimization - start each Laplace approximation from the optimized \code{f} vector from the previous hyperparameter iteration.
 #' @param weights numeric or \code{NULL}; observation weights (not implemented).
 #' @param grad.computation logical; compute gradients during the gaussian process optimization (required when
@@ -68,15 +77,18 @@
 #
 # opt.control - option to pass to optim(control = )
 
-gpFit <- function (gp, h = NULL, opt.h = TRUE,
+gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'), 
+				  opt.h = TRUE,
 				  two.stage = TRUE,
 				  stages = 1:2,
 				  stage1low = 1e-2,
+				  h = NULL,
 				  use.prior = TRUE,
 				  hessian = FALSE,
 #				  optim.low = -Inf, optim.up = Inf,
 				  opt.control = list(factr = 1e10, maxit = 190),
-				  verbose = FALSE, method = c('Laplace'),
+				  fisher.options = list(sampling = FALSE, samples = 1000),
+				  verbose = FALSE, 
 				  use_f_start = TRUE,
 				  weights = NULL,
 				  grad.computation = TRUE,
@@ -226,10 +238,10 @@ gpFit <- function (gp, h = NULL, opt.h = TRUE,
 	gpHyperparCheck(gp, h)
 
 	# fit model
-	if (method == 'Laplace') {
+	if (method == 'Laplace' || method == 'Laplace-Fisher') {
 		# by Laplace approximation
-		fit <- gpFitLaplace(gp, h = h, wt = weights, e = NULL, verbose = verbose, use_f_start = use_f_start,
-			grad.computation = grad.computation, ...)
+		fit <- gpFitLaplace(gp, method = method, h = h, wt = weights, e = NULL, verbose = verbose, use_f_start = use_f_start,
+			grad.computation = grad.computation, fisher.options = fisher.options, ...)
 	} else {
 		stop("Not implemented")
 	}
