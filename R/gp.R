@@ -107,7 +107,7 @@ gpSetData <- function (gp, data)
 	gp_size <- gpDetermineSize(gp)
 	gp$GP_size <- gp_size$size
 	if (!is.null(gp[["GP_factor"]]))
-		stopifnot(gpcv$GP_factor == gp_size$fact) # should still be the same
+		stopifnot(gp$GP_factor == gp_size$fact) # should still be the same
 		
 	gp$GP_factor <- gp_size$fact # bude vzdy character string ruzny od "", NA, NULL, viz gpDetermineSize()
 
