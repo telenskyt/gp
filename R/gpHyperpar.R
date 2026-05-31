@@ -82,7 +82,7 @@ gpHyperparDefaults <- function (gp)
 		}
 	}
 	# likelihood hyperparameters, if any
-	likHyperparList <- gp$negLogLik.hyperpar
+	likHyperparList <- gp$lik.hyperpar
 	for (par in names(likHyperparList)) {
 		stopifnot(is.numeric(likHyperparList[[par]]))
 		len <- length(likHyperparList[[par]])
