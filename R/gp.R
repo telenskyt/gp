@@ -3,7 +3,11 @@
 #'
 #' @param f formula for the covariance matrix
 #' @param data object of class gpData, created by the gpData() function
-#' @param negLogLik either a single function, or a named list of three functions (three-stage template); these are two ways to supply the user-defined negative log likelihood function p(y|f):
+#' @param lik an object of class likTemp, representing the user-defined template of the likelihood function \code{p(y|f)}.
+#' 
+#' ORIG DOC TO BE DELETED - MAYBE USE PART OF THESE FOR THE DOCUMENTATION OF CLASS likTemp
+#' either a single function, or a named list of three functions (three-stage template); these are two ways to supply 
+#' the user-defined negative log likelihood function p(y|f):
 #' \enumerate{
 #'	\item \code{negLogLik} is a single function \code{f(data, par)}, taking two parameters: 
 #'	\describe{
@@ -27,15 +31,15 @@
 #'		the previous stage.}
 #' }
 #' }
-#' @param negLogLik.hyperpar optional, a named list of extra hyperparameters for the \code{negLogLik} function (named list of numeric scalars or vectors); this doesn't include the special 
-#' 		parameter \code{f} (the Gaussian process).
-#' @param negLogLik.formula optional, formula related to the supplied \code{negLogLik} function. This is not used in any way, except it is stored in the object and printed in the summary,
+#' @param lik.hyperpar optional, a named list of extra likelihood hyperparameters for the \code{negLogLik} function (named list of numeric scalars or vectors); this doesn't include the special 
+#' 		parameter \code{f} (the Gaussian process). This effectively defines the likelihood hyperparameters, named ".lik" in the hyperparameter table.
+#' @param lik.formula optional, formula related to the supplied \code{negLogLik} function. This is not used in any way, except it is stored in the object and printed in the summary,
 #'		so it has only informational purpose.
-#' @param negLogLik.reindex2main should the \code{par$f} parameter of the \code{negLogLik} function be reindexed to the rows of the main table?
+#' @param lik.reindex2main should the \code{par$f} parameter of the \code{negLogLik} function be reindexed to the rows of the main table?
 #'			If \code{FALSE}, the \code{par$f} parameter will be kept at the dimension of the Gaussian Process (as reported by \code{gpDetermineSize()}).
 #'			If the Gaussian process is running at the dimension of the main table, then it does not matter.
 #'
-#' @param W.type the type of the hessian matrix (\code{W}) of the user-defined negative log likelihood function (\code{negLogLik})"
+#' @param W.type the type of the hessian matrix (\code{W}) of the negative log likelihood function (as defined by the \code{lik} parameter)
 #' \describe{
 #' \item{\code{"diag"}}{(default) - the hessian matrix (\code{W}) is diagonal. Most common case, fastest computation. This is usually the case when the user-defined likelihood factorizes over individual \eqn{f_i}'s.}
 #' \item{\code{"bdiag"}}{the hessian matrix (\code{W}) is block-diagonal. This is usually the case when the user-defined likelihood factorizes over mutually disjoint sets of \eqn{f_i}'s.}
@@ -50,7 +54,7 @@
 #'  \item{$data}{training data prepared for model fit - converted to matrices, and scaled (standardized) where appropriate}
 #'}
 #' @export
-gp <- function(f, data, negLogLik, negLogLik.hyperpar = NULL, negLogLik.formula = NULL, negLogLik.reindex2main = TRUE,
+gp <- function(f, data, lik, lik.hyperpar = NULL, lik.formula = NULL, lik.reindex2main = TRUE,
 	W.type = c("diag", "bdiag", "other"),
 	predictor.fun = NULL, response.parname = NULL, link = NULL)
 {
@@ -74,18 +78,18 @@ gp <- function(f, data, negLogLik, negLogLik.hyperpar = NULL, negLogLik.formula 
 	gp$GP_size <- gp_size$size
 	gp$GP_factor <- gp_size$fact # bude vzdy character string ruzny od "", NA, NULL, viz gpSize()
 
-	stopifnot(is.function(negLogLik))
-	gp$negLogLik <- negLogLik
-	if (is.null(negLogLik.hyperpar))
-		negLogLik.hyperpar <- list()
-	gp$negLogLik.hyperpar <- negLogLik.hyperpar
-	if ("f" %in% names(gp$negLogLik.hyperpar))
-		stop("The negLogLik.hyperpar cannot contain parameter named 'f' - this is reserved for the Gaussian process.")
-	gp$negLogLik.formula <- negLogLik.formula
-	gp$negLogLik.reindex2main <- negLogLik.reindex2main
-	if (gp$negLogLik.reindex2main && gp$GP_factor != "1") { # the reindexing is desired to take place
+	stopifnot(is(lik, "likTempPhased"))
+	gp$lik <- lik
+	if (is.null(lik.hyperpar))
+		lik.hyperpar <- list()
+	gp$lik.hyperpar <- lik.hyperpar
+	if ("f" %in% names(gp$lik.hyperpar))
+		stop("The lik.hyperpar cannot contain parameter named 'f' - this is reserved for the Gaussian process.")
+	gp$lik.formula <- lik.formula
+	gp$lik.reindex2main <- lik.reindex2main
+	if (gp$lik.reindex2main && gp$GP_factor != "1") { # the reindexing is desired to take place
 		if (!gpDataHasMainTable(gp$data))
-			stop("The parameter negLogLik.reindex2main = TRUE, but I cannot reindex from the factor ", gp$GP_factor, ", at which gaussian process is running, to the main table, since it is missing in the training data. Supply the main table or consider setting negLogLik.reindex2main = FALSE.")
+			stop("The parameter lik.reindex2main = TRUE, but I cannot reindex from the factor ", gp$GP_factor, ", at which gaussian process is running, to the main table, since it is missing in the training data. Supply the main table or consider setting lik.reindex2main = FALSE.")
 	}
 
 	gp$W.type <- match.arg(W.type)
