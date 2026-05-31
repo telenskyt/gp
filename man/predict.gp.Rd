@@ -7,18 +7,15 @@
 \method{predict}{gp}(
   gp,
   newdata = NULL,
-  hyperpar = gpHyperparList(gp),
+  type = c("latent", "terms", "response"),
+  se.fit = FALSE,
+  cov.fit = FALSE,
+  CI = 0.95,
   components = NULL,
   comp_missing = c("avg", "none"),
   w = NULL,
   groupMeans = NULL,
-  type = c("latent", "response"),
-  se.fit = FALSE,
-  cov.fit = FALSE,
-  CI = 0.95,
-  predictor.fun = NULL,
-  link = NULL,
-  parname = NULL,
+  hyperpar = gpHyperparList(gp),
   maxn = NULL,
   pred.sims = 1e+05,
   Kx.cache = NULL,
@@ -33,7 +30,17 @@
 the unscaled training dataset used for fitting the model. If \code{NULL} (the default), predictions will be made on the training dataset (which
 is going to be super fast if CI = NULL)}
 
-\item{hyperpar}{(optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.}
+\item{type}{character; type of prediction:
+\describe{
+\item{\code{"latent"}}{predictions directly from the Gaussian Process itself (\code{f} and optionally \code{f_SE}), always in the dimension of the GP (\code{gp$GP_factor})}
+\item{\code{"terms"}}{predictions including GP (\code{f} and optionally \code{f_SE}) along with all the other terms used in the likelihood template. If gp$lik.reindex2main = TRUE,
+the predictions will be reindexed to the dimension of the main table.}
+\item{\code{"response"}}{predictions after applying the inverse link function. If gp$lik.reindex2main = TRUE,
+the predictions will be reindexed to the dimension of the main table.}
+}}
+
+\item{cov.fit}{logical; if \code{TRUE}, the covariance matrix of the predictions will also be returned (can be very memory consuming for large datasets!).
+Default is \code{FALSE}.}
 
 \item{components}{of the covariance formula. One of the following:
 \itemize{
@@ -66,18 +73,7 @@ if more different averages with different weights are desired, \code{w} can be a
 
 \item{groupMeans}{optional, factor of the size of the predicted dataset. If provided, mean predictions for each factor level are calculated.}
 
-\item{type}{character; type of prediction:
-\describe{
-\item{\code{"response"}}{(default) - predictions on the response scale}
-\item{\code{"latent"}}{predictions on the latent scale}
-}}
-
-\item{cov.fit}{logical; if \code{TRUE}, the covariance matrix of the predictions will also be returned (can be very memory consuming for large datasets!).
-Default is \code{FALSE}.}
-
-\item{link}{character, optional. In case of \code{type = "response"}, what should be the link function to take inverse of for calculating the derived quantity (response scale)? Character as passed to \code{make.link()}.}
-
-\item{parname}{character, optional. In case of \code{type = "response"}, what should be the name of the parameter which is the derived quantity on the response scale?}
+\item{hyperpar}{(optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.}
 
 \item{maxn}{maximum maximum dataset size to fit at once (!!! the unit ???!!!); if the dataset is larger, it will be split into chunks of size \code{maxn}
 before predictions are calculated. This parameter doesn't affect the result. It is only to speed-up the computation and use less memory by splitting the dataset
@@ -97,7 +93,15 @@ caching parts of the K(newdata, newdata) matrix.}
 \item{!!!!!!}{upravit po nove definici - mozna udelat default NULL? CI numeric between 0 and 1, or \code{NULL}; confidence level for the confidence intervals to be calculated. If \code{NULL}, no standard errors
 and confidence intervals will be calculated, which makes the prediction much faster (but then also no mean on the response scale will be
 calculated - because for this, the standard error of the latent GP \code{f} is needed.)). Default is 0.95.}
+
+\item{link}{character, optional. In case of \code{type = "response"}, what should be the link function to take inverse of for calculating the derived quantity (response scale)? Character as passed to \code{make.link()}.}
+
+\item{parname}{character, optional. In case of \code{type = "response"}, what should be the name of the parameter which is the derived quantity on the response scale?}
+}
+\value{
+A matrix of predictions, with columns \code{f} and \code{f_SE} (if \code{se.fit = TRUE}). If \code{cov.fit = TRUE}, returns a named list, \code{pred} will be
+the mentioned matrix and \code{cov} will be the full covariance matrix. For the dimension of the prediction, see the \code{type} parameter.
 }
 \description{
-Predict from a fitted Gaussian process model. Predictions are done at the level of the Gaussian Process, i.e. along the factor specified by \code{gp$GP_factor}.
+Predict from a fitted Gaussian process model.
 }

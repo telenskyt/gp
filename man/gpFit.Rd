@@ -6,16 +6,17 @@
 \usage{
 gpFit(
   gp,
-  h = NULL,
+  method = c("Laplace", "Laplace-Fisher"),
   opt.h = TRUE,
   two.stage = TRUE,
   stages = 1:2,
   stage1low = 0.01,
+  h = NULL,
   use.prior = TRUE,
   hessian = FALSE,
   opt.control = list(factr = 1e+10, maxit = 190),
+  fisher.options = list(sampling = FALSE, samples = 1000),
   verbose = FALSE,
-  method = c("Laplace"),
   use_f_start = TRUE,
   weights = NULL,
   grad.computation = TRUE,
@@ -27,9 +28,9 @@ gpFit(
 \arguments{
 \item{gp}{GP model object.}
 
-\item{h}{optional; a numeric vector of starting values of hyperparameters (untransformed, i.e. on their most natural scale). If \code{NULL},
-the starting values are taken from \code{gp} hyperparameter table - from the \code{gp$hyperpar[,"start"]} column when \code{opt.h = TRUE}, or from
-the \code{gp$hyperpar[,"value"]} column when \code{opt.h = FALSE}.}
+\item{method}{character; fitting method. Either \code{"Laplace"} (Laplace approximation), or \code{"Laplace-Fisher"} (Laplace-Fisher approximation).
+See \code{fisher.options} for the latter method.
+Laplace-Fisher approximation is the solution for when the hessian of the negative log likelihood is not positive semi-definite.}
 
 \item{opt.h}{logical; should hyperparameters be optimised? Default TRUE; Only rarely you may want to say FALSE.}
 
@@ -43,15 +44,24 @@ note that stage 2 doesn't start from \code{gp$hyperpar$start}, but from \code{gp
 
 \item{stage1low}{the low threshold for the sigma2 parameter of the components for which the two-stage fitting applies.}
 
+\item{h}{optional; a numeric vector of starting values of hyperparameters (untransformed, i.e. on their most natural scale). If \code{NULL},
+the starting values are taken from \code{gp} hyperparameter table - from the \code{gp$hyperpar[,"start"]} column when \code{opt.h = TRUE}, or from
+the \code{gp$hyperpar[,"value"]} column when \code{opt.h = FALSE}.}
+
 \item{use.prior}{logical; if TRUE, likelihood + prior (posterior) is optimized; if FALSE, only likelihood is optimized.}
 
 \item{hessian}{logical; compute and return the Hessian during the optimization. Warning: may be heavy on CPU time! Default FALSE.}
 
 \item{opt.control}{list of control parameters passed to the \code{optim(control = )}}
 
-\item{verbose}{logical}
+\item{fisher.options}{list of the following options specifying how to generate the Fisher information matrix:
+\describe{
+\item{\code{sampling}}{should sampling be used to create the Fisher information matrix? If \code{FALSE} (the default), likelihood-specific method must be implemented.
+Sampling can be used when no such method is implemented (but it is slower).}
+\item{\code{samples}}{how many samples should be generated for the sampling method?}
+}}
 
-\item{method}{character; fitting method. Currently \code{"Laplace"} supported (Laplace approximation).}
+\item{verbose}{logical}
 
 \item{use_f_start}{logical; internal optimization - start each Laplace approximation from the optimized \code{f} vector from the previous hyperparameter iteration.}
 

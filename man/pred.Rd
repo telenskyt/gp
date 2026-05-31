@@ -28,6 +28,10 @@ pred(
 
 \item{cov.fit}{return the covariance matrix of the predicted values?}
 }
+\value{
+A matrix of predictions, always at the dimension of the Gaussian Process, with columns \code{f} and \code{f_SE} (if \code{se.fit = TRUE}).
+If \code{cov.fit = TRUE}, returns a named list, \code{pred} will be the mentioned matrix and \code{cov} will be the full covariance matrix.
+}
 \description{
 Internal predict function
 }

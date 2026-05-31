@@ -7,10 +7,10 @@
 gp(
   f,
   data,
-  negLogLik,
-  negLogLik.hyperpar = NULL,
-  negLogLik.formula = NULL,
-  negLogLik.reindex2main = TRUE,
+  lik,
+  lik.hyperpar = NULL,
+  lik.formula = NULL,
+  lik.reindex2main = TRUE,
   W.type = c("diag", "bdiag", "other"),
   predictor.fun = NULL,
   response.parname = NULL,
@@ -22,7 +22,11 @@ gp(
 
 \item{data}{object of class gpData, created by the gpData() function}
 
-\item{negLogLik}{either a single function, or a named list of three functions (three-stage template); these are two ways to supply the user-defined negative log likelihood function p(y|f):
+\item{lik}{an object of class likTemp, representing the user-defined template of the likelihood function \code{p(y|f)}.
+
+ORIG DOC TO BE DELETED - MAYBE USE PART OF THESE FOR THE DOCUMENTATION OF CLASS likTemp
+either a single function, or a named list of three functions (three-stage template); these are two ways to supply
+the user-defined negative log likelihood function p(y|f):
 \enumerate{
 \item \code{negLogLik} is a single function \code{f(data, par)}, taking two parameters:
 \describe{
@@ -47,20 +51,20 @@ the previous stage.}
 }
 }}
 
-\item{negLogLik.hyperpar}{optional, a named list of extra hyperparameters for the \code{negLogLik} function (named list of numeric scalars or vectors); this doesn't include the special
-parameter \code{f} (the Gaussian process).}
+\item{lik.hyperpar}{optional, a named list of extra likelihood hyperparameters for the \code{negLogLik} function (named list of numeric scalars or vectors); this doesn't include the special
+parameter \code{f} (the Gaussian process). This effectively defines the likelihood hyperparameters, named ".lik" in the hyperparameter table.}
 
-\item{negLogLik.formula}{optional, formula related to the supplied \code{negLogLik} function. This is not used in any way, except it is stored in the object and printed in the summary,
+\item{lik.formula}{optional, formula related to the supplied \code{negLogLik} function. This is not used in any way, except it is stored in the object and printed in the summary,
 so it has only informational purpose.}
 
-\item{negLogLik.reindex2main}{should the \code{par$f} parameter of the \code{negLogLik} function be reindexed to the rows of the main table?
+\item{lik.reindex2main}{should the \code{par$f} parameter of the \code{negLogLik} function be reindexed to the rows of the main table?
 If \code{FALSE}, the \code{par$f} parameter will be kept at the dimension of the Gaussian Process (as reported by \code{gpDetermineSize()}).
 If the Gaussian process is running at the dimension of the main table, then it does not matter.}
 
-\item{W.type}{the type of the hessian matrix (\code{W}) of the user-defined negative log likelihood function (\code{negLogLik})"
+\item{W.type}{the type of the hessian matrix (\code{W}) of the negative log likelihood function (as defined by the \code{lik} parameter)
 \describe{
 \item{\code{"diag"}}{(default) - the hessian matrix (\code{W}) is diagonal. Most common case, fastest computation. This is usually the case when the user-defined likelihood factorizes over individual \eqn{f_i}'s.}
-\item{\code{"bdiag"}}{the hessian matrix (\code{W}) is block-diagonal. This is usually the case when the user-defined likelihood factorizes over groups of \eqn{f_i}'s.}
+\item{\code{"bdiag"}}{the hessian matrix (\code{W}) is block-diagonal. This is usually the case when the user-defined likelihood factorizes over mutually disjoint sets of \eqn{f_i}'s.}
 \item{\code{"other"}}{the hessian matrix (\code{W}) is a general matrix.}
 }
 One should keep the setting as specific as possible to keep the computation efficient.}
