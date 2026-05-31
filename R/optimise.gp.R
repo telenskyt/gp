@@ -169,7 +169,7 @@ optimise.gp <- function(args)
 	theta <- gpLink(args$gp, args$h)
 		
 	# optimisation arguments
-	if (args$method == 'Laplace') {
+	if (args$method == 'Laplace' || args$method == 'Laplace-Fisher') {
 		meth <- 'L-BFGS-B'
 		grad <- gradient
 	} else {
