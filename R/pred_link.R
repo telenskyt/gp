@@ -1,6 +1,8 @@
 
 # from original legacy code, from model_expand_predictions(): d:\tomas\gp\acr\vypocet\GRaF-my_modif\R\model\K-tsc_spat2.R 
 
+# 2026-05: no longer used; maybe parts of this code will be reused when we will start calculating CI for link functions etc.
+
 ############ Predictions
 # simplest possible version!
 #' Expand the predictions by quantities derived using the inverse link function
