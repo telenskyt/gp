@@ -64,19 +64,7 @@ gp <- function(f, data, lik, lik.hyperpar = NULL, lik.formula = NULL, lik.reinde
 	gp$response.parname <- response.parname
 	gp$link <- link
 
-	stopifnot(class(data) == "gpData")
-
-	gp$obsdata <- data
-
-	stopifnot(gpDataCheckReq(gp, data))
-
-	gp$data <- gpDataPrepare(gp, data)
-
-	gp$covComp_df <- gpComponentsTable(gp)
-
-	gp_size <- gpDetermineSize(gp)
-	gp$GP_size <- gp_size$size
-	gp$GP_factor <- gp_size$fact # bude vzdy character string ruzny od "", NA, NULL, viz gpSize()
+	gp <- gpSetData(gp, data)
 
 	stopifnot(is(lik, "likTempPhased"))
 	gp$lik <- lik
@@ -98,3 +86,31 @@ gp <- function(f, data, lik, lik.hyperpar = NULL, lik.formula = NULL, lik.reinde
 
 	gp
 }
+
+# function to set a data as a training dataset to a gp object
+#
+# used in gp(), but also in gpFitCV() - is this a sign that the interface 
+# should have been different, not passing data to gp() but to gpFit() and gpFitCV()?
+
+gpSetData <- function (gp, data)
+{
+	stopifnot(class(data) == "gpData")
+
+	gp$obsdata <- data
+
+	stopifnot(gpDataCheckReq(gp, data))
+
+	gp$data <- gpDataPrepare(gp, data)
+
+	gp$covComp_df <- gpComponentsTable(gp)
+
+	gp_size <- gpDetermineSize(gp)
+	gp$GP_size <- gp_size$size
+	if (!is.null(gp[["GP_factor"]]))
+		stopifnot(gpcv$GP_factor == gp_size$fact) # should still be the same
+		
+	gp$GP_factor <- gp_size$fact # bude vzdy character string ruzny od "", NA, NULL, viz gpDetermineSize()
+
+	gp
+}
+

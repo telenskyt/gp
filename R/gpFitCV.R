@@ -109,17 +109,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 			train_data <- gpDataSubset(gp$obsdata, fact = fold.fact, ind = (fold.col != f))
 			test_data <- gpDataSubset(gp$obsdata, fact = fold.fact, ind = (fold.col == f))
 
-			{ ### Integrate the newly subsetted data into the CV model
-			  ### !! This code is duplicated with gp() - perhaps a sign that the interface should have been different, not passing data to gp() but to gpFit() and gpFitCV()?
-			gpcv$obsdata <- train_data
-			gpcv$data <- gpDataPrepare(gpcv, gpcv$obsdata)
-
-			gpcv$covComp_df <- gp:::gpComponentsTable(gpcv)
-
-			gp_size <- gpDetermineSize(gpcv)
-			gpcv$GP_size <- gp_size$size
-			stopifnot(gpcv$GP_factor == gp_size$fact) # bude vzdy character string ruzny od "", NA, NULL, viz gpDetermineSize()
-			}
+			gpcv <- gpSetData(gpcv, train_data)
 			
 			if (!is.null(start.from.model))
 				gpcv <- gpHyperparStartFromModel(gpcv, start.from.model$fitCV$models[[f]])
