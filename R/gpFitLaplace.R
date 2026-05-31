@@ -1,4 +1,4 @@
-# gpFitLaplace - find optimum of the GP for given set of hyperparameters using Laplace approximation
+# gpFitLaplace - find optimum of the GP for given set of hyperparameters using Laplace approximation, or Laplace-Fisher approximation
 # ???? proc f_start neni parametr???
 #
 # mn - mean vector, on GP scale. If NULL, mnfun() is used.
@@ -39,11 +39,17 @@
 # wow! Here are derived the gradients of marginal likelihood for Likelihood hyperparameters! (https://math.stackexchange.com/q/3207960/15731)
 # Groot, P., Peters, M., Heskes, T., & Ketter, W. (2014). Fast Laplace Approximation for Gaussian Processes with a Tensor Product Kernel.
 #
-
-gpFitLaplace <- function (gp, h, mn = NULL, wt = 1, e = NULL, tol = 10 ^ -6, itmax = 50,
+#' @importFrom Matrix t
+gpFitLaplace <- function (gp, method = c('Laplace', 'Laplace-Fisher'), fisher.options = list(sampling = FALSE, samples = 1000), 
+			h, mn = NULL, wt = 1, e = NULL, tol = 10 ^ -6, itmax = 50,
             verbose = FALSE, use_f_start = FALSE, grad.computation = TRUE, mem_verbose = FALSE, num.correct.W.tol = 10*sqrt(.Machine$double.eps)) 
 {
 	print(match.call())
+	method <- match.arg(method)
+	fisher <- NULL
+	LTinv.rW <- NULL
+	if (method == "Laplace-Fisher")
+		fisher <- fisher.options
 	wt <- 1 # currently weights are not supported
 	x <- gp$data # alias for **scaled** data; but there is also y in there....
 	y <- gp$data
@@ -104,86 +110,38 @@ gc()
 		#print(gc())
 		it <- it + 1
 		obj.old <- obj
-		W <- -(wt * d2(gp, f, y, hyperpar))
+		W <- -d2(gp, f, y, hyperpar, fisher)
 		
-		if (any(W < 0) && !is.null(num.correct.W.tol) && is.finite(num.correct.W.tol)) { # 2026 osetreni - jen drobne numericke chybky muzem zarovnat na 0, s ohledem na komentar nize
+		if (gp$W.type == "diag" && method != "Laplace-Fisher" && any(W < 0) && !is.null(num.correct.W.tol) && is.finite(num.correct.W.tol)) { # 2026 osetreni - jen drobne numericke chybky muzem zarovnat na 0, s ohledem na komentar nize
 			W[W < 0 & W >= -num.correct.W.tol] <- 0
 			warning("corrected small negative values of W (within tolerance num.correct.W.tol)")
 		}
 			
-		if (any(W < 0)) {
+		if (gp$W.type == "diag" && method != "Laplace-Fisher" && any(W < 0)) {
 			# (2026 note: going through the log files of my models, it looks like this didn't actually work. 
 			# It happened in q_extend models, which didn't work out, only once it happened in normal model (O-tsc,sitesm/Picus_viridis), resulting in an error and core dump anyways.)
 			stop("some W < 0, i.e. the diagonal of the hessian has negative values (range: ", paste(range(W), collapse=" to "),
-				"),\n\tmeaning the hessian of the neg. log likelihood is not positive definite.\n\tIncreasing num.correct.W.tol can help, but use with caution!")
+				"),\n\tmeaning the hessian of the neg. log likelihood is not positive definite. Consider using method = \"Laplace-Fisher\". Increasing num.correct.W.tol can help for small negative values, but use with caution!")
 			
-			# moje bastloidni osetreni!
-			# zkusim remedy!! Posunout se po tech f tak, abych byl v te concave casti! 
-			# (nemusi pak fungovat approx. marginal likelihood ale... ale to zatim neresim...)
-			
-			# debug using likelihood_concavity.R
-
-				if (all(sign(d1(gp, f, y, hyperpar))[W < 0] < 0)) # @@@@!!!! this test only makes sense for TSC likelihood... remove later
-					cat("according to expectation, all(sign(d1(f, y, hyperpar))[W < 0] < 0)\n")
-				else 
-					cat("!!! interesting! some sign(d1(f, y, hyperpar))[W < 0] is >= 0!\n")
-
-
-			f0 <- as.vector(f)
-			W0 <- W
-			if (1) {  # lepsi remedy! Najdi hodnotu f takovou, aby W = 0!!
-				for (ind in which(W < 0)) { 
-					f[ind] <- uniroot(function (fi, i) { f[i] <- fi ; -d2(gp, f, y, hyperpar)[i] }, interval = c(-20,20), i = ind)$root
-				}
-				W <- -(wt * d2(gp, f, y, hyperpar))
-				if (all(f <= f0)) { # @@@@!!!! this test only makes sense for TSC likelihood... remove later
-					cat("according to expectation, all(f <= f0)\n")
-				} else
-					cat("!!! interesting! some f > f0 !\n")
-				
-			} else { # starsi remedy
-				my_step <- 0
-				while (any(W < 0) && my_step < 10) {
-					# v mistech kde je W zaporne (druha der. kladna), se posunu o 1 smerem podle prvni derivace
-					# je-li kladna, prictu 1; je-li zaporna, odectu 1
-					f <- ifelse(W >= 0, f, f + 1 * sign(d1(gp, f, y, hyperpar)))
-					if (all(sign(d1(gp, f, y, hyperpar))[W < 0] < 0)) # @@@@!!!! this test only makes sense for TSC likelihood... remove later
-						cat("according to expectation, all(sign(d1(f, y, hyperpar))[W < 0] < 0)\n")
-					else 
-						cat("!!! interesting! some sign(d1(f, y, hyperpar))[W < 0] is >= 0!\n")
-					
-					# a ted prepocitej W:
-					W <- -(wt * d2(gp, f, y, hyperpar))
-					
-					my_step <- my_step + 1
-				}
-			}
-			if (any(W < 0))
-				stop("Remedy for W < 0 didn't work")
-			warning("Hyp iter ", if (exists("hyper_iter")) hyper_iter+1 else NA, ", LA iter ", it, ": log lik non-concave, bastl-remedy (in ", my_step, " steps)")
-			if (0) {
-			cat("f0:\n")
-			print(f0)
-			cat("f:\n")
-			print(f)
-			cat("The changes to `f` made:\n")
-			print(f - f0)
-			}
-			chgs <- data.frame(f0 = f0, f = f, f_diff = f - f0, W0 = W0, W = W)
-			cat("The changes to `f` made (max 12 shown):\n")
-			print(head(chgs[chgs$f_diff != 0,], 12))
-			a_doesnt_correspond_with_f <- TRUE
 		}
-		rW <- sqrt(W)
-		cf <- f - mn
-		#L <- tryCatch(chol(rW %*% t(rW) * K + diag(n)),
-		#			error = function(x) return(NULL)) # nechapu proc tryCatch() proboha!! Ja o te chybe potrebuju vedet!
-		L <- chol(rW %*% t(rW) * K + diag(n))
-			# caution! This L is a transpose of the L in R&W2006. Here, the L <- chol(B) means t(L) %*% L == B, in R&W2006 it is L %*% t(L) == B
-			# but I've checked this code of finding mode and also the predictions and it's used correctly (it takes this into account). -- Tomas 02/2020
-		b <- W * cf + wt * d1(gp, f, y, hyperpar)
-		a_new_proposed <- b - rW * backsolve(L, forwardsolve(t(L), rW * (K %*% b)))
-		rm(L) # jeste vice usetri pameti!
+		cf <- f - mn		
+		if (gp$W.type == "diag") {
+			rW <- sqrt(W) # W and rW are vectors in this case
+			L <- chol(rW %*% t(rW) * K + diag(n))
+				# caution! This L is a transpose of the L in R&W2006. Here, the L <- chol(B) means t(L) %*% L == B, in R&W2006 it is L %*% t(L) == B
+				# but I've checked this code of finding mode and also the predictions and it's used correctly (it takes this into account). -- Tomas 02/2020
+			b <- W * cf + wt * d1(gp, f, y, hyperpar)
+			a_new_proposed <- b - rW * backsolve(L, forwardsolve(t(L), rW * (K %*% b)))
+				# here it doesn't pay off to do just one backsolve() and then crossprod, because if we associate it this way, we need to backsolve just a single vector!
+		} else {
+			rW <- chol_W(W)
+			L <- chol(rW %*% K %*% t(rW) + diag(n))
+			b <- W %*% cf + wt * d1(gp, f, y, hyperpar)
+			a_new_proposed <- b - t(rW) %*% backsolve(L, forwardsolve(t(L), rW %*% (K %*% b)))
+				# here it doesn't pay off to do just one backsolve() and then crossprod, because if we associate it this way, we need to backsolve just a single vector!
+		}
+		
+		L <- NULL # jeste vice usetri pameti!
 gc()
 		step_size <- 1
 		if (a_doesnt_correspond_with_f) {
@@ -191,7 +149,7 @@ gc()
 			cat("a_doesnt_correspond_with_f, doing just simple method\n") # "simple method" basically means step_size = 1 :-)
 
 		} else {
-			adiff <- a_new_proposed - a 
+			adiff <- as.vector(a_new_proposed) - a 
 			dim(adiff) <- NULL
 			# find optimum step size using Brent's method
 			step_size_range <- c(0, 2)
@@ -282,28 +240,34 @@ gc()
   
 	# recompute key components
 	cf <- f - mn
-	W <- -(wt * d2(gp, f, y, hyperpar))
-	if (any(W < 0) && !is.null(num.correct.W.tol) && is.finite(num.correct.W.tol)) { # 2026 osetreni - jen drobne numericke chybky muzem zarovnat na 0, s ohledem na komentar nize
+	W <- -d2(gp, f, y, hyperpar, fisher)
+	if (gp$W.type == "diag" && method != "Laplace-Fisher" && any(W < 0) && !is.null(num.correct.W.tol) && is.finite(num.correct.W.tol)) { # 2026 osetreni - jen drobne numericke chybky muzem zarovnat na 0, s ohledem na komentar nize
 		W[W < 0 & W >= -num.correct.W.tol] <- 0
 		warning("corrected small negative values of W (within tolerance num.correct.W.tol)")
 	}	
-	if (!all(W >= 0)) {
+	if (gp$W.type == "diag" && method != "Laplace-Fisher" && !all(W >= 0)) {
 		# set options(error = recover) and debug it using likelihood_concavity.R
 		stop("even in the optimum f, some W < 0, i.e. the diagonal of the hessian has negative values (range: ", paste(range(W), collapse=" to "),
 			"),\n\tmeaning the hessian of the neg. log likelihood is not positive definite, meaning log likelihood isn't concave function in the optimum f.",
 			"\n\tIncreasing num.correct.W.tol can help, but use with caution!")
 	}
-	mstart(id = "L")	
-	rW <- sqrt(W)
-	xx <- rW %*% t(rW)# * K + diag(n)
-	#xx <- rW %*% t(rW) * K + diag(n)
-gc()
-    xx <- xx * K
-gc() # ta vlozena gc() tady jsou velmi dulezita!!!
-	xx <- xx + diag(n)
-gc()
-    L <- tryCatch(chol(xx),
-                  error = function(x) return(NULL)) # see the note on L above (it's a transpose of L in R&W2006, but it's OK)
+	mstart(id = "L")
+	if (gp$W.type == "diag") {
+		rW <- sqrt(W)
+		xx <- rW %*% t(rW)# * K + diag(n)
+		#xx <- rW %*% t(rW) * K + diag(n)
+	gc()
+		xx <- xx * K
+	gc() # ta vlozena gc() tady jsou velmi dulezita!!!
+		xx <- xx + diag(n)
+	gc()
+	} else {
+	gc()
+		rW <- chol_W(W)
+		xx <- rW %*% K %*% t(rW) + diag(n)
+	gc()
+	}
+    L <- chol(xx) # see the note on L above (it's a transpose of L in R&W2006, but it's OK)
 	rm(xx)
 	cat("Computing L matrix took ")	
 	mstop(id = "L")
@@ -350,27 +314,32 @@ if (grad.computation) {
     
 	mstart(id = "graf_grad_common", mem_precise = TRUE)
     # gradient components
-	LTinv.rW <- backsolve(L, diag(rW), transpose = TRUE) # L^T^-1 chol(W)^T
+	if (gp$W.type == "diag")
+		LTinv.rW <- backsolve(L, diag(rW), transpose = TRUE) # L^T^-1 chol(W)
+	else
+		LTinv.rW <- backsolve(L, rW, transpose = TRUE) # L^T^-1 chol(W)
+		
 gc()
-    R <- crossprod(LTinv.rW) 
-    diag.CT.C <- colSums((LTinv.rW %*% K)^2) # diag(C^T C)
-    rm(LTinv.rW)
+    R <- crossprod(LTinv.rW)
+	L <- NULL # safer than rm(L), in case we mistakenly refer to it later, we don't want the global variable to be used!
+	rW <- NULL
+    #rm(LTinv.rW)
+	#!!! promyslet co kde rm-nout!
 gc()
+
+    # rate of change of marginal likelihood w.r.t. the mode
+	if (gp$W.type == "diag") {
+		diag_posterior_cov <- diag(K) - colSums((LTinv.rW %*% K)^2) # diagonal of (K^-1 + W)^-1, the posterior covariance matrix
+		s2 <- t(diag_posterior_cov / 2 * d3(gp, f, y, hyperpar, fisher))
+	} else {
+		posterior_cov <- K - crossprod(LTinv.rW %*% K)
+		s2 <- t(flatten(mask(posterior_cov, W))) %*% d3(gp, f, y, hyperpar, fisher) / 2
+	}
 	cat("gpFitLaplace(): common gradient computations took ")
-	mstop(id = "graf_grad_common")
+	mstop(id = "graf_grad_common")	
 
-#	print(gc())
-    # partial gradients of the kernel
-    #dK <- cov.SE.d1(x, e, h)
-	#gc1 <- gc()
-	#t1 <- proc.time()
 	#Rprof(line.profiling = TRUE, memory.profiling = TRUE)
-	#K <- cov.SE(x1 = x, e1 = e, h = h) # ?? neni to totez co nahore? !!! ANO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    
-    # rate of change of likelihood w.r.t. the mode
-	diag_posterior_cov <- (diag(K) - colSums_C2) # diagonal of (K^-1 + W)^-1, the posterior covariance matrix
-    s2 <- diag_posterior_cov / 2 * d3(gp, f, y, hyperpar)
-
+	
 	#KR <- K %*% R
 	
     for (i in grad.computation.idx) {
@@ -384,15 +353,17 @@ gc()
 		  
 			s1 <- (t(a) %*% dK_i %*% a) / 2 - sum(R * dK_i) / 2 # s1 (eq 5.22) from Alg. 5.1
 			b <- dK_i %*% d1(gp, f, y, hyperpar)
-			rm(dK_i) 
+			dK_i <- NULL
 gc()
-			#grad <- s1 + t(s2) %*% (cbind(KR, b) %*% c(-b, 1)) # h_grads computation time: 160.560s; mem: 4198.2Mb. # 2x slower and more memory
-			h_grads[i] <- s1 + t(s2) %*% (b - K %*% (R %*% b))
 		} else { # likelihood hyperparameter! Finally possible!! Celebration!! This I implemented using formulas in Groot et al 2014! Otestovano a proslo!
-			s1 <- d0_dhyp(gp, f, y, hyperpar, i) + t(diag_posterior_cov) %*% d2_dhyp(gp, f, y, hyperpar, i) / 2
+			if (gp$W.type == "diag")
+				s1 <- d0_dhyp(gp, f, y, hyperpar, i) + t(diag_posterior_cov) %*% d2_dhyp(gp, f, y, hyperpar, i, fisher) / 2
+			else
+				s1 <- d0_dhyp(gp, f, y, hyperpar, i) + sum(posterior_cov * d2_dhyp(gp, f, y, hyperpar, i, fisher)) / 2
+					# here we could also use the mask(posterior_cov, W) from above instead; not sure what is faster
 			b <- K %*% d1_dhyp(gp, f, y, hyperpar, i)
-			h_grads[i] <- s1 + t(s2) %*% (b - K %*% (R %*% b))
 		}
+		h_grads[i] <- s1 + s2 %*% (b - K %*% (R %*% b))
 		der_wrt <- gp$hyperpar[gpHyperparIdx(gp, i),] # which var we derivate w.r.t to :-)
 		if (mem_verbose) {
 			cat("gradient computation for hyperpar ", der_wrt$hyperpar, "(i = ", i, ") took ")
@@ -401,13 +372,8 @@ gc()
     }
 
 	#Rprof(NULL)
-	#t2 <- proc.time()
-	#gc2 <- gc()
-	#cat(sprintf("h_grads computation time: %.3fs\n", (t2 - t1)[3]))
 	cat("gpFitLaplace(): whole gradients computation took ")
 	mstop(id = "graf_grad")
-	#print(gc())
-	#cat(sprintf("h_grads computation mem: %.1fMb.\n", sum(gc2[,6] - gc1[,6])))
 }
    
 	# get local variable dimensions, to be able to read code better and maybe optimize it
@@ -419,10 +385,11 @@ gc()
 		warning("timed out, don't trust the inference!") # !!!! make this a warning, at least!
 	}
 	# vector h is already imported to gp$hyperpar
-    fit <- list(h = h, f = f, a = a, W = W, L = L, K = K,
-                e = e, mnll = mnll, wt = wt, psi = obj, tol = tol,
+    fit <- c(list(h = h, f = f, a = a, W = W, K = K), 
+				if (!is.null(LTinv.rW)) list(LTinv.rW = LTinv.rW) else if (!is.null(L)) list(L = L),
+                list(e = e, mnll = mnll, wt = wt, psi = obj, tol = tol,
                 h_grads = h_grads, vardim = vardim, iterations = it, itmax = itmax, 
-				LAiter = LAiter, lastLAObjDiff = obj - obj.old, f_start_was_reset = f_start_was_reset)
+				LAiter = LAiter, lastLAObjDiff = obj - obj.old, f_start_was_reset = f_start_was_reset))
 	fit
 }
 
@@ -444,3 +411,49 @@ psi <- function(gp, a, f, mn, y, wt, hyperpar)
 {
 	0.5 * t(a) %*% (f - mn) - sum(wt * d0(gp, f, y, hyperpar))
 }
+
+
+# https://chatgpt.com/c/6a11e450-6240-83eb-9815-9d28d7ccd9ca
+# rW <- chol_W(W) # W = t(rW) %*% rW
+chol_W <- function(W, ...)
+{
+	cf <- chol_psd(W, ...)
+	#cf <- chol_psd(W, rel = 1e-20)
+	#cf$tau
+	#cf$i
+	rWC <- Matrix::expand2(cf$factor, LDL = FALSE)
+
+	#rW <- rWC[["P1."]] %*% rWC[["L"]]
+	rW <- rWC[["L."]] %*% rWC[["P1"]]
+	if (0) {
+		Wv <- t(rW) %*% rW
+		range(Wv - W)
+	}
+
+	rW	
+}
+
+chol_psd <- function(W, rel = 1e-15, maxit = 7)
+{
+	n <- nrow(W)
+	scale <- max(abs(diag(W)))
+	if (!is.finite(scale) || scale == 0) scale <- 1
+
+	tau <- rel * scale
+
+	for (i in 1:maxit) {
+		out <- try(
+			suppressWarnings(Matrix::Cholesky(W, perm = TRUE, LDL = FALSE, super = FALSE, Imult = tau)),
+			silent = TRUE
+		)
+		if (!inherits(out, "try-error")) {
+			return(list(factor = out, tau = tau, i = i))
+		}
+		tau <- tau * 10
+	}
+
+	stop("Cholesky decomposition failed for the hessian matrix W even when adding tau = ", tau, " to the diagonal; W might not be positive semi-definite (or this decomposition failed for some other reason). Either choose gpFit(method=\"Laplace-Fisher\"), if you are not already, or increase the numerical correction in chol_psd().")
+}
+
+
+
