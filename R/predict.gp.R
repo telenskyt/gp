@@ -172,7 +172,7 @@ predict.gp <- function(gp, newdata = NULL, hyperpar = gpHyperparList(gp), compon
 		# calculate model specific response from the latent
 		stopifnot(is.character(parname) && nchar(parname) > 0)		
 		if (!is.null(predictor.fun))	
-			ans <- predict_expand_fun(gp, newdata, pred = ans, pred_fun = predictor.fun, parname)
+			ans <- predict_expand_fun(gp, x_new, pred = ans, pred_fun = predictor.fun, parname)
 		else {
 			stopifnot(!is.null(link))
 			stopifnot(is.character(link))
