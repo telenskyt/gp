@@ -37,7 +37,7 @@
 
 gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.model = NULL,
 	parallel = TRUE, fn.prefix = "", log.fn = if (parallel) "log-fold%f-%h-%p.txt" else NULL, dump.fn = if (parallel) "dump-fold%f-%h_%p"  else NULL,
-	tr.max.lines = 5, pred.options = list(type = "response", se.fit = TRUE),
+	tr.max.lines = 5, pred.options = list(type = "terms", se.fit = TRUE),
 	...)
 {
 	args <- list(fold.col = fold.col, fold.fact = fold.fact)
@@ -74,6 +74,8 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 	wd <- getwd.keepsym()
 	masterPID <- Sys.getpid()
 	cat("1: getOption('warn') == ", getOption('warn'), "\n")
+	cat(".packages(): \n")
+	print(str(.packages()))
 	#fold.run <- foreach (f = folds, .packages = c("gp")) %do_as_needed% {
 	#fold.run <- foreach (f = folds, .packages = c("gp", "RTMB")) %do_as_needed% {	
 	fold.run <- foreach (f = folds, .packages = .packages()) %do_as_needed% {
@@ -109,7 +111,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 			train_data <- gpDataSubset(gp$obsdata, fact = fold.fact, ind = (fold.col != f))
 			test_data <- gpDataSubset(gp$obsdata, fact = fold.fact, ind = (fold.col == f))
 
-			gpcv <- gpSetData(gpcv, train_data)
+			gpcv <- gp:::gpSetData(gpcv, train_data) # nechapu, proc tu najednou musi byt gp::: ... kdyz "gp" je mezi .packages! voser!
 			
 			if (!is.null(start.from.model))
 				gpcv <- gpHyperparStartFromModel(gpcv, start.from.model$fitCV$models[[f]])
@@ -139,12 +141,24 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 		stats = NULL # CV stats		
 	)
 	# put the results together
-	# now, reindex the fold.col to the dimension of the prediction (gp$GP_factor)
-	# thanks to the condition above, the only case when reindexing might be needed is when GP_factor = "1" and fold.fact = something else.
-	if (fold.fact != gp$GP_factor) {
+	# now, there might be two reasons to reindex the fold.col to the dimension of main table
+	reindex.ff2main <- FALSE
+	if (fold.fact != gp$GP_factor) { # first reason is this 
+		# now, reindex the fold.col to the dimension of the prediction (gp$GP_factor)
+		# thanks to the condition above, the only case when reindexing might be needed is when GP_factor = "1" and fold.fact = something else (=something smaller)
 		stopifnot(gp$GP_factor == "1") # consequence of the checks above
 		stopifnot(fold.fact != "1") # consequence of the checks above
 		# now, we have to reindex fold.col to the main table
+		reindex.ff2main <- TRUE
+	}
+	if (gp$lik.reindex2main && gp$GP_factor != "1") { # this is the second reason
+		# in this case, both fold.factor and GP_factor are something smaller than "1"
+		# (the main table), and we want to reindex it to "1" = the main table
+		stopifnot(fold.fact != "1")
+		stopifnot(fold.fact == gp$GP_factor)
+		reindex.ff2main <- TRUE
+	}
+	if (reindex.ff2main) {
 		stopifnot(gpDataHasMainTable(gp$obsdata)) # has to have it in this case
 		fold_idx_col <- paste0(fold.fact, "_idx")
 		fold.col <- fold.col[gp$obsdata[[1]][[fold_idx_col]]]
