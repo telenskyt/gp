@@ -119,7 +119,7 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
             }
         }
 
-		x_new <- gpDataPrepare(gp, newdata) # it will scale the data in exactly the way that training data set was		
+		x_new <- gpDataPrepare(gp, newdata, scale.as = gp$data) # it will scale the newdata in exactly the way that training data set was
 	}
 	
 	# check CI

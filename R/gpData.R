@@ -324,23 +324,30 @@ gpDataIsScaled <- function (gpData)
 	!is.null(attr(gpData, "gpDataPrepared"))
 }
 
-# Prepares the data for the model:
-#	- converts tables (data.frames) to matrices
-#	- scales the matrices (to mean = 0 and sd = 1) that need it (scale = TRUE in cov_funcs.R)
-#		- if the gp object already has scaled training data (gp$data), this function will take scaling from there, and
-# It issues an error, if there are any non-numeric columns,
+#' Prepares the object of class gpData for the model (scaling, conversion to matrices etc.)
+#'
+#'@details Prepares the data for the model:
+#'	- converts tables (data.frames) to matrices
+#'	- scales the matrices (to mean = 0 and sd = 1) that need it (scale = TRUE in cov_funcs.R)
+#'		- if the gp object already has scaled training data (gp$data), this function will take scaling from there, and
+#' It issues an error, if there are any non-numeric columns etc.
+#'
+#'@param gp object of class \code{gp}
+#'@param gpData object of class \code{gpData}; the data to be prepared (scaled etc.)
+#'@param scale.as object of class \code{gpData}; if given, the data \code{gpData} will be scaled exactly the same way as the \code{scale.as} data.
+#'
 #'@export
-#
-# NOTE-002-scaling-chytak!!
-gpDataPrepare <- function(gp, gpData)
+gpDataPrepare <- function(gp, gpData, scale.as = NULL)
 {
 	stopifnot(class(gp) == "gp")
 	stopifnot(!is.null(gp$covComp))
 	stopifnot(class(gpData) == "gpData")
-	if (!is.null(gp[["data"]]))
-		stopifnot(all(names(gpData) %in% names(gp[["data"]]))) # if training dataset is already present, make sure all tables here were also present in the training
-	# note: if training dataset is not present, i.e. gpData is supposed to be the training dataset, we don't have to check if all tables from dataReq are present
-	# - this was already done by gpDataCheckReq()
+	if (!is.null(scale.as)) {
+		stopifnot(class(scale.as) == "gpData")
+		if (!gpDataIsScaled(scale.as))
+			stop("the dataset provided in `scale.as` must already be scaled")
+		stopifnot(all(names(gpData) %in% names(scale.as))) # make sure all tables here were also present in the scale.as
+	}
 	mats <- intersect(names(gpData), names(gp$dataReq$mats)) # pick all tables that are provided in the data and at the same time used by the formula
 	for (m in mats) {
 		# convert m to matrix - but first do some checks
@@ -357,12 +364,10 @@ gpDataPrepare <- function(gp, gpData)
 		if (!gp$dataReq$mats[[m]]$scaling)
 			gpData[[m]] <- as.matrix(gpData[[m]])
 		else { # scale
-			if (is.null(gp[["data"]]))	# training dataset not yet present
-										# have to use gp[["data"]] instead of gp$data due to the damn partial matching						 
+			if (is.null(scale.as))
 				gpData[[m]] <- scale(as.matrix(gpData[[m]]))
-			else 					# take scaling from the training dataset
-				gpData[[m]] <- scale(as.matrix(gpData[[m]]), center = attr(gp$data[[m]], "scaled:center"), scale = attr(gp$data[[m]], "scaled:scale"))
-				
+			else  					# take scaling from given dataset
+				gpData[[m]] <- scale(as.matrix(gpData[[m]]), center = attr(scale.as[[m]], "scaled:center"), scale = attr(scale.as[[m]], "scaled:scale"))
 			if (any(attr(gpData[[m]], "scaled:scale") == 0)) {
 				zero.var.cols <- which(attr(gpData[[m]], "scaled:scale") == 0)
 				warning("These columns in table '", m, "' have zero variation: ", paste(names(zero.var.cols), collapse = ", "))
