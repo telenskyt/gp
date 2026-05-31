@@ -3,7 +3,10 @@
 #'@param se.fit	return the standard errors of the predicted values?
 #'@param cov.fit return the covariance matrix of the predicted values?
 #'@param components character vector of names of the components of covariance that should be used for this prediction
-
+#'
+#' @returns A matrix of predictions, always at the dimension of the Gaussian Process, with columns \code{f} and \code{f_SE} (if \code{se.fit = TRUE}). 
+#' If \code{cov.fit = TRUE}, returns a named list, \code{pred} will be the mentioned matrix and \code{cov} will be the full covariance matrix.
+#
 # returns prediction at the level of f (or f*)
 # from the Algorithm 3.2 from Rasmussen & Williams 2006 (chap 3.4, pg 47) up to line 6, line 7 (integration) not implemented here
 #
@@ -169,15 +172,13 @@ pred <- function(gp, predx, same = FALSE, hyperpar = gpHyperparList(gp), compone
 		mstart(id = "pred cov")
 		if (se.fit) {
 			cat("\t* computing posterior (co)variances:\n")
-			need(fit, "L")
-			need(fit, "W")
-			cat("\t\t* backsolve... \t\t\t\t\t")
-			mstart(id = "backsolve")
-			stopifnot(all(fit$W >= 0))
-			v <- backsolve(fit$L, sqrt(as.vector(fit$W)) * Kx, transpose = T)
-			mstop(id = "backsolve")
+			need(fit, "LTinv.rW")
+			cat("\t\t* v <- LTinv.rW %*% K*\t\t\t\t")
+			mstart(id = "v")			
+			v <- fit$LTinv.rW %*% Kx
+			mstop(id = "v")
 
-					# vector * Matice = diag(vector) %*% Matice
+			# vector * Matice = diag(vector) %*% Matice
 			# Kxx - k(x*,x*)
 			#		@@@ TODO!!! Optimization: calculate only diagonal :-) But if maxn is relatively small, this is not so bad as calculating K for the big matrix
 			cat("\t\t* K_matrix(pred, pred)")
