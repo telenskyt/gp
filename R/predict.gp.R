@@ -1,6 +1,6 @@
 #' Predict from a fitted Gaussian process model
 #' 
-#' Predict from a fitted Gaussian process model. Predictions are done at the level of the Gaussian Process, i.e. along the factor specified by \code{gp$GP_factor}.
+#' Predict from a fitted Gaussian process model. 
 #' 
 #' @param newdata object of class gpData, ***unscaled*** (i.e. not passed through \code{gpDataPrepare()}) data! They must be on the same scale as 
 #' the unscaled training dataset used for fitting the model. If \code{NULL} (the default), predictions will be made on the training dataset (which
@@ -30,8 +30,11 @@
 #' 
 #' @param type character; type of prediction:
 #' \describe{
-#' \item{\code{"response"}}{(default) - predictions on the response scale}
-#' \item{\code{"latent"}}{predictions on the latent scale}
+#' \item{\code{"latent"}}{predictions directly from the Gaussian Process itself (\code{f} and optionally \code{f_SE}), always in the dimension of the GP (\code{gp$GP_factor})}
+#' \item{\code{"terms"}}{predictions including GP (\code{f} and optionally \code{f_SE}) along with all the other terms used in the likelihood template. If gp$lik.reindex2main = TRUE, 
+#'						the predictions will be reindexed to the dimension of the main table.}
+#' \item{\code{"response"}}{predictions after applying the inverse link function. If gp$lik.reindex2main = TRUE, 
+#'						the predictions will be reindexed to the dimension of the main table.}
 #' }
 #'
 #' @param !!!!!! upravit po nove definici - mozna udelat default NULL? CI numeric between 0 and 1, or \code{NULL}; confidence level for the confidence intervals to be calculated. If \code{NULL}, no standard errors
@@ -52,6 +55,9 @@
 #' @param Kxx.cache optional, object returned by \code{K_cache()} function, to speed up repeated calls to \code{predict.gp()} with the same \code{newdata} by 
 #' caching parts of the K(newdata, newdata) matrix.
 #'
+#' @returns A matrix of predictions, with columns \code{f} and \code{f_SE} (if \code{se.fit = TRUE}). If \code{cov.fit = TRUE}, returns a named list, \code{pred} will be
+#'	the mentioned matrix and \code{cov} will be the full covariance matrix. For the dimension of the prediction, see the \code{type} parameter.
+#'
 #' @export
 
 # pred.sims (timingy u plotu: = 1e6 => 24s; 1e5 => 12.58 ; 1e4 => 11s -> volim 1e5 jako default)
@@ -64,8 +70,12 @@
 
 # ... - passed to model_expand_predictions()
 
-predict.gp <- function(gp, newdata = NULL, hyperpar = gpHyperparList(gp), components = NULL, comp_missing = c("avg", "none"), w = NULL, groupMeans = NULL, 
-						type = c('latent', 'response'),	se.fit = FALSE, cov.fit = FALSE, CI = 0.95, predictor.fun = NULL, link = NULL, parname = NULL, maxn = NULL, pred.sims = 100000, 
+
+
+predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response'),	se.fit = FALSE, cov.fit = FALSE, CI = 0.95, 
+						components = NULL, comp_missing = c("avg", "none"), w = NULL, groupMeans = NULL, 
+						hyperpar = gpHyperparList(gp), 
+						maxn = NULL, pred.sims = 100000, 
 						Kx.cache = NULL, Kxx.cache = NULL, ...)  
 {
 	if (is.null(gp$fit))
@@ -135,49 +145,37 @@ predict.gp <- function(gp, newdata = NULL, hyperpar = gpHyperparList(gp), compon
 		pred.cov <- pred$cov
 		pred <- pred$pred
 	}
+	# pred is now always a matrix, with cols "f" and optionally also "f_SE" 
 	
-	if (!se.fit) {
-		ans <- pred
-	} else if (is.null(CI)) { # se.fit = TRUE & CI is NULL
-		ans <- pred
-	} else { # # se.fit = TRUE & CI is not NULL
-		upper <- pred[, 1] + err * pred[, 2]
-		lower <- pred[, 1] - err * pred[, 2]
+	if (type == "terms" || type == "response") {
+		if (gp$lik.reindex2main && gp$GP_factor != "1") { 
+			stopifnot(gpDataHasMainTable(x_new))	
+			# reindex from the GP_factor to main table, as requested by the template
+			fact_idx <- paste0(gp$GP_factor, "_idx")
+			pred <- pred[x_new[[1]][[fact_idx]]]
+			if (cov.fit)
+				stop("type == terms or response used with cov.fit = TRUE and with lik.reindex2main = TRUE; would need to reindex the covariance matrix here, but sounds crazy, reconsider this case")
+		}
+		par <- c(hyperpar[[".lik"]], list(f = pred[,"f"]))
+	}
+	
+	if (se.fit && !is.null(CI)) { # add confidence intervals
+		upper <- pred[, "f"] + err * pred[, "f_SE"]
+		lower <- pred[, "f"] - err * pred[, "f_SE"]
 		dCI <- cbind(lower, upper)
 		colnames(dCI) <- c(paste0("f_lower_", round(100 * CI), "CI"), #paste("lower ", round(100 * CI), "% CI", sep = ""),
 						   paste0("f_upper_", round(100 * CI), "CI")) #paste("upper ", round(100 * CI), "% CI", sep = "")
-		ans <- cbind(pred, dCI)							   
-	}	
-	if (type == "response") { # if not only latent wanted, predict also other stuff
-		# correct for the "intercept" of the missing components (we chose not to do it in the 'latent' case)
-		if (0) { # no longer done here; done in pred() now, so it can be done also for (co)variances
-				# hmm, tak zpetne si rikam, ze tohle bylo skoro nejlepsi nakonec.. mohl bych to sem znova dat jako jednu z voleb
-				# pro comp_missing... ale vyuzit ted uz ty predpocitany comp_means
-			missing_components <- paste0(setdiff(strsplit(all_model_components, "")[[1]], strsplit(components, "")[[1]]), collapse = "")
-			if (nchar(missing_components) > 0) {
-				cat("calculating posterior mean for missing components ", missing_components, ", to correct for it\n")
-				mstart(id = "missing", mem_precise = TRUE)
-				pr <- pred(gp$x, gp, hyperpar = hyperpar, std = FALSE, maxn = Inf, components = missing_components) # @@@@@@@@@@@ experimental
-				pred[,'f'] <- pred[,'f'] + mean(pr[,'f'])
-				cat("pred() for missing components took ")
-				mstop(id = "missing")			
-			}
-		}
-		if (is.null(link))
-			link <- gp[["link"]]
-		if (is.null(parname))
-			parname <- gp[["response.parname"]]
-		if (is.null(predictor.fun))
-			predictor.fun <- gp[["predictor.fun"]]
-		# calculate model specific response from the latent
-		stopifnot(is.character(parname) && nchar(parname) > 0)		
-		if (!is.null(predictor.fun))	
-			ans <- predict_expand_fun(gp, x_new, pred = ans, pred_fun = predictor.fun, parname)
-		else {
-			stopifnot(!is.null(link))
-			stopifnot(is.character(link))
-			ans <- predict_expand_link(pred = ans, link = link, parname = parname)
-		}
+		pred <- cbind(pred, dCI)							   
+	}
+	
+	if (type == "terms") {
+		terms <- gp$lik$terms(data = x_new, par) # we are calling $terms and not $stage(stage = 1), because we want just the terms separately
+		if (!is.null(terms))
+			pred <- cbind(pred, as.matrix(terms)) # we want to keep the return value as matrix, as it has always been
+	}
+	else if (type == "response") {
+		pred <- as.matrix(gp$lik$stages(data = x_new, par, stages = 1:2)) # in this case, we don't return f and f_SE and the other stuff at the moment... we could though... to reconsider
+			# we want to keep the return value as matrix, as it has always been
 	}
 	cat("returning memory - gc() took ")
 	mstart(id = "gc")
@@ -186,7 +184,7 @@ predict.gp <- function(gp, newdata = NULL, hyperpar = gpHyperparList(gp), compon
 	cat("whole predict() took ")
 	mstop(id = "whole predict")
 	if (!cov.fit)
-		ans
+		pred
 	else
-		list(pred = ans, cov = pred.cov)
+		list(pred = pred, cov = pred.cov)
 }
