@@ -7,7 +7,7 @@ d0_dhyp <- function (gp, f, data = gp$data, hyperpar, i)
 	i <- gpHyperparIdx(gp, i) - min(which(gp$hyperpar$component == ".lik")) + 1 # get the index of the likelihood hyperparameter within all likelihood hyperparameters (including the fixed ones)
 	#numLikHyperpar <- sum(gp$hyperpar$component == ".lik") # number of all likelihood hyperparameters (including the fixed ones); we don't exclude the fixed ones for the RTMB tape
 	
-	if (gp$negLogLik.reindex2main && gp$GP_factor != "1") { 
+	if (gp$lik.reindex2main && gp$GP_factor != "1") { 
 		stopifnot(gpDataHasMainTable(data))
 		# reindex from the GP_factor to main table in the closure wrapper, so that also the automatic differentiation
 		# gives vector of the dimension of GP_factor!
@@ -23,7 +23,7 @@ d0_dhyp <- function (gp, f, data = gp$data, hyperpar, i)
 	# cmb - the closure trick somewhere from the RTMB docs, to tie this to particular data and prevent unnecessary headaches!
 	#mstart(id = "MakeTape", mem_precise = TRUE)
 	par <- c(hyperpar[[".lik"]], list(f = numeric(gp$GP_size)))
-	F <- MakeTape(cmb(gp$negLogLik, data), par)
+	F <- MakeTape(cmb(gp$lik$nll, data), par)
 	#mstop(id = "MakeTape")
 
 	res <- drop(F$jacobian(unlist(par)))[i] # unlist() needed for the $jacobian() method
