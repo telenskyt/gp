@@ -128,16 +128,16 @@ gc()
 		if (gp$W.type == "diag") {
 			rW <- sqrt(W) # W and rW are vectors in this case
 			L <- chol(rW %*% t(rW) * K + diag(n))
-				# caution! This L is a transpose of the L in R&W2006. Here, the L <- chol(B) means t(L) %*% L == B, in R&W2006 it is L %*% t(L) == B
+				# caution! This L is a transpose of the L in R&W2006, it is upper-triangular. Here, the L <- chol(B) means t(L) %*% L == B, in R&W2006 it is L %*% t(L) == B
 				# but I've checked this code of finding mode and also the predictions and it's used correctly (it takes this into account). -- Tomas 02/2020
 			b <- W * cf + wt * d1(gp, f, y, hyperpar)
-			a_new_proposed <- b - rW * backsolve(L, forwardsolve(t(L), rW * (K %*% b)))
+			a_new_proposed <- b - rW * backsolve(L, backsolve(L, rW * (K %*% b), transpose = TRUE))
 				# here it doesn't pay off to do just one backsolve() and then crossprod, because if we associate it this way, we need to backsolve just a single vector!
 		} else {
 			rW <- chol_W(W)
 			L <- chol(rW %*% K %*% t(rW) + diag(n))
 			b <- W %*% cf + wt * d1(gp, f, y, hyperpar)
-			a_new_proposed <- b - t(rW) %*% backsolve(L, forwardsolve(t(L), rW %*% (K %*% b)))
+			a_new_proposed <- b - t(rW) %*% backsolve(L, backsolve(L, rW %*% (K %*% b), transpose = TRUE))
 				# here it doesn't pay off to do just one backsolve() and then crossprod, because if we associate it this way, we need to backsolve just a single vector!
 		}
 		
