@@ -75,7 +75,7 @@
 predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response'),	se.fit = FALSE, cov.fit = FALSE, CI = 0.95, 
 						components = NULL, comp_missing = c("avg", "none"), w = NULL, groupMeans = NULL, 
 						hyperpar = gpHyperparList(gp), 
-						maxn = NULL, pred.sims = 100000, 
+						maxn = 2000, pred.sims = 100000, 
 						Kx.cache = NULL, Kxx.cache = NULL, ...)  
 {
 	if (is.null(gp$fit))
@@ -131,7 +131,7 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
 		#se.fit <- TRUE
 	}
 
-	if (is.null(maxn)) maxn <- ceiling(gpDataSize(x_new, gp$GP_factor)  / 10) # we are splitting the newdata, not the training dataset; ceiling needed instead of round here
+	#if (is.null(maxn)) maxn <- ceiling(gpDataSize(x_new, gp$GP_factor)  / 10) # we are splitting the newdata, not the training dataset; ceiling needed instead of round here
 		
 	# first, put up together the latent prediction
 	mstart(id = "whole predict", mem_precise = TRUE)
