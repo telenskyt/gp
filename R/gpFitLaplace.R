@@ -385,11 +385,12 @@ gc()
 		warning("timed out, don't trust the inference!") # !!!! make this a warning, at least!
 	}
 	# vector h is already imported to gp$hyperpar
-    fit <- c(list(h = h, f = f, a = a, W = W, K = K), 
-				if (!is.null(LTinv.rW)) list(LTinv.rW = LTinv.rW) else if (!is.null(L)) list(L = L),
+    fit <- c(list(method = method, h = h, f = f, a = a, W = W, K = K), 
+				if (!is.null(LTinv.rW)) list(LTinv.rW = LTinv.rW) else if (!is.null(L)) list(L = L, rW = rW),
                 list(e = e, mnll = mnll, wt = wt, psi = obj, tol = tol,
                 h_grads = h_grads, vardim = vardim, iterations = it, itmax = itmax, 
-				LAiter = LAiter, lastLAObjDiff = obj - obj.old, f_start_was_reset = f_start_was_reset))
+				LAiter = LAiter, lastLAObjDiff = obj - obj.old, f_start_was_reset = f_start_was_reset,
+				fisher.options = fisher))
 	fit
 }
 
