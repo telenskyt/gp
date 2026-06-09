@@ -16,7 +16,7 @@
   w = NULL,
   groupMeans = NULL,
   hyperpar = gpHyperparList(gp),
-  maxn = NULL,
+  maxn = 2000,
   pred.sims = 1e+05,
   Kx.cache = NULL,
   Kxx.cache = NULL,

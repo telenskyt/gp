@@ -15,7 +15,7 @@ gpFitCV(
   log.fn = if (parallel) "log-fold\%f-\%h-\%p.txt" else NULL,
   dump.fn = if (parallel) "dump-fold\%f-\%h_\%p" else NULL,
   tr.max.lines = 5,
-  pred.options = list(type = "response", se.fit = TRUE),
+  pred.options = list(type = "terms", se.fit = TRUE),
   ...
 )
 }
