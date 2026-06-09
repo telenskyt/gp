@@ -19,7 +19,7 @@ Install the package directly from github:
 ```r
 library(devtools)
 
-install_github("https://github.com/telenskyt/gp/")
+install_github("https://github.com/telenskyt/gp/", force = TRUE, INSTALL_opts = c("--with-keep.source", "--with-keep.parse.data"))
 ```
 
 You can also clone the github repository like this:
