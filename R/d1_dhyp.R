@@ -30,9 +30,24 @@ d1_dhyp <- function (gp, f, data = gp$data, hyperpar, i)
 	F <- MakeTape(cmb(gp$lik$nll, data), par)
 	#mstop(id = "MakeTape")
 	
-	F2 <- F$jacfun()$jacfun(sparse = TRUE) # Kasper's advice on how to calculate just Hessian diagonal (here, it will be general sparse matrix) https://groups.google.com/g/tmb-users/c/fAaEhwW1niU
-	stopifnot(numLikHyperpar > 0)
-	res <- F2(par)[-(1:numLikHyperpar), i]
+	F1 <- F$jacfun()
+
+	F1T <- MakeTape(function (f) { 
+		"[<-" <- ADoverload("[<-") 
+		"c" <- ADoverload("c")		
+		#par[["f"]] <- f
+		#F$jacobian(unlist(par))[i] 
+		
+		#F1(c(hyperpar[[".lik"]], list(f = f)))[i] # toto hazelo chybu
+		F1(c(unlist(hyperpar[[".lik"]]), f))[i] # tohle je reseni te chyby, pomohl github copilot, ale nechapu proc tady najednou je potreba unlist, to nikdy nebylo!
+	}, f) # tape to take just the hessian diagonal (and just for the f)
+
+	F1T$simplify("eliminate")
+	F1T$simplify("optimize")
+	#F1T$atomic() # doesn't speed it up
+
+	F2 <- F1T$jacfun()	
+	res <- drop(F2(f))
 	
 	if (!is.numeric(res) || !all(is.finite(res)))
 		stop("second derivative of the user defined likelihood (negLogLik parameter to gp()) is not numeric: ", res)
