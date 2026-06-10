@@ -1,10 +1,15 @@
 # derivative of d1 w.r.t. hyperparameter i
 # i.e. second-order partial derivative of log likelihood given f w.r.t f w.r.t hyperpar i (returns vector)
-# i - index within the optimized (non-fixed) hyperparameters
+# i - index within the optimized (non-fixed) hyperparameters, must be a likelihood hyperparameter
 d1_dhyp <- function (gp, f, data = gp$data, hyperpar, i)
 {
+	# validation of i
+	stopifnot(gp$hyperpar$component[gpHyperparIdx(gp, i)] == ".lik")
+	stopifnot(all(gp$hyperpar$component[min(which(gp$hyperpar$component == ".lik")):gpHyperparIdx(gp, i)] == ".lik"))
 	i <- gpHyperparIdx(gp, i) - min(which(gp$hyperpar$component == ".lik")) + 1 # get the index of the likelihood hyperparameter within all likelihood hyperparameters (including the fixed ones)
 	numLikHyperpar <- sum(gp$hyperpar$component == ".lik") # number of all likelihood hyperparameters (including the fixed ones); we don't exclude the fixed ones for the RTMB tape
+	stopifnot(i >= 1)
+	stopifnot(i <= numLikHyperpar)
 	
 	if (gp$lik.reindex2main && gp$GP_factor != "1") { 
 		stopifnot(gpDataHasMainTable(data))	
@@ -33,6 +38,5 @@ d1_dhyp <- function (gp, f, data = gp$data, hyperpar, i)
 		stop("second derivative of the user defined likelihood (negLogLik parameter to gp()) is not numeric: ", res)
 	if (length(res) != gp$GP_size)
 		stop("length of the second derivative the of user defined likelihood (negLogLik parameter to gp()) is ", length(res), ", should be ", gp$GP_size)
-	-res	
-
+	-res
 }

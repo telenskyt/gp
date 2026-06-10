@@ -6,8 +6,13 @@
 d2_dhyp <- function (gp, f, data = gp$data, hyperpar, i, fisher = NULL)
 {
 	mstart(id = "d2_dhyp")
+	# validation of i
+	stopifnot(gp$hyperpar$component[gpHyperparIdx(gp, i)] == ".lik")
+	stopifnot(all(gp$hyperpar$component[min(which(gp$hyperpar$component == ".lik")):gpHyperparIdx(gp, i)] == ".lik"))	
 	i <- gpHyperparIdx(gp, i) - min(which(gp$hyperpar$component == ".lik")) + 1 # get the index of the likelihood hyperparameter within all likelihood hyperparameters (including the fixed ones)
 	numLikHyperpar <- sum(gp$hyperpar$component == ".lik") # number of all likelihood hyperparameters (including the fixed ones); we don't exclude the fixed ones for the RTMB tape
+	stopifnot(i >= 1)
+	stopifnot(i <= numLikHyperpar)
 	
 	if (is.null(fisher))
 		nll_fun <- gp$lik$nll
