@@ -33,9 +33,9 @@ is going to be super fast if CI = NULL)}
 \item{type}{character; type of prediction:
 \describe{
 \item{\code{"latent"}}{predictions directly from the Gaussian Process itself (\code{f} and optionally \code{f_SE}), always in the dimension of the GP (\code{gp$GP_factor})}
-\item{\code{"terms"}}{predictions including GP (\code{f} and optionally \code{f_SE}) along with all the other terms used in the likelihood template. If gp$lik.reindex2main = TRUE,
+\item{\code{"terms"}}{predictions passed through first stage of the likelihood template, that is, including GP (\code{f} and optionally \code{f_SE}) along with all the other terms used in the likelihood template. If \code{gp$lik.reindex2main} is \code{TRUE},
 the predictions will be reindexed to the dimension of the main table.}
-\item{\code{"response"}}{predictions after applying the inverse link function. If gp$lik.reindex2main = TRUE,
+\item{\code{"response"}}{predictions passed through the first two stages of the likelihood template, that is, after applying the inverse link function. If \code{gp$lik.reindex2main} is \code{TRUE},
 the predictions will be reindexed to the dimension of the main table.}
 }}
 
