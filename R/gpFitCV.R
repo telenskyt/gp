@@ -120,7 +120,8 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 			predCV <- do.call(predict, c(list(m, test_data), pred.options))
 			
 			m <- gpPack(m, maximum = TRUE)
-			# pack it even more! :
+			# pack it even more! These will be then restored in gpGetCVModel() :
+			m$lik <- NULL
 			m$obsdata <- NULL
 			m$fit$a <- NULL
 			if (!is.null(m$fit$stage1))
@@ -219,6 +220,7 @@ gpGetCVModel <- function(gp, fold)
 		# validate fold.col and fold.fact arguments and get evaluated fold.col (as a vector)
 	
 	m <- gp$fitCV$models[[fold]]
+	m$lik <- gp$lik
 	m$obsdata <- gpDataSubset(gp$obsdata, fact = fold.fact, ind = (fold.col != fold))
 	
 	m <- gpUnpack(m, compute = FALSE)
