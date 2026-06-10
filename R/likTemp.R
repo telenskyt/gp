@@ -22,17 +22,6 @@ initialize = function(
 	process, 
 	lik)
 {
-	if (!is.function(terms))
-		stop("'terms' must be a function")
-	if (!is.function(link))
-		stop("'link' must be a function")
-	if (!is.function(process))
-		stop("'process' must be a function")
-		
-	environment(terms) <- asNamespace("gp")
-	environment(link) <- asNamespace("gp")
-	environment(process) <- asNamespace("gp")
-
 	#if (!is.null(terms))
 	terms <<- terms
 	link <<- link
@@ -41,11 +30,10 @@ initialize = function(
 	likFun <<- NULL
 	if (is.character(lik))
 		likType <<- lik
-	else if (is.function(lik)) {
-		environment(lik) <- asNamespace("gp")
+	else if (is.function(lik)) 
 		likFun <<- lik
-	}
 },
+
 
 ### template interface
 #
