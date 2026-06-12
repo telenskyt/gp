@@ -130,12 +130,14 @@ cat("Re-creating covariance matrix... ")
 		gc()
 			xx <- xx * gp$fit$K
 		gc() # ta vlozena gc() tady jsou velmi dulezita!!!
-			xx <- xx + diag(n)
+			diag(xx) <- diag(xx) + 1
 		gc()
 		} else {
 		gc()
 			rW <- chol_W(gp$fit$W)
-			xx <- rW %*% gp$fit$K %*% t(rW) + diag(n)
+			xx <- rW %*% gp$fit$K %*% t(rW)
+		gc() # ta vlozena gc() tady jsou velmi dulezita!!! (pro nizsi konzumaci pameti)
+			diag(xx) <- diag(xx) + 1
 		gc()
 		}
 		if (!need.K) {

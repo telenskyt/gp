@@ -127,7 +127,15 @@ gc()
 		cf <- f - mn		
 		if (gp$W.type == "diag") {
 			rW <- sqrt(W) # W and rW are vectors in this case
-			L <- chol(rW %*% t(rW) * K + diag(n))
+			xx <- rW %*% t(rW)
+		gc()
+			xx <- xx * K
+		gc() # ta vlozena gc() tady jsou velmi dulezita!!!
+			diag(xx) <- diag(xx) + 1
+		gc()
+			L <- chol(xx)
+			rm(xx)
+		gc()
 				# caution! This L is a transpose of the L in R&W2006, it is upper-triangular. Here, the L <- chol(B) means t(L) %*% L == B, in R&W2006 it is L %*% t(L) == B
 				# but I've checked this code of finding mode and also the predictions and it's used correctly (it takes this into account). -- Tomas 02/2020
 			b <- W * cf + wt * d1(gp, f, y, hyperpar)
@@ -135,7 +143,12 @@ gc()
 				# here it doesn't pay off to do just one backsolve() and then crossprod, because if we associate it this way, we need to backsolve just a single vector!
 		} else {
 			rW <- chol_W(W)
-			L <- chol(rW %*% K %*% t(rW) + diag(n))
+			xx <- rW %*% K %*% t(rW)
+		gc()
+			diag(xx) <- diag(xx) + 1
+			L <- chol(xx)
+			rm(xx)
+		gc()
 			b <- W %*% cf + wt * d1(gp, f, y, hyperpar)
 			a_new_proposed <- b - t(rW) %*% backsolve(L, backsolve(L, rW %*% (K %*% b), transpose = TRUE))
 				# here it doesn't pay off to do just one backsolve() and then crossprod, because if we associate it this way, we need to backsolve just a single vector!
@@ -259,13 +272,14 @@ gc()
 	gc()
 		xx <- xx * K
 	gc() # ta vlozena gc() tady jsou velmi dulezita!!!
-		xx <- xx + diag(n)
+		diag(xx) <- diag(xx) + 1
 	gc()
 	} else {
 	gc()
 		rW <- chol_W(W)
-		xx <- rW %*% K %*% t(rW) + diag(n)
-	gc()
+		xx <- rW %*% K %*% t(rW)
+	gc() # ta vlozena gc() tady jsou velmi dulezita!!!
+		diag(xx) <- diag(xx) + 1
 	}
     L <- chol(xx) # see the note on L above (it's a transpose of L in R&W2006, but it's OK)
 	rm(xx)
