@@ -7,7 +7,7 @@
 #'		The column (or the supplied vector) must be a vector of integers from \code{1} to \code{N} (\code{N} being the number of folds), 
 #'		specifying the number of the cross-validation fold the given record belongs to.
 #' @param fold.fact a factor along which the cross-validation folds (\code{fold.col}) are specified. Factor \code{"1"} means the folds are specified for the rows of the main table.
-#'		Note that if the GP dimension is given by some real grouping factor (i.e. \code{p$GP_factor != "1"}), then the \code{fold.fact} must be that factor.
+#'		Note that if the GP dimension is given by some real grouping factor (i.e. \code{gp$GP_factor != "1"}), then the \code{fold.fact} must be that factor.
 #' @param folds integer vector of folds to fit; if \code{NULL} (the default), all folds are fit
 #' @param start.from.model an object of class \code{gp} to take the starting values from (from the \code{value} column in the hyperparameter table, 
 #'		see \code{\link{gpHyperparStartFromModel}}). If specified, then for each cross-validation fold model to be fit, 
