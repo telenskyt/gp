@@ -44,6 +44,8 @@ gpFitLaplace <- function (gp, method = c('Laplace', 'Laplace-Fisher'), fisher.op
 			h, mn = NULL, wt = 1, e = NULL, tol = 10 ^ -6, itmax = 50,
             verbose = FALSE, use_f_start = FALSE, grad.computation = TRUE, mem_verbose = FALSE, num.correct.W.tol = 10*sqrt(.Machine$double.eps)) 
 {
+	if (is.null(gp[["data"]]))
+		stop("The gp object doesn't contain scaled data; perpahs you need to call gpUnpack() on it (you can use compute = FALSE to save CPU time)")
 	print(match.call())
 	method <- match.arg(method)
 	fisher <- NULL
@@ -330,8 +332,10 @@ if (grad.computation) {
     # gradient components
 	if (gp$W.type == "diag")
 		LTinv.rW <- backsolve(L, diag(rW), transpose = TRUE) # L^T^-1 chol(W)
-	else
+	else {
+		rW <- suppressWarnings(as.matrix(rW))
 		LTinv.rW <- backsolve(L, rW, transpose = TRUE) # L^T^-1 chol(W)
+	}
 		
 gc()
     R <- crossprod(LTinv.rW)
