@@ -21,7 +21,7 @@
 #'		See \code{fisher.options} for the latter method.
 #'		Laplace-Fisher approximation is the solution for when the hessian of the negative log likelihood is not positive semi-definite.
 #'
-#' @param fisher.options list of the following options specifying how to generate the Fisher information matrix:
+#' @param fisher.options list of the following options specifying how to generate the Fisher information matrix (applies when \code{method = "Laplace-Fisher"}):
 #' \describe{
 #' \item{\code{sampling}}{should sampling be used to create the Fisher information matrix? If \code{FALSE} (the default), likelihood-specific method must be implemented.
 #'							Sampling can be used when no such method is implemented (but it is slower).}
