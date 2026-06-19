@@ -164,8 +164,10 @@ cat("Re-creating covariance matrix... ")
 		stopifnot(!is.null(L))
 		if (gp$W.type == "diag")
 			LTinv.rW <- backsolve(L, diag(rW), transpose = TRUE) # L^T^-1 chol(W)
-		else
-			LTinv.rW <- backsolve(L, rW, transpose = TRUE) # L^T^-1 chol(W)
+		else {
+			rW.dense <- suppressWarnings(as.matrix(rW))
+			LTinv.rW <- backsolve(L, rW.dense, transpose = TRUE) # L^T^-1 chol(W)
+		}
 		mstop(id = "LTinv.rW")
 	}
 	if (need.L) {
