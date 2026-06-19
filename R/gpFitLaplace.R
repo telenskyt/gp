@@ -350,8 +350,9 @@ gc()
 		diag_posterior_cov <- diag(K) - colSums((LTinv.rW %*% K)^2) # diagonal of (K^-1 + W)^-1, the posterior covariance matrix
 		s2 <- t(diag_posterior_cov / 2 * d3(gp, f, y, hyperpar, fisher))
 	} else {
-		posterior_cov <- K - crossprod(LTinv.rW %*% K)
-		s2 <- t(flatten(mask(posterior_cov, W))) %*% d3(gp, f, y, hyperpar, fisher) / 2
+		posterior_cov_masked <- mask(K - crossprod(LTinv.rW %*% K), W) # perhaps this whole thing can be optimized even more; maybe by using torch::torch_sparse_sampled_addmm()? NOTE-OPTIM-123
+		gc()
+		s2 <- t(flatten(posterior_cov_masked)) %*% d3(gp, f, y, hyperpar, fisher) / 2
 	}
 	cat("gpFitLaplace(): common gradient computations took ")
 	mstop(id = "graf_grad_common")	
@@ -376,9 +377,8 @@ gc()
 		} else { # likelihood hyperparameter! Finally possible!! Celebration!! This I implemented using formulas in Groot et al 2014! Otestovano a proslo!
 			if (gp$W.type == "diag")
 				s1 <- d0_dhyp(gp, f, y, hyperpar, i) + t(diag_posterior_cov) %*% d2_dhyp(gp, f, y, hyperpar, i, fisher) / 2
-			else
-				s1 <- d0_dhyp(gp, f, y, hyperpar, i) + sum(posterior_cov * d2_dhyp(gp, f, y, hyperpar, i, fisher)) / 2
-					# here we could also use the mask(posterior_cov, W) from above instead; not sure what is faster
+			else 
+				s1 <- d0_dhyp(gp, f, y, hyperpar, i) + sum(posterior_cov_masked * d2_dhyp(gp, f, y, hyperpar, i, fisher)) / 2
 			b <- K %*% d1_dhyp(gp, f, y, hyperpar, i)
 		}
 		h_grads[i] <- s1 + s2 %*% (b - K %*% (R %*% b))
