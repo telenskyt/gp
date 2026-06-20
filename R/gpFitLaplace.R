@@ -398,9 +398,9 @@ gc()
 	vardim <- t(sapply(ls(), function (x) if (is.null(dim(get(x)))) c(length(get(x)), 0) else dim(get(x))))
 	colnames(vardim) <- c("rows", "cols")
 	
-    if(verbose ) cat(paste("  ", it, "Laplace iterations\n"))
+    if (verbose) cat(paste("  ", it, "Laplace iterations\n"))
 	if (it == itmax) {
-		warning("timed out, don't trust the inference!") # !!!! make this a warning, at least!
+		warning("number of iterations reached itmax, don't trust the convergence!") # !!!! make this a warning, at least! Maybe we should have some convergence codes.
 	}
 	# vector h is already imported to gp$hyperpar
     fit <- c(list(method = method, h = h, f = f, a = a, W = W, K = K), 
