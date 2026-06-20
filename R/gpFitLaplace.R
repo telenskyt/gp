@@ -8,6 +8,7 @@
 # num.correct.W.tol - numerical correction of W - if not NULL, values of W (hessian diagonal) will be corrected for small negative numbers, within given tolerance
 #
 # Value:
+# f_cov_masked: posterior covariance masked by the structural non-zeros in W
 # h_grads jsou: d marginal log likelihood / d h (!!!! pozor neni to derivace mnll, ale -mnll!!!!!!)
 #
 # changelog - previous modifications of graf::gpFitLaplace() by Tomas Telensky: 
@@ -50,6 +51,7 @@ gpFitLaplace <- function (gp, method = c('Laplace', 'Laplace-Fisher'), fisher.op
 	method <- match.arg(method)
 	fisher <- NULL
 	LTinv.rW <- NULL
+	f_cov_masked <- NULL
 	if (method == "Laplace-Fisher")
 		fisher <- fisher.options
 	wt <- 1 # currently weights are not supported
@@ -392,6 +394,13 @@ gc()
 	#Rprof(NULL)
 	cat("gpFitLaplace(): whole gradients computation took ")
 	mstop(id = "graf_grad")
+	
+	if (gp$W.type == "diag") 
+		f_cov_masked <- Diagonal(diag_posterior_cov) 
+	else {
+		f_cov_masked <- posterior_cov_masked
+		rm(posterior_cov_masked)
+	}
 }
    
 	# get local variable dimensions, to be able to read code better and maybe optimize it
@@ -403,7 +412,7 @@ gc()
 		warning("number of iterations reached itmax, don't trust the convergence!") # !!!! make this a warning, at least! Maybe we should have some convergence codes.
 	}
 	# vector h is already imported to gp$hyperpar
-    fit <- c(list(method = method, h = h, f = f, a = a, W = W, K = K), 
+    fit <- c(list(method = method, h = h, f = f, f_cov_masked = f_cov_masked, a = a, W = W, K = K), 
 				if (!is.null(LTinv.rW)) list(LTinv.rW = LTinv.rW) else if (!is.null(L)) list(L = L, rW = rW),
                 list(e = e, mnll = mnll, wt = wt, psi = obj, tol = tol,
                 h_grads = h_grads, vardim = vardim, iterations = it, itmax = itmax, 
