@@ -267,7 +267,7 @@ gpHyperparCheckAll <- function (gp)
 {
 	gpHyperparCheck(gp, gp$hyperpar$start, incl.fixed = TRUE)
 	gpHyperparCheck(gp, gp$hyperpar$value, incl.fixed = TRUE)
-	stopifnot(!is.unsorted(gp$hyperparcomponent == ".lik")) # check that the likelihood hyperparameters are at the end of the table
+	stopifnot(!is.unsorted(gp$hyperpar$component == ".lik")) # check that the likelihood hyperparameters are at the end of the table
 }
 
 #' Get the starting values of the hyperparameters from another model (gp0) wherever possible
