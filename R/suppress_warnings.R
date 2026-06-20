@@ -160,6 +160,8 @@ inspect_warnings <- function(expr, stack = c("condition", "full"))
 #' The stack is trimmed at the warning's [conditionCall()] before matching.
 #' If all filters are `NULL`, this suppresses all warnings from `expr`.
 #'
+#' If both \code{fun} and \code{package} arguments are supplied, they must match at the same frame of the stack.
+#'
 #' @examples
 #' f <- function() {
 #' 	warning("f warned")
@@ -181,6 +183,14 @@ suppress_warnings_from <- function(
 	fixed = TRUE
 ) 
 {
+	if (!is.null(package) && (!is.character(package) || length(package) != 1L)) {
+		stop("`package` must be NULL or a single string.", call. = FALSE)
+	}
+
+	if (!is.null(fun) && (!is.character(fun) || length(fun) != 1L)) {
+		stop("`fun` must be NULL or a single string.", call. = FALSE)
+	}
+
 	withCallingHandlers(
 		expr,
 		warning = function(w) {
@@ -189,15 +199,19 @@ suppress_warnings_from <- function(
 
 			st <- warning_stack(w, trim = "condition")
 
-			pkg_ok <- is.null(package) ||
-				any(st$package == package, na.rm = TRUE)
+			stack_ok <- any(vapply(seq_len(nrow(st)), function(i) {
+				pkg_ok <- is.null(package) ||
+					!is.na(st$package[i]) && st$package[i] == package
 
-			fun_ok <- is.null(fun) ||
-				any(st$fun == fun, na.rm = TRUE)
+				fun_ok <- is.null(fun) ||
+					!is.na(st$fun[i]) && st$fun[i] == fun
 
-			if (msg_ok && pkg_ok && fun_ok) {
+				pkg_ok && fun_ok
+			}, logical(1L)))
+
+			if (msg_ok && stack_ok) {
 				tryInvokeRestart("muffleWarning")
-			}
+			}			
 		}
 	)
 }
