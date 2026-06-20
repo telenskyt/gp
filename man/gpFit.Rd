@@ -54,7 +54,7 @@ the \code{gp$hyperpar[,"value"]} column when \code{opt.h = FALSE}.}
 
 \item{opt.control}{list of control parameters passed to the \code{optim(control = )}}
 
-\item{fisher.options}{list of the following options specifying how to generate the Fisher information matrix:
+\item{fisher.options}{list of the following options specifying how to generate the Fisher information matrix (applies when \code{method = "Laplace-Fisher"}):
 \describe{
 \item{\code{sampling}}{should sampling be used to create the Fisher information matrix? If \code{FALSE} (the default), likelihood-specific method must be implemented.
 Sampling can be used when no such method is implemented (but it is slower).}
