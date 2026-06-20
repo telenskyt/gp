@@ -167,7 +167,7 @@ cat("Re-creating covariance matrix... ")
 		if (gp$W.type == "diag")
 			LTinv.rW <- backsolve(L, diag(rW), transpose = TRUE) # L^T^-1 chol(W)
 		else {
-			rW.dense <- suppress_warnings_from(as.matrix(rW), "sparse->dense coercion: allocating vector of size", fun = "asMethod", package = "Matrix")
+			rW.dense <- suppress_warnings_from(as.matrix(rW), "sparse->dense coercion: allocating vector of size", fun = "asMethod")
 			LTinv.rW <- backsolve(L, rW.dense, transpose = TRUE) # L^T^-1 chol(W)
 		}
 		mstop(id = "LTinv.rW")

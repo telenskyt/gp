@@ -346,7 +346,7 @@ if (grad.computation) {
 		LTinv.rW <- backsolve(L, diag(rW), transpose = TRUE) # L^T^-1 chol(W)
 			# maybe some more optimization could be done in this branch (replacing one matrix multiply %*% with *), see https://chatgpt.com/c/6a364786-35b4-83ed-8457-fce90d16471f, NOTE-OPTIM-124
 	else {
-		rW <- suppress_warnings_from(as.matrix(rW), "sparse->dense coercion: allocating vector of size", fun = "asMethod", package = "Matrix")
+		rW <- suppress_warnings_from(as.matrix(rW), "sparse->dense coercion: allocating vector of size", fun = "asMethod")
 		LTinv.rW <- backsolve(L, rW, transpose = TRUE) # L^T^-1 chol(W)
 	}
 		
