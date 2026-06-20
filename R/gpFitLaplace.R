@@ -334,6 +334,7 @@ if (grad.computation) {
     # gradient components
 	if (gp$W.type == "diag")
 		LTinv.rW <- backsolve(L, diag(rW), transpose = TRUE) # L^T^-1 chol(W)
+			# maybe some more optimization could be done in this branch (replacing one matrix multiply %*% with *), see https://chatgpt.com/c/6a364786-35b4-83ed-8457-fce90d16471f, NOTE-OPTIM-124
 	else {
 		rW <- suppress_warnings_from(as.matrix(rW), "sparse->dense coercion: allocating vector of size", fun = "asMethod", package = "Matrix")
 		LTinv.rW <- backsolve(L, rW, transpose = TRUE) # L^T^-1 chol(W)
@@ -352,7 +353,10 @@ gc()
 		diag_posterior_cov <- diag(K) - colSums((LTinv.rW %*% K)^2) # diagonal of (K^-1 + W)^-1, the posterior covariance matrix
 		s2 <- t(diag_posterior_cov / 2 * d3(gp, f, y, hyperpar, fisher))
 	} else {
+		mstart(id = "graf_masked_posterior")
 		posterior_cov_masked <- mask(K - crossprod(LTinv.rW %*% K), W) # perhaps this whole thing can be optimized even more; maybe by using torch::torch_sparse_sampled_addmm()? NOTE-OPTIM-123
+		cat("gpFitLaplace(): computation of posterior_cov_masked took ")
+		mstop(id = "graf_masked_posterior")
 		gc()
 		s2 <- t(flatten(posterior_cov_masked)) %*% d3(gp, f, y, hyperpar, fisher) / 2
 	}
