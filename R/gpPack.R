@@ -25,9 +25,10 @@ gpPackFit <- function(fit, maximum = FALSE)
 	fit$rW <- NULL
 	fit$K <- NULL
 	fit$W <- NULL
-	if (maximum) 
+	if (maximum) {
 		fit$f <- NULL # nakonec i bez tohoto se da obejit!!! :-))) # ale defaultne necham tam radsi uplne to puvodni, kvuli ruzne num nestabilite....
-	else
+		fit$f_cov_masked <- NULL
+	} else
 		rownames(fit$f) <- NULL # rownames take a lot of space! Just one column matrix with them 279872 bytes, without 31440 bytes!!!
 							# And they only had 6 characters each! (nrow = 3881, ncol = 1). R is not very efficient storing them.
 							# And rownames are in obsx already
@@ -74,6 +75,7 @@ gpUnpack <- function (gp, compute = TRUE, need.K = compute, need.L = FALSE, need
 		stopifnot(!is.null(gf$fit[["K"]]))
 		stopifnot(!is.null(gf$fit[["W"]]))
 		gp$fit$f <- gf$fit$f
+		gp$fit$f_cov_masked <- gf$fit$f_cov_masked
 		gp$fit$a <- gf$fit$a
 		gp$fit$K <- gf$fit$K
 		gp$fit$W <- gf$fit$W
