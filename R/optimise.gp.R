@@ -13,7 +13,7 @@ objective <- function(theta, prior.pars, isfac, args, fun)
 	
 	# set the hyperparameters
 	args$h <- h
-	
+		
 #	if (hyper_iter > 1) {
 #		cat("\thyper_iter", hyper_iter, "head(f_start):", head(f_[,hyper_iter - 1]), "\n")
 #		args$f_start <- f_[,hyper_iter - 1]
@@ -62,7 +62,7 @@ objective <- function(theta, prior.pars, isfac, args, fun)
 		stopifnot(all(h == m$h))
 		iter_h <<- rbind(iter_h, h)
 		if (args$use_f_start)
-			f_start <<- list(f = m$f, a = m$a, psi = m$psi)
+			f_start <<- m$f_start
 		f_ <<- cbind(f_, m$f)
 	}
 

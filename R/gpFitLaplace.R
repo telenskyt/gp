@@ -1,5 +1,5 @@
 # gpFitLaplace - find optimum of the GP for given set of hyperparameters using Laplace approximation, or Laplace-Fisher approximation
-# ???? proc f_start neni parametr???
+# f_start cannot be an argument of this function, because of memoise! Needs to be passed in a closure (enclosing environment). It is a list of information needed to use f_start.
 #
 # mn - mean vector, on GP scale. If NULL, mnfun() is used.
 # h - vector of hyperparameters that are being optimized (not fixed), optim.link funkci musi resit volajici, zde se uz okolo tohoto nic neresi
@@ -78,15 +78,25 @@ print(gc())
 
 	# an identity matrix for the calculations (oh no please)
 	#eye <- diag(n) 
+	#if (hyper_iter >= 2)
+	#	stop("HERE")
 	if (use_f_start && exists("f_start") && !is.null(f_start) && hyper_iter >= 2) { # myslim ze dava smysl zvednout iteraci, od ktere se pouziva f_start...
 		# hyper_iter podminka: ono to failovalo kdyz se fci graf() dal l.start a bylo use_f_start = TRUE, nekdy to slo do uplne numerickejch chyb
 		# tak tam davam tuto podminku ze pouziju f_start az kdyz se to trochu stabilizuje
 		# !! pozor, z nejakeho duvodu promenna hyper_iter tady bude cislovana od 0 (= 0 v 1. iteraci)
 		cat("..using f_start\n")
-		f <- f_start$f # !!!  nevim jestli to bude fungovat!	Podle me je potreba s tim se privest i `a` a obj.
+		if (is.null(hyperpar[[".lik"]])) { 
+			f <- f_start$f
+		} else { # there are likelihood hyperparameters
+			if (is.null(gp$lik$f_start)) # we need specific method for calculating f_start; 
+				stop("the likelihood template is missing the f_start method; it is needed because gpFit(use_f_start = TRUE) and the likelihood has hyperparameters. Either provide the f_start method in gp(lik=) argument or set gpFit(use_f_start = FALSE), at the expense of slower fit.")
+			par <- gpGetParForLikTemplate(gp, f = f_start$f, y, hyperpar) # provide some f, so that it works,
+			par$f <- NULL # but we will delete it anyway
+			f <- gp$lik$f_start(prev_terms = f_start$terms, current_terms = gp$lik$terms(y, par))
+		}
 		#a <- f_start$a
-		obj <- Inf # proste nevime, stare `a' nelze pouzit, je nutne ho spocist znovu, stejne jako obj!
-		a <- rep(0, n)
+		obj <- Inf # this value is unknown, and we can't use the old `a`, we need to calculate it again, and `obj` as well!
+		a <- rep(0, n) # so just start `a` from this value
 		a_doesnt_correspond_with_f <- TRUE
 		#f <- mn
 		#obj <- -sum(wt * d0(f, y))		
@@ -415,13 +425,20 @@ gc()
 	if (it == itmax) {
 		warning("number of iterations reached itmax, don't trust the convergence!") # !!!! make this a warning, at least! Maybe we should have some convergence codes.
 	}
+	if (!use_f_start) 
+		new_f_start <- NULL
+	else {
+		par <- gpGetParForLikTemplate(gp, f, y, hyperpar)
+		new_f_start <- list(f = f, terms = gp$lik$stages(y, par, stages = 1))
+	}	
+
 	# vector h is already imported to gp$hyperpar
     fit <- c(list(method = method, h = h, f = f, f_cov_masked = f_cov_masked, a = a, W = W, K = K), 
 				if (!is.null(LTinv.rW)) list(LTinv.rW = LTinv.rW) else if (!is.null(L)) list(L = L, rW = rW),
                 list(e = e, mnll = mnll, wt = wt, psi = obj, tol = tol,
                 h_grads = h_grads, vardim = vardim, iterations = it, itmax = itmax, 
 				LAiter = LAiter, lastLAObjDiff = obj - obj.old, f_start_was_reset = f_start_was_reset,
-				fisher.options = fisher))
+				fisher.options = fisher, f_start = new_f_start))
 	fit
 }
 

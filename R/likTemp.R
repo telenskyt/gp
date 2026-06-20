@@ -12,7 +12,8 @@ likTempPhased <- setRefClass(
 		link = "function",
 		process = "function",
 		likType = "ANY",
-		likFun = "ANY"
+		likFun = "ANY",
+		f_start = "ANY"
 	),
 	methods = list(
 	
@@ -20,7 +21,8 @@ initialize = function(
 	terms = function (data, par) NULL, 
 	link = function (data, par) par, 
 	process, 
-	lik)
+	lik,
+	f_start = NULL)
 {
 	#if (!is.null(terms))
 	terms <<- terms
@@ -32,6 +34,11 @@ initialize = function(
 		likType <<- lik
 	else if (is.function(lik)) 
 		likFun <<- lik
+	if (!is.null(f_start)) {
+		if (!(is.function(f_start) && identical(names(formals(f_start)), c("prev_terms", "current_terms"))))
+			stop("f_start must be a function(prev_terms, current_terms)")
+	}
+	f_start <<- f_start
 },
 
 
