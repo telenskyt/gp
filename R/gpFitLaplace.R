@@ -333,7 +333,7 @@ if (grad.computation) {
 	if (gp$W.type == "diag")
 		LTinv.rW <- backsolve(L, diag(rW), transpose = TRUE) # L^T^-1 chol(W)
 	else {
-		rW <- suppressWarnings(as.matrix(rW))
+		rW <- suppress_warnings_from(as.matrix(rW), "sparse->dense coercion: allocating vector of size", fun = "asMethod", package = "Matrix")
 		LTinv.rW <- backsolve(L, rW, transpose = TRUE) # L^T^-1 chol(W)
 	}
 		
@@ -462,7 +462,10 @@ chol_psd <- function(W, rel = 1e-15, maxit = 7)
 
 	for (i in 1:maxit) {
 		out <- try(
-			suppressWarnings(Matrix::Cholesky(W, perm = TRUE, LDL = FALSE, super = FALSE, Imult = tau)),
+			suppress_warnings_from(
+				Matrix::Cholesky(W, perm = TRUE, LDL = FALSE, super = FALSE, Imult = tau), 
+				message = "CHOLMOD warning 'not positive definite'", fun = "Cholesky", package = "Matrix"
+			),
 			silent = TRUE
 		)
 		if (!inherits(out, "try-error")) {
