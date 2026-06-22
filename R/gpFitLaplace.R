@@ -41,6 +41,7 @@
 # Groot, P., Peters, M., Heskes, T., & Ketter, W. (2014). Fast Laplace Approximation for Gaussian Processes with a Tensor Product Kernel.
 #
 #' @importFrom Matrix t
+#' @importFrom Matrix Diagonal
 gpFitLaplace <- function (gp, method = c('Laplace', 'Laplace-Fisher'), fisher.options = list(sampling = FALSE, samples = 1000), 
 			h, mn = NULL, wt = 1, e = NULL, tol = 10 ^ -6, itmax = 50,
             verbose = FALSE, use_f_start = FALSE, grad.computation = TRUE, mem_verbose = FALSE, num.correct.W.tol = 10*sqrt(.Machine$double.eps)) 
@@ -410,7 +411,7 @@ gc()
 	mstop(id = "graf_grad")
 	
 	if (gp$W.type == "diag") 
-		f_cov_masked <- Diagonal(diag_posterior_cov) 
+		f_cov_masked <- Diagonal(x = diag_posterior_cov) 
 	else {
 		f_cov_masked <- posterior_cov_masked
 		rm(posterior_cov_masked)
