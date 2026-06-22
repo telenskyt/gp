@@ -101,7 +101,7 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 
 	if (!recursive) { # top level call, from the outside (not an internal call) - will be called just once in the beginning
 		if (grad.computation == FALSE && opt.h == TRUE)
-			stop("grad.computation must be TRUE when hyperparameters are optimized")
+			warning("grad.computation is set to FALSE when hyperparameters are optimized - hope you intended it!")
 
 		# get all visible object as a list
 		# (dela to moc slozite, stacilo by c(as.list(environment()), list(...))  viz https://stackoverflow.com/a/17244041

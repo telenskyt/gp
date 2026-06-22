@@ -171,7 +171,10 @@ optimise.gp <- function(args)
 	# optimisation arguments
 	if (args$method == 'Laplace' || args$method == 'Laplace-Fisher') {
 		meth <- 'L-BFGS-B'
-		grad <- gradient
+		if (args$grad.computation)
+			grad <- gradient
+		else
+			grad <- NULL
 	} else {
 		stop("not implemented")
 		meth <- 'BFGS'
