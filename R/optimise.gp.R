@@ -170,7 +170,7 @@ optimise.gp <- function(args)
 		
 	# optimisation arguments
 	if (args$method == 'Laplace' || args$method == 'Laplace-Fisher') {
-		meth <- 'L-BFGS-B'
+		#meth <- 'L-BFGS-B'
 		if (args$grad.computation)
 			grad <- gradient
 		else
@@ -193,7 +193,7 @@ optimise.gp <- function(args)
 				 hessian = args$hessian,
 				 lower = gpLink(args$gp, gpHyperparExportVector(args$gp, "low")),
 				 upper = gpLink(args$gp, gpHyperparExportVector(args$gp, "up")),
-				 method = meth,
+				 method = args$opt.method,
 				 control = args$opt.control)
 	
 	# get the resultant hyperparameters

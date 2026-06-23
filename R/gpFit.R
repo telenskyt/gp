@@ -14,7 +14,8 @@
 # !!! bacha ten text vyse (ty dva radky) je duplikovan zde
 #' @param stage1low the low threshold for the sigma2 parameter of the components for which the two-stage fitting applies.
 #' @param use.prior logical; if TRUE, likelihood + prior (posterior) is optimized; if FALSE, only likelihood is optimized.
-#' @param hessian logical; compute and return the Hessian during the optimization. Warning: may be heavy on CPU time! Default FALSE.
+#' @param hessian logical; compute and return the Hessian during the hyperparameter optimization. Warning: may be heavy on CPU time! Default FALSE.
+#' @param opt.method the method used by \code{optim(method = )}
 #' @param opt.control list of control parameters passed to the \code{optim(control = )}
 #' @param verbose logical
 #' @param method character; fitting method. Either \code{"Laplace"} (Laplace approximation), or \code{"Laplace-Fisher"} (Laplace-Fisher approximation).
@@ -86,6 +87,7 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 				  use.prior = TRUE,
 				  hessian = FALSE,
 #				  optim.low = -Inf, optim.up = Inf,
+				  opt.method = 'L-BFGS-B',
 				  opt.control = list(factr = 1e10, maxit = 190),
 				  fisher.options = list(sampling = FALSE, samples = 1000),
 				  verbose = FALSE, 
