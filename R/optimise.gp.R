@@ -22,7 +22,7 @@ objective <- function(theta, prior.pars, isfac, args, fun)
 	m <- do.call(fun, args)
 	
 	# log likelihood and prior
-	llik <- -m$mnll
+	llik <- -m$nlml
 
 	lpri <- sum(gpPrior(args$gp, h))
 	
@@ -33,8 +33,8 @@ objective <- function(theta, prior.pars, isfac, args, fun)
 	if (args$use.prior)
 		objective <- -lpost
 	else
-		objective <- m$mnll
-	cat("opt: mnll:", m$mnll, ", -logPrior: ", -lpri, ", negLogPosterior:", -lpost, "\n")
+		objective <- m$nlml
+	cat("opt: nlml:", m$nlml, ", -logPrior: ", -lpri, ", negLogPosterior:", -lpost, "\n")
 	
 	
 	AUC <- NA
@@ -50,7 +50,7 @@ objective <- function(theta, prior.pars, isfac, args, fun)
 		iter_info <<- rbind(iter_info, data.frame(
 			iter = hyper_iter,
 			LA_iterations = m$iterations, # pojmenovano LA, ale muze to byt i EP!
-			mnll = m$mnll, # marginal likelihood, ~ -log p(y|X), integral toho psi pro vsechna f
+			nlml = m$nlml, # marginal likelihood, ~ -log p(y|X), integral toho psi pro vsechna f
 			negLogPosterior = -lpost, # posterior (marginal), ~ -log p(theta|X,y)  toto se minimalizuje v hyperparam. optimalizaci
 			psi = ifelse(args$method == 'Laplace', m$psi, NA), # ~ - log p(f|X,y), vlastne posterior pro latent f, toto se minimalizuje v LA iteracich
 			lastLAObjDiff = m$lastLAObjDiff, # last difference between LA iteration objective (psi, which is minimized). When positive, last iteration objective was going up, which is something to look at still.

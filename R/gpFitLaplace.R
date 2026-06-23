@@ -9,7 +9,7 @@
 #
 # Value:
 # f_cov_masked: posterior covariance masked by the structural non-zeros in W
-# h_grads jsou: d marginal log likelihood / d h (!!!! pozor neni to derivace mnll, ale -mnll!!!!!!)
+# h_grads jsou: d marginal log likelihood / d h (!!!! pozor neni to derivace nlml, ale -nlml!!!!!!)
 #
 # changelog - previous modifications of graf::gpFitLaplace() by Tomas Telensky: 
 # v8: 
@@ -305,7 +305,7 @@ gc()
 	# `a` bylo spocitano relativne slozite, ale v tuto chvili doiterovalo do hodnoty d1(f, y, hyperpar) ! Viz (3.17), (3.21) a alg. 3.2 v R&W2006 :)
 
     # return marginal negative log-likelihood, (3.32) in R&W 2006 (pg 48), see alg. 3.1 (pg 46)
-    mnll <- (a %*% cf)[1, 1] / 2 + sum(log(diag(L))) - sum((wt * d0(gp, f, y, hyperpar))) 
+    nlml <- (a %*% cf)[1, 1] / 2 + sum(log(diag(L))) - sum((wt * d0(gp, f, y, hyperpar))) 
 		# (a %*% cf)[1, 1] = t(a) %*% cf ... otestoval jsem ze to tak je
 gc()
 	cat("gpFitLaplace(): fit took ")
@@ -436,7 +436,7 @@ gc()
 	# vector h is already imported to gp$hyperpar
     fit <- c(list(method = method, h = h, f = f, f_cov_masked = f_cov_masked, a = a, W = W, K = K), 
 				if (!is.null(LTinv.rW)) list(LTinv.rW = LTinv.rW) else if (!is.null(L)) list(L = L, rW = rW),
-                list(e = e, mnll = mnll, wt = wt, psi = obj, tol = tol,
+                list(e = e, nlml = nlml, wt = wt, psi = obj, tol = tol,
                 h_grads = h_grads, vardim = vardim, iterations = it, itmax = itmax, 
 				LAiter = LAiter, lastLAObjDiff = obj - obj.old, f_start_was_reset = f_start_was_reset,
 				fisher.options = fisher, f_start = new_f_start))
