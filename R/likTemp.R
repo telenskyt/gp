@@ -80,12 +80,19 @@ simulate = function (par, samples)
 },
 
 # nll: runs all the template phases one by one, and returns the negative log likelihood
+#
+# data: scaled data, always contains "y" - the training data
+# par: 
+#	- contains likelihood hyperparameters, if there are some
+#	- contains "f"
+#
+# returns: negative log likelihood (a single number)
 nll = function (data, par) 
 {
 	stages(data, par, stages = 1:5)
 },
 
-# pick which stages you want to run
+# pick which stages you want to run; data & par must correspond to the stages selected, as will the return value
 stages = function (data, par, stages = 1:5)
 {
 	if (1 %in% stages) {
