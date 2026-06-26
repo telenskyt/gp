@@ -62,7 +62,15 @@ mask <- function(D, S)
 		stop("dim(D) must equal dim(S).", call. = FALSE)
 	}
 
+	if (!methods::is(S, "generalMatrix")) {
+		S <- as(S, "generalMatrix")
+	}
+
 	P <- as(S, "CsparseMatrix")
+
+	if (!methods::is(P, "dgCMatrix"))
+		stop("this function is not tested for class(S) = ", paste(class(S), collapse = ", "))
+
 
 	nr <- nrow(D)
 	colNum <- rep.int(seq_len(ncol(D)) - 1L, diff(P@p)) # column number, numbered from 0
