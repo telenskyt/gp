@@ -146,7 +146,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 	reindex.ff2main <- FALSE
 	if (fold.fact != gp$GP_factor) { # first reason is this 
 		# now, reindex the fold.col to the dimension of the prediction (gp$GP_factor)
-		# thanks to the condition above, the only case when reindexing might be needed is when GP_factor = "1" and fold.fact = something else (=something smaller)
+		# thanks to the condition checked in gpFitCV__validate_and_get_fold_col(), the only case when reindexing might be needed is when GP_factor = "1" and fold.fact = something else (=something smaller)
 		stopifnot(gp$GP_factor == "1") # consequence of the checks above
 		stopifnot(fold.fact != "1") # consequence of the checks above
 		# now, we have to reindex fold.col to the main table
@@ -160,7 +160,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 		reindex.ff2main <- TRUE
 	}
 	if (reindex.ff2main) {
-		stopifnot(gpDataHasMainTable(gp$obsdata)) # has to have it in this case
+		stopifnot(gpDataHasMainTable(gp[["obsdata"]])) # has to have it in this case
 		fold_idx_col <- paste0(fold.fact, "_idx")
 		fold.col <- fold.col[gp$obsdata[[1]][[fold_idx_col]]]
 	}
