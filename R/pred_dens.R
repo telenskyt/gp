@@ -14,7 +14,8 @@
 # !!!! slo by udelat i multi-dimensional verzi pro W.type = "bdiag" s nejakou cubature()
 #	- ??? ale jak pak pres to iterovat? Neresi to nekdo? podle me mask(.., W) je k tomu blizko
 
-pred_dens_logit__int <- function(gp, data, pred, subdivisions = 10000L, ...)
+
+pred_dens_logit__int <- function(gp, data = gp[["data"]], pred, subdivisions = 10000L, ...)
 {
 	#vec <- gp$negLogLik$process(data, pred)
 	# vec - vector for given likelihood
@@ -24,20 +25,47 @@ pred_dens_logit__int <- function(gp, data, pred, subdivisions = 10000L, ...)
 	if (gp$W.type != "diag")
 		stop("W is not diagonal - please choose a different method for calculating predictive density (e.g. sampling)")
 	
+	if (is.list(pred)) {
+		stopifnot(!is.null(pred[["f"]]))
+		stopifnot(!is.null(pred[["f_cov_masked"]]))
+		stopifnot(inherits(pred[["f_cov_masked"]], "sparseMatrix"))
+		stopifnot(isDiagonal(pred[["f_cov_masked"]]))
+		pred <- as.matrix(data.frame(f = pred$f, f_SE = sqrt(diag(pred[["f_cov_masked"]]))))
+	} else if (is.data.frame(pred)) {
+		pred <- as.matrix(pred)
+	} else {
+		stopifnot(is.matrix(pred))
+	}
+	stopifnot(all(c("f", "f_SE") %in% colnames(pred)))
 	# for now, we only support the case when each f[i] corresponds to one likelihood component
-	#!!!! zde je jeste potreba nejaky typ checku,ze korespondence mezi indexy y a f je 1:1!!!!!
+	#!!!! zde je jeste potreba nejaky typ checku,ze korespondence mezi in	dexy y a f je 1:1!!!!!
 	#?? nejaky attribute te __process templaty?
 	
+
+	hyperpar <- gpHyperparList(gp)
 	N <- gpDataSize(data, fact = gp$GP_factor)
+	works_for_reindex_confirmed <- FALSE
 	pd <- c()
 	err <- c()		
 	for (i in 1:N) {
-		qlo <- qnorm(1e-10, f[i], f_SE[i])
-		qhi <- qnorm(1 - 1e-10, f[i], f_SE[i])
-		int <- integrate(function (x) gp$nllTempl$p_i(data, pred, i)*dnorm(x, pred$f[i], pred$f_SE[i]), qlo, qhi, subdivisions = subdivisions, ...)
+		data_i <- gpDataSubset(data, fact = gp$GP_factor, i)
+		par_i <- gp:::gpGetParForLikTemplate(gp, pred[i, "f"], data_i, hyperpar)
+		stopifnot(!is.null(par_i[["f"]]))
+		if (length(par_i$f) > 1) {
+			stopifnot(all(par_i$f == pred[i, "f"]))
+			works_for_reindex_confirmed <- TRUE
+		}
+		qlo <- qnorm(1e-10, pred[i, "f"], pred[i, "f_SE"])
+		qhi <- qnorm(1 - 1e-10, pred[i, "f"], pred[i, "f_SE"])
+		int <- integrate(function (x) { 
+			par_i$f <- rep(x, length(par_i$f)) # needed for the case of reindexing
+			gp$lik$stages(data_i, par_i, stages = 1:4)*dnorm(x, pred[i, "f"], pred[i, "f_SE"])
+		}, qlo, qhi, subdivisions = subdivisions, ...)
 		pd[i] <- int$value
 		err[i] <- int$abs.error/int$value
 	}
+	if (works_for_reindex_confirmed)
+		cat("!!! it was confirmed that it works for reindexing! CONF-123\n")
 	list(value = -sum(log(pd)), err = sum(log1p(err)))
 }
 
