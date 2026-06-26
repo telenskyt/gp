@@ -56,19 +56,48 @@ gpLooGen_v0 <- function (gp, folds)
 # a pak se provede ten trik s delenim dvou gaussian PDF v eq 38, 39, ale zobecni se to na multidimenzionalni.
 # a ono to konecne funguje!!!
 #
+#' @param gp GP model object
+#' @param fold.col either a name of a column in the main table, or a vector along factor \code{fold.fact}.
+#'		The column (or the supplied vector) must be a vector of integers from \code{1} to \code{N} (\code{N} being the number of folds), 
+#'		specifying the number of the cross-validation fold the given record belongs to.
+#' @param fold.fact a factor along which the cross-validation folds (\code{fold.col}) are specified. Factor \code{"1"} means the folds are specified for the rows of the main table.
+#'		Note that if the GP dimension is given by some real grouping factor (i.e. \code{gp$GP_factor != "1"}), then the \code{fold.fact} must be that factor.
+#
 #' @importFrom Matrix Matrix
+#' @importFrom Matrix fac2sparse
 #' @export
-gpLooGen <- function (gp, folds)
+gpLGOpred <- function (gp, fold.col, fold.fact = "1")
 {
-	stopifnot(is.vector(gp$fit$W))
+	fold.col <- gpFitCV__validate_and_get_fold_col(gp, fold.col, fold.fact)
+		# validate fold.col and fold.fact arguments and get evaluated fold.col (as a vector)
+
+	# similar code as in gpFitCV:
+	if (fold.fact != gp$GP_factor) {
+		# now, reindex the fold.col to the dimension of the prediction (gp$GP_factor)
+		# thanks to the condition checked in gpFitCV__validate_and_get_fold_col(), the only case when reindexing might be needed is when GP_factor = "1" and fold.fact = something else (=something smaller)
+		stopifnot(gp$GP_factor == "1") # consequence of the checks above
+		stopifnot(fold.fact != "1") # consequence of the checks above
+		# so now, we have to reindex fold.col to the main table, which is exactly corresponding to the GP dimension
+		stopifnot(gp$GP_size == gpDataSize(gp$obsdata, "1"))
+		
+		stopifnot(gp:::gpDataHasMainTable(gp[["obsdata"]])) # has to have it in this case
+		fold_idx_col <- paste0(fold.fact, "_idx")
+		fold.col <- fold.col[gp$obsdata[[1]][[fold_idx_col]]]		
+	}
+	# fold.col is now of the dimension of the GP
+
+	#stopifnot(is.vector(gp$fit$W))
 	pr.cov <- predict(gp, type = "latent", cov.fit = TRUE)
 
-	mask <- outer(folds, folds, "==")*1L
-	mask <- Matrix(mask, sparse = TRUE)
+	mask <- crossprod(fac2sparse(factor(fold.col))) # make a sparse matrix `mask` of the GP dimension, which has 1 where the elements belong to the same fold
+	pr.cov <- mask(pr.cov$cov, mask) # now mask the posterior to it
 
-	pr.cov <- pr.cov$cov * mask # this mask will practically make this block-diagonal w.r.t. the folds (generalization of diag()!)
-
-	M <- solve(pr.cov - diag(1/gp$fit$W))
+	if (gp$W.type == "diag")
+		M <- solve(pr.cov - Diagonal(x = 1/gp$fit$W))
+	else {
+		Winv <- solve(gp$fit$W)
+		M <- solve(pr.cov - Winv)
+	}
 	R <- pr.cov - pr.cov %*% M %*% pr.cov # use matrix inversion lemma, the form from R&W 2006 page 201 top!
 		# this calculates the inverse(inverse(pr.cov) - gp$fit$W)), even though the inverse(pr.cov) itself doesn't exist!!!
 		# (pozn.: na toto reseni me privedla page https://math.stackexchange.com/a/1251958/15731, i kdyz s tim primo nesouvisi - ale nasel jsem ji kdyz 
@@ -76,10 +105,13 @@ gpLooGen <- function (gp, folds)
 		#
 		# pozn: mozna by to slo spocitat nejak rychleji a lepe bez toho inversu, kdyz mam L? Ale asi ne, protoze ta pr.cov je uz po tom maskovani
 	
-	v.loo <- diag(R) # here we marginalize each an every single one, for this is needed the diagonality of W
-					# the generalization will not do this, it will have v.loo non-diagonal, but then it will be harder to integrate the predictive density over it
-	f.loo <- gp$fit$f - v.loo * gp$fit$a
-	data.frame(f = f.loo, f_SE = sqrt(v.loo))
+	if (gp$W.type == "diag")
+		f.loo.cov.masked <- Diagonal(x = diag(R))
+	else
+		f.loo.cov.masked <- mask(R, gp$fit$W) 
+	f.loo <- gp$fit$f - f.loo.cov.masked %*% gp$fit$a
+	list(f = as.matrix(f.loo), f_cov_masked = f.loo.cov.masked)
+		# keep f as a column vector, same as in gpFitLaplace()
 }
 
 
