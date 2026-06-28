@@ -31,7 +31,7 @@ the linear model}
 
 \item{lik.hyperpar}{character; should likelihood hyperparameters be fixed or optimized?}
 
-\item{lik.fix}{NULL or numeric scalar/vector; values used for fixed likelihood hyperparameters. If \code{NULL}, values are taken from \code{gp$hyperpar$value}.}
+\item{lik.fix}{Can be either a single numeric value - then it will be used for all likelihood hyperparameters - or \code{NULL}. If \code{NULL}, values are taken from \code{gp$hyperpar$value}.}
 
 \item{lik.prefix}{character; prefix added to likelihood hyperparameter names in \code{summary()}}
 
