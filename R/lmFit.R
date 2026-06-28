@@ -221,6 +221,92 @@ coef.lmFit <- function(object, ...)
 	sum
 }
 
+#' @method predict lmFit
+#' @export
+predict.lmFit <- function(object, newdata = NULL, se.fit = FALSE, ...)
+{
+	# Use the original table unless the caller supplied prediction data.
+	if (is.null(newdata)) {
+		data_table <- as.data.frame(object$data[[object$table]])
+	} else if (inherits(newdata, "gpData")) {
+		if (!object$table %in% names(newdata))
+			stop("Table `", object$table, "` is missing in `newdata`.")
+		data_table <- as.data.frame(newdata[[object$table]])
+	} else {
+		data_table <- as.data.frame(newdata)
+	}
+
+	# Build the prediction model matrix.
+	A <- model.matrix(object$formula, data_table)
+	if (nrow(A) != nrow(data_table))
+		stop("model.matrix() changed the number of rows from ", nrow(data_table), " to ", nrow(A), ".")
+	if (!identical(colnames(A), colnames(object$x)))
+		stop("Prediction model matrix columns do not match the fitted model matrix.")
+
+	# Extract fitted RTMB parameters and compute the linear predictor.
+	par <- object$obj$env$parList(object$fit$par)
+	f <- (A %*% par[[object$beta.name]])[,1]
+
+	# Return only the linear predictor unless standard errors were requested.
+	if (!se.fit)
+		return(f)
+
+	# Compute standard errors for the linear predictor from the beta covariance block.
+	sigma <- solve(object$obj$he(object$fit$par))
+	beta.ind <- seq_len(ncol(object$x))
+	sigma.beta <- sigma[beta.ind, beta.ind, drop = FALSE]
+	f.SE <- sqrt(rowSums((A %*% sigma.beta) * A))
+	data.frame(f = f, f_SE = f.SE)
+}
+
+# Count the parameters optimized by RTMB.
+lmFitDf <- function(object)
+{
+	length(object$fit$par)
+}
+
+#' @method nobs lmFit
+#' @export
+nobs.lmFit <- function(object, use.fallback = FALSE, ...)
+{
+	# Prefer the number of likelihood observations reported by the RTMB object.
+	rep <- object$obj$report(par = object$fit$par)
+	if (!is.null(rep$y))
+		return(length(rep$y))
+
+	# Fall back to model-matrix rows only when requested by the caller.
+	if (use.fallback)
+		return(nrow(object$x))
+
+	stop("Cannot determine number of observations: `obj$report()` did not return `y`.", call. = FALSE)
+}
+
+#' @method logLik lmFit
+#' @export
+logLik.lmFit <- function(object, ...)
+{
+	structure(
+		-object$fit$objective,
+		df = lmFitDf(object),
+		nobs = stats::nobs(object, use.fallback = TRUE),
+		class = "logLik"
+	)
+}
+
+#' @method AIC lmFit
+#' @export
+AIC.lmFit <- function(object, ..., k = 2)
+{
+	2*object$fit$objective + k*lmFitDf(object)
+}
+
+#' @method extractAIC lmFit
+#' @export
+extractAIC.lmFit <- function(object, scale, k = 2, ...)
+{
+	c(lmFitDf(object), AIC.lmFit(object, k = k))
+}
+
 #' @method summary lmFit
 #' @export
 summary.lmFit <- function(object, ...)
@@ -232,6 +318,7 @@ summary.lmFit <- function(object, ...)
 	printCoefmat(coef(object), ...)
 
 	cat("\nnegative log likelihood: ", object$fit$objective, "\n", sep = "")
+	cat("AIC: ", stats::AIC(object), "\n", sep = "")
 	invisible(object)
 }
 
