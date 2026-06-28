@@ -14,6 +14,7 @@ gpFit(
   h = NULL,
   use.prior = TRUE,
   hessian = FALSE,
+  opt.method = "L-BFGS-B",
   opt.control = list(factr = 1e+10, maxit = 190),
   fisher.options = list(sampling = FALSE, samples = 1000),
   verbose = FALSE,
@@ -50,7 +51,9 @@ the \code{gp$hyperpar[,"value"]} column when \code{opt.h = FALSE}.}
 
 \item{use.prior}{logical; if TRUE, likelihood + prior (posterior) is optimized; if FALSE, only likelihood is optimized.}
 
-\item{hessian}{logical; compute and return the Hessian during the optimization. Warning: may be heavy on CPU time! Default FALSE.}
+\item{hessian}{logical; compute and return the Hessian during the hyperparameter optimization. Warning: may be heavy on CPU time! Default FALSE.}
+
+\item{opt.method}{the method used by \code{optim(method = )}}
 
 \item{opt.control}{list of control parameters passed to the \code{optim(control = )}}
 
