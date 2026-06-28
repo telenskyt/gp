@@ -55,7 +55,7 @@ gpLooGen_v0 <- function (gp, folds)
 # odvodil jsem si to sam jako analogii eq 67 ve Vehtari 2016, kdyz se to f[i] a t~[i] vezmou jako multidimenzionalni
 # a pak se provede ten trik s delenim dvou gaussian PDF v eq 38, 39, ale zobecni se to na multidimenzionalni.
 # a ono to konecne funguje!!!
-#
+#' LGO-CV prediction - an approximation of leave-group-out cross-validation
 #' @param gp GP model object
 #' @param fold.col either a name of a column in the main table, or a vector along factor \code{fold.fact}.
 #'		The column (or the supplied vector) must be a vector of integers from \code{1} to \code{N} (\code{N} being the number of folds), 
