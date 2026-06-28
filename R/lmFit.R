@@ -210,6 +210,14 @@ coef.lmFit <- function(object, ...)
 {
 	sum <- summary(object$sdr, p.value = TRUE)
 	rownames(sum) <- object$coef.names
+	if (!all(is.finite(sum))) {
+		warning("summary.sdreport() produced non-numeric values. One of the reasons might be a singular matrix.", 
+			if (object$lik.hyperpar == "optimize") 
+				" This can e.g. happen if there are two intercepts, one in the linear predictor and the other in the (now optimized) likelihood hyperparameters."
+			else
+				""
+		)
+	}
 	sum
 }
 
