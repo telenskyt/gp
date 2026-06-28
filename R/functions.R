@@ -295,3 +295,21 @@ foreach2 <- function (.pass.wd = TRUE, .working.dir = NULL, .log.fn = NULL, .dum
 	}), parent.frame(), e$data)	
 	#e$fun(obj, substitute(ex), parent.frame(), e$data)	
 }
+
+
+#' scale() only selected columns
+#' @param d data.frame
+#' @param cols character, column names
+#' @returns the whole data.frame like \code{d}, with the columns \code{cols} scaled. The scaling attributes from scale() will 
+#' be saved as well.
+#' @export
+# developer note: perhaps even handling of zero variance, done in gpDataPrepare(), could be done somewhere
+scale_cols <- function(d, cols)
+{
+	tmp_scaled <- scale(d[,cols])
+	d[,cols] <- tmp_scaled
+	attr(d, "scaled:center") <- attr(tmp_scaled, "scaled:center")
+	attr(d, "scaled:scale") <- attr(tmp_scaled, "scaled:scale")
+	d
+}
+
