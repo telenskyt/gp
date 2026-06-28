@@ -1,5 +1,7 @@
 # The  version generated with OpenAI Codex, after a long conversation. I instructed Codex to refactor it from the code 
-# specific for the Lapwing case study (nestsurv-lm.R). Now I regret a bit, the code is more complicated than I would do it...
+# specific for the Lapwing case study (nestsurv-lm.R). Now I regret a bit, the code is more complicated than I would do it,
+# even after many requests for simplification...
+# !!! Perhaps the lik.hyperpar = "optimize" branch might be buggy.
 # 
 #
 #' Fit a linear version of a GP model
@@ -14,7 +16,7 @@
 #'	the linear model
 #' @param beta.name character; name of the linear predictor coefficient parameter
 #' @param lik.hyperpar character; should likelihood hyperparameters be fixed or optimized?
-#' @param lik.fix NULL or numeric scalar/vector; values used for fixed likelihood hyperparameters. If \code{NULL}, values are taken from \code{gp$hyperpar$value}.
+#' @param lik.fix Can be either a single numeric value - then it will be used for all likelihood hyperparameters - or \code{NULL}. If \code{NULL}, values are taken from \code{gp$hyperpar$value}.
 #' @param lik.prefix character; prefix added to likelihood hyperparameter names in \code{summary()}
 #' @param silent logical; passed to \code{RTMB::MakeADFun}
 #' @param optCtrl list; passed to \code{nlminb(control = )}
@@ -47,8 +49,8 @@ lmFit <- function(gp, formula, data, table, beta.name = "beta_lm", lik.hyperpar 
 	# Decide which likelihood hyperparameters are optimized and which fixed values are used.
 	lik.ind <- gp_lm$hyperpar$component == ".lik"
 	if (!is.null(lik.fix)) {
-		if (!is.numeric(lik.fix) || !(length(lik.fix) %in% c(1, sum(lik.ind))))
-			stop("`lik.fix` must be a numeric scalar or have length ", sum(lik.ind), ".")
+		if (!is.numeric(lik.fix) || length(lik.fix) != 1)
+			stop("`lik.fix` must be a numeric scalar.")
 	}
 	if (lik.hyperpar == "fix" && !is.null(lik.fix))
 		gp_lm$hyperpar$value[lik.ind] <- rep(lik.fix, length.out = sum(lik.ind))
