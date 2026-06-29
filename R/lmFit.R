@@ -4,22 +4,38 @@
 # !!! Perhaps the lik.hyperpar = "optimize" branch might be buggy.
 # 
 #
-#' Fit a linear version of a GP model
+#' Fit a linear model on the GP model object
 #'
-#' Fits a GP-free version of the model, where the latent Gaussian process \code{f}
+#' Fits a linear model, where the latent Gaussian process \code{f}
 #' is replaced by a linear predictor constructed from \code{formula}.
 #'
 #' @param gp gp model object; its likelihood template will be used
 #' @param formula the linear model formula
-#' @param data object of class \code{gpData}; data used for the likelihood and the linear predictor
+#' @param data object of class \code{gpData}; data used for the likelihood and the linear predictor. See the details below.
 #' @param table character - name of the table in \code{data} that is going to be used to construct the model matrix for 
 #'	the linear model
 #' @param beta.name character; name of the linear predictor coefficient parameter
-#' @param lik.hyperpar character; should likelihood hyperparameters be fixed or optimized?
-#' @param lik.fix Can be either a single numeric value - then it will be used for all likelihood hyperparameters - or \code{NULL}. If \code{NULL}, values are taken from \code{gp$hyperpar$value}.
+#' @param lik.hyperpar character; if there are likelihood hyperparameters, should they be fixed or optimized?
+#' \describe{
+#'	\item{\code{"fix"}}{the likelihood hyperparameters will be fixed at value specified by \code{lik.fix}}
+#'	\item{\code{"optimize"}}{the likelihood hyperparameters will be optimized along with the parameters in \code{formula}}
+#' }
+#' @param lik.fix when \code{lik.hyperpar = "fix"}, to what value should the likelihood hyperparameters be fixed?
+#' \describe{
+#'	\item{single numeric value}{all likelihood hyperparameters will be set to this value}
+#'	\item{\code{"value"}}{the likelihood hyperparameters will be set to values in the column \code{"value"} in the hyperparameter table (\code{gp$hyperpar$value})}
+#' }
 #' @param lik.prefix character; prefix added to likelihood hyperparameter names in \code{summary()}
 #' @param silent logical; passed to \code{RTMB::MakeADFun}
 #' @param optCtrl list; passed to \code{nlminb(control = )}
+#'
+#' @details Note that the model is linear in the \code{formula} specified. If \code{lik.hyperpar = "optimize"}, 
+#' the model is not necessarily linear in these hyperparameters; this is given by the likelihood template defined in the \code{gp} object.
+#'
+#' Note that no scaling (covariate standardization) is done neither in this function nor in \code{predict}. It is up to the user 
+#' to provide the correct \code{data} argument with the desired scaling.
+#'
+#' This function is used in the cross-validation process to fit the null model for the baseline comparison.
 #'
 #' @return Object of class \code{lmFit}
 #' @export
@@ -48,12 +64,21 @@ lmFit <- function(gp, formula, data, table, beta.name = "beta_lm", lik.hyperpar 
 
 	# Decide which likelihood hyperparameters are optimized and which fixed values are used.
 	lik.ind <- gp_lm$hyperpar$component == ".lik"
-	if (!is.null(lik.fix)) {
-		if (!is.numeric(lik.fix) || length(lik.fix) != 1)
-			stop("`lik.fix` must be a numeric scalar.")
+	# check and process the lik.fix argument if it applies
+	if (!any(lik.ind) && lik.hyperpar == "optimize")
+		stop("there are no likelihood hyperparameters to optimize")
+	if (lik.hyperpar == "fix" && any(lik.ind)) { # there are likelihood hyperparameters
+		if (is.null(lik.fix))
+			stop("the likelihood template has hyperparameters, and you specified lik.hyperpar = 'fix'. Please specify how should they be fixed with the lik.fix argument.")
+		else if (is.character(lik.fix) && lik.fix == "value") {
+			# everything is fine
+		} else if (is.numeric(lik.fix) && length(lik.fix) == 1) {
+			gp_lm$hyperpar$value[lik.ind] <- rep(lik.fix, length.out = sum(lik.ind))
+		} else {
+			stop("numeric lik.fix needs to have length exactly 1 (a single number)")
+		}
 	}
-	if (lik.hyperpar == "fix" && !is.null(lik.fix))
-		gp_lm$hyperpar$value[lik.ind] <- rep(lik.fix, length.out = sum(lik.ind))
+		
 	gp_lm$hyperpar$fixed <- TRUE
 	if (lik.hyperpar == "optimize")
 		gp_lm$hyperpar$fixed[lik.ind] <- FALSE
@@ -225,6 +250,8 @@ coef.lmFit <- function(object, ...)
 #' @export
 predict.lmFit <- function(object, newdata = NULL, se.fit = FALSE, ...)
 {
+	if (se.fit == TRUE && object[["lik.hyperpar"]] == "optimize")
+		stop("se.fit = TRUE for lik.hyperpar = 'optimize' not implemented at the moment")
 	# Use the original table unless the caller supplied prediction data.
 	if (is.null(newdata)) {
 		data_table <- as.data.frame(object$data[[object$table]])
