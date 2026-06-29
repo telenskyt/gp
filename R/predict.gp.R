@@ -4,7 +4,7 @@
 #'
 #' @param newdata object of class gpData, ***unscaled*** (i.e. not passed through \code{gpDataPrepare()}) data! They must be on the same scale as
 #' the unscaled training dataset used for fitting the model. If \code{NULL} (the default), predictions will be made on the training dataset (which
-#' is going to be super fast if CI = NULL)
+#' is going to be super fast if conf.int = FALSE)
 #' @param gp object of class gp, the fitted Gaussian process model
 #' @param hyperpar (optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.
 #' @template param-components
@@ -37,19 +37,20 @@
 #'						the predictions will be reindexed to the dimension of the main table.}
 #' }
 #'
-#' @param !!!!!! upravit po nove definici - mozna udelat default NULL? CI numeric between 0 and 1, or \code{NULL}; confidence level for the confidence intervals to be calculated. If \code{NULL}, no standard errors
-#' and confidence intervals will be calculated, which makes the prediction much faster (but then also no mean on the response scale will be
-#' calculated - because for this, the standard error of the latent GP `f` is needed.)). Default is 0.95.
+#' @param conf.int logical; should confidence intervals be calculated? If \code{FALSE}, no confidence intervals will be calculated,
+#' 	which makes the prediction much faster (but just in case both \code{se.fit} and \code{cov.fit} are also \code{FALSE}). 
+#'	If \code{TRUE}, \code{se.fit} will be automatically set to \code{TRUE}, since the standard errors are needed for the CI calculation.
+#' @param conf.level numeric; confidence level for the confidence intervals. Default is 0.95.
 #' @param cov.fit logical; if \code{TRUE}, the covariance matrix of the predictions will also be returned (can be very memory consuming for large datasets!).
 #' Default is \code{FALSE}.
 #' @param link character, optional. In case of \code{type = "response"}, what should be the link function to take inverse of for calculating the derived quantity (response scale)? Character as passed to \code{make.link()}.
 #' @param parname character, optional. In case of \code{type = "response"}, what should be the name of the parameter which is the derived quantity on the response scale?
-#' @param maxn maximum maximum dataset size to fit at once (!!! the unit ???!!!); if the dataset is larger, it will be split into chunks of size \code{maxn}
-#' before predictions are calculated. This parameter doesn't affect the result. It is only to speed-up the computation and use less memory by splitting the dataset
-#' - the K(newdata,newdata) matrix is then smaller. So it only speeds it up for CI != NULL (in the backsolve function) for CI = NULL its only slowdown.
+#' @param maxn maximum dataset size (along the \code{gp$GP_factor}) to fit at once; if the dataset is larger, it will be split into chunks of size \code{maxn}
+#' before predictions are calculated. Use \code{Inf} to disable the splitting entirely. Choosing a suitable value may speed up the computation when either \code{se.fit} or \code{cov.fit} is \code{TRUE},
+#' because the Kxx matrices are then smaller - but testing is needed.
 #'
 #' @param pred.sims (currently unused) number of simulations to be used for calculating the response scale predictions and their CIs. Default is 100000.
-#' Higher values give more accurate results, but are slower. Ignored if \code{CI = NULL}.
+#' Higher values give more accurate results, but are slower. Ignored if \code{conf.int = FALSE}.
 #' @param Kx.cache optional, object returned by \code{K_cache()} function, to speed up repeated calls to \code{predict.gp()} with the same \code{newdata} by
 #' caching parts of the K(training_data, newdata) matrix.
 #' @param Kxx.cache optional, object returned by \code{K_cache()} function, to speed up repeated calls to \code{predict.gp()} with the same \code{newdata} by
@@ -61,7 +62,7 @@
 #' @export
 
 # pred.sims (timingy u plotu: = 1e6 => 24s; 1e5 => 12.58 ; 1e4 => 11s -> volim 1e5 jako default)
-#	=> now is obsolete, we are using numerical integration. Whether or not it's used depends on CI.
+#	=> now is obsolete, we are using numerical integration. Whether or not it's used depends on conf.int.
 
 # Note: weighting is done before predicting. Which is same as after, as it is all linear, but probably faster.
 
@@ -70,9 +71,7 @@
 
 # ... - passed to model_expand_predictions()
 
-
-
-predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response'),	se.fit = FALSE, cov.fit = FALSE, CI = 0.95,
+predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response'),	se.fit = FALSE, cov.fit = FALSE, conf.int = FALSE, conf.level = 0.95,
 						components = NULL, comp_missing = c("avg", "none"), w = NULL, groupMeans = NULL,
 						hyperpar = gpHyperparList(gp),
 						maxn = 2000, pred.sims = 100000,
@@ -90,6 +89,12 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
 	all_components_used <- all(names(gp$covComp) %in% components)
 
 	type <- match.arg(type)
+
+	# do a backward compatibility check
+	dots <- match.call(expand.dots = FALSE)$...
+	if ("CI" %in% names(dots)) {
+		stop("CI argument has been replaced by conf.int and conf.level")
+	}
 
 	# set up data
 	same <- FALSE
@@ -122,13 +127,16 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
 		x_new <- gpDataPrepare(gp, newdata, scale.as = gp$data) # it will scale the newdata in exactly the way that training data set was
 	}
 
-	# check CI
-	if (!is.null(CI)) {
-		if (CI >= 1 | CI <= 0) {
-			stop("CI must be a number between 0 and 1, or NULL")
-		}
-		err <- qnorm( 1 - (1 - CI) / 2 )
-		#se.fit <- TRUE
+	# check confidence intervals
+	if (!is.logical(conf.int) || length(conf.int) != 1L || is.na(conf.int)) {
+		stop("conf.int must be TRUE or FALSE")
+	}
+	if (!is.numeric(conf.level) || length(conf.level) != 1L || is.na(conf.level) || conf.level >= 1 || conf.level <= 0) {
+		stop("conf.level must be a number between 0 and 1")
+	}
+	if (conf.int) {
+		err <- qnorm( 1 - (1 - conf.level) / 2 )
+		se.fit <- TRUE
 	}
 
 	#if (is.null(maxn)) maxn <- ceiling(gpDataSize(x_new, gp$GP_factor)  / 10) # we are splitting the newdata, not the training dataset; ceiling needed instead of round here
@@ -159,12 +167,12 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
 		par <- c(hyperpar[[".lik"]], list(f = pred[,"f"]))
 	}
 
-	if (se.fit && !is.null(CI)) { # add confidence intervals
+	if (conf.int) { # add confidence intervals
 		upper <- pred[, "f"] + err * pred[, "f_SE"]
 		lower <- pred[, "f"] - err * pred[, "f_SE"]
 		dCI <- cbind(lower, upper)
-		colnames(dCI) <- c(paste0("f_lower_", round(100 * CI), "CI"), #paste("lower ", round(100 * CI), "% CI", sep = ""),
-						   paste0("f_upper_", round(100 * CI), "CI")) #paste("upper ", round(100 * CI), "% CI", sep = "")
+		colnames(dCI) <- c(paste0("f_lower_", round(100 * conf.level), "CI"), #paste("lower ", round(100 * conf.level), "% CI", sep = ""),
+						   paste0("f_upper_", round(100 * conf.level), "CI")) #paste("upper ", round(100 * conf.level), "% CI", sep = "")
 		pred <- cbind(pred, dCI)
 	}
 
