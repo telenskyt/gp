@@ -77,7 +77,7 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
 						maxn = 2000, pred.sims = 100000,
 						Kx.cache = NULL, Kxx.cache = NULL, ...)
 {
-	if (is.null(gp$fit))
+	if (is.null(gp[["fit"]]))
 		stop("Model object has not been fit yet: you need to call gpFit() first")
 	comp_missing <- match.arg(comp_missing)
 	need <- function (object, x) if (is.null(object[[x]])) stop("Model object is missing the `", x, "` element - try to call gpUnpack() on it")
@@ -156,6 +156,7 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
 	# pred is now always a matrix, with cols "f" and optionally also "f_SE"
 
 	if (type == "terms" || type == "response") {
+		# do the same as in gpGetParForLikTemplate(), but reindex not only f, but also pred!
 		if (gp$lik.reindex2main && gp$GP_factor != "1") {
 			stopifnot(gpDataHasMainTable(x_new))
 			# reindex from the GP_factor to main table, as requested by the template
