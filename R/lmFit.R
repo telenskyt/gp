@@ -10,7 +10,7 @@
 #' is replaced by a linear predictor constructed from \code{formula}.
 #'
 #' @param gp gp model object; its likelihood template will be used
-#' @param formula the linear model formula
+#' @param formula the linear model formula to replace the latent Gaussian process \code{f}
 #' @param data object of class \code{gpData}; data used for the likelihood and the linear predictor. See the details below.
 #' @param table character - name of the table in \code{data} that is going to be used to construct the model matrix for 
 #'	the linear model
@@ -252,16 +252,15 @@ predict.lmFit <- function(object, newdata = NULL, se.fit = FALSE, ...)
 {
 	if (se.fit == TRUE && object[["lik.hyperpar"]] == "optimize")
 		stop("se.fit = TRUE for lik.hyperpar = 'optimize' not implemented at the moment")
-	# Use the original table unless the caller supplied prediction data.
+	# Use the training table unless the caller supplied prediction data.
 	if (is.null(newdata)) {
-		data_table <- as.data.frame(object$data[[object$table]])
-	} else if (inherits(newdata, "gpData")) {
+		newdata <- object$data
+	} else {
+		stopifnot(inherits(newdata, "gpData"))
 		if (!object$table %in% names(newdata))
 			stop("Table `", object$table, "` is missing in `newdata`.")
-		data_table <- as.data.frame(newdata[[object$table]])
-	} else {
-		data_table <- as.data.frame(newdata)
 	}
+	data_table <- as.data.frame(newdata[[object$table]])
 
 	# Build the prediction model matrix.
 	A <- model.matrix(object$formula, data_table)
