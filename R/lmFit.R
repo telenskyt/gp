@@ -13,7 +13,7 @@
 #' @param formula the linear model formula to replace the latent Gaussian process \code{f}
 #' @param data object of class \code{gpData}; data used for the likelihood and the linear predictor. See the details below.
 #' @param table character - name of the table in \code{data} that is going to be used to construct the model matrix for 
-#'	the linear model
+#'	the linear model. This table must be of the dimension of \code{gp$GP_factor}.
 #' @param beta.name character; name of the linear predictor coefficient parameter
 #' @param lik.hyperpar character; if there are likelihood hyperparameters, should they be fixed or optimized?
 #' \describe{
@@ -32,6 +32,9 @@
 #' @details Note that the model is linear in the \code{formula} specified. If \code{lik.hyperpar = "optimize"}, 
 #' the model is not necessarily linear in these hyperparameters; this is given by the likelihood template defined in the \code{gp} object.
 #'
+#' The table used for the linear model must have the same dimension as \code{gp$GP_factor}, because the linear predictor replaces
+#' the latent Gaussian process \code{f} directly. If \code{gp$GP_factor == "1"}, the table must have no grouping factor.
+#'
 #' Note that no scaling (covariate standardization) is done neither in this function nor in \code{predict}. It is up to the user 
 #' to provide the correct \code{data} argument with the desired scaling.
 #'
@@ -49,8 +52,7 @@ lmFit <- function(gp, formula, data, table, beta.name = "beta_lm", lik.hyperpar 
 	stopifnot(is.character(beta.name) && length(beta.name) == 1 && nchar(beta.name) > 0)
 	lik.hyperpar <- match.arg(lik.hyperpar)
 	stopifnot(is.character(lik.prefix) && length(lik.prefix) == 1)
-	if (!table %in% names(data))
-		stop("Table `", table, "` is missing in the data.")
+	lmFitCheckTableFactor(data, table, gp, caller = "lmFit()", data.name = "data")
 
 	# Build the model matrix for the linear predictor.
 	data_table <- as.data.frame(data[[table]])
@@ -94,27 +96,36 @@ lmFit <- function(gp, formula, data, table, beta.name = "beta_lm", lik.hyperpar 
 
 	# Build the parameter list passed to RTMB.
 	par <- structure(list(structure(numeric(ncol(x)), names = colnames(x))), names = beta.name)
+	lik.par.names <- character(0)
 	if (lik.hyperpar == "optimize") {
-		lik.par <- gpHyperparExportVector(gp_lm, "start")
+		lik.par <- gpHyperparList(gp_lm, "start")[[".lik"]]
+		lik.par.names <- names(lik.par)
 		if (length(lik.par) > 0)
-			par <- c(par, setNames(list(lik.par), ".lik"))
+			par <- c(par, lik.par)
 	}
 	if (anyDuplicated(names(par)))
 		stop("Parameter names are not unique.")
 
-	# Build coefficient names shown by coef() and summary().
-	coef.names <- colnames(x)
-	if (lik.hyperpar == "optimize" && any(lik.optim.ind)) {
-		lik.names <- gp_lm$hyperpar$hyperpar[lik.optim.ind]
-		lik.var <- gp_lm$hyperpar$var[lik.optim.ind]
-		lik.names[!is.na(lik.var)] <- paste(lik.names[!is.na(lik.var)], lik.var[!is.na(lik.var)], sep = ".")
-		coef.names <- c(coef.names, paste0(lik.prefix, lik.names))
-	}
-
 	# Build the RTMB objective function.
-	cmb <- function(f, gp, data, x, table, beta.name) function(p) f(p, gp, data, x, table, beta.name)
+	cmb <- function(f, gp, data, x, beta.name, lik.par.names) function(p) f(p, gp, data, x, beta.name, lik.par.names)
 
-	obj <- MakeADFun(cmb(lmFitNll, gp_lm, data, x, table, beta.name), par, silent = silent)
+	obj <- MakeADFun(cmb(lmFitNll, gp_lm, data, x, beta.name, lik.par.names), par, silent = silent)
+
+	# Build names for coef()/summary() from the exact parameter list passed to
+	# RTMB, rather than reconstructing the order from the hyperparameter table.
+	# This keeps the displayed names tied to the optimized vector order.
+	coef.names <- names(unlist(par, use.names = TRUE))
+	beta.prefix <- paste0(beta.name, ".")
+	beta.ind <- startsWith(coef.names, beta.prefix)
+	coef.names[beta.ind] <- substring(coef.names[beta.ind], nchar(beta.prefix) + 1)
+	coef.names[!beta.ind] <- paste0(lik.prefix, coef.names[!beta.ind])
+
+	# RTMB flattens list parameters by repeating the top-level list name for
+	# each scalar entry, e.g. names(list(beta_lm = c(a = 0, b = 0))) becomes
+	# c("beta_lm", "beta_lm"). Check that this is exactly the same flattening
+	# as our input list, because coef.names are built from that list order.
+	if (!identical(names(obj$par), rep(names(par), lengths(par))) || length(coef.names) != length(obj$par))
+		stop("RTMB parameter order does not match the parameter list.")
 
 	# Optimize the objective.
 	fit <- nlminb(obj$par, obj$fn, obj$gr, control = optCtrl)
@@ -122,6 +133,10 @@ lmFit <- function(gp, formula, data, table, beta.name = "beta_lm", lik.hyperpar 
 		stop("Model convergence problem; ",
 			fit$message, ". Consider increasing iter.max and eval.max in the optCtrl argument.")
 	}
+
+	lik.par.fit <- NULL
+	if (lik.hyperpar == "optimize" && any(lik.optim.ind))
+		lik.par.fit <- obj$env$parList(fit$par)[lik.par.names]
 
 	# Compute the standard errors and p-values.
 	if (!silent)
@@ -141,6 +156,7 @@ lmFit <- function(gp, formula, data, table, beta.name = "beta_lm", lik.hyperpar 
 		sdr = sdr,
 		beta.name = beta.name,
 		lik.hyperpar = lik.hyperpar,
+		lik.par = lik.par.fit,
 		lik.prefix = lik.prefix,
 		coef.names = coef.names
 	)
@@ -149,77 +165,33 @@ lmFit <- function(gp, formula, data, table, beta.name = "beta_lm", lik.hyperpar 
 }
 
 # Evaluate the negative log likelihood for the linearized model.
-lmFitNll <- function(par, gp, data, x, table, beta.name)
+lmFitNll <- function(par, gp, data, x, beta.name, lik.par.names)
 {
 	# Compute the linear predictor from the model matrix and linear coefficients.
 	f <- (x %*% par[[beta.name]])[,1]
 
-	# Reindex the linear predictor to the dimension expected by the likelihood.
-	f <- lmFitReindexF(gp, f, data, table)
+	hyperpar <- gpHyperparList(gp)
+	if (length(lik.par.names) > 0)
+		hyperpar[[".lik"]] <- par[lik.par.names]
 
-	# Remove the linear coefficients; the likelihood only needs hyperparameters and f.
-	par[[beta.name]] <- NULL
-
-	# Select the likelihood hyperparameter rows.
-	lik.ind <- gp$hyperpar$component == ".lik"
-	lik.hy <- gp$hyperpar[lik.ind, , drop = FALSE]
-
-	# Use RTMB values when .lik is optimized; otherwise use fixed values from the table.
-	if (!is.null(par[[".lik"]]))
-		lik.value <- par[[".lik"]]
-	else
-		lik.value <- gp$hyperpar$value[lik.ind]
-
-	# Convert likelihood hyperparameters from table rows to the likelihood list.
-	lik.par <- setNames(lapply(unique(lik.hy$hyperpar), function(hyperpar) {
-		lik.value[lik.hy$hyperpar == hyperpar]
-	}), unique(lik.hy$hyperpar))
-
-	# Add the linear predictor and evaluate the likelihood.
-	lik.par$f <- f
+	# Let the standard likelihood helper handle .lik and possible GP-factor-to-main-table reindexing.
+	lik.par <- gpGetParForLikTemplate(gp, f, data, hyperpar)
 	gp$lik$nll(data, lik.par)
 }
 
-# Determine the factor dimension expected by the likelihood.
-lmFitLikFactor <- function(gp)
+lmFitCheckTableFactor <- function(data, table, gp, caller, data.name)
 {
-	if (gp$lik.reindex2main && gp$GP_factor != "1")
-		return("1")
-	gp$GP_factor
-}
-
-# Determine the factor dimension of the table used by the linear predictor.
-lmFitTableFactor <- function(data, table)
-{
-	fact <- attr(data[[table]], "fact")
-	if (is.null(fact))
-		fact <- "1"
-	fact
-}
-
-# Reindex the linear predictor to the dimension expected by the likelihood.
-lmFitReindexF <- function(gp, f, data, table)
-{
-	source_fact <- lmFitTableFactor(data, table)
-	target_fact <- lmFitLikFactor(gp)
-
-	if (source_fact == target_fact) {
-		target_size <- gpDataSize(data, target_fact)
-		if (length(f) != target_size)
-			stop("The linear predictor has length ", length(f), ", but the likelihood expects length ", target_size, ".")
-		return(f)
-	}
-
-	if (target_fact == "1" && source_fact != "1") {
-		if (!gpDataHasMainTable(data))
-			stop("Cannot reindex the linear predictor from factor `", source_fact, "` to the main table: the data has no main table.")
-		fact_idx <- paste0(source_fact, "_idx")
-		if (!fact_idx %in% colnames(data[[1]]))
-			stop("Cannot reindex the linear predictor: column `", fact_idx, "` is missing in the main table.")
-		return(f[data[[1]][[fact_idx]]])
-	}
-
-	stop("Cannot reindex the linear predictor from factor `", source_fact, "` to factor `", target_fact, "`.")
+	if (!table %in% names(data))
+		stop("Table `", table, "` is missing in `", data.name, "`.")
+	table.fact <- attr(data[[table]], "fact")
+	if (is.null(table.fact))
+		table.fact <- "1"
+	if (table.fact != gp$GP_factor)
+		stop(
+			caller, " requires table `", table, "` in `", data.name, "` to be of the dimension of `gp$GP_factor`. ",
+			"Table `", table, "` has factor `", table.fact, "`, but `gp$GP_factor` is `", gp$GP_factor, "`."
+		)
+	invisible(table.fact)
 }
 
 #' @method terms lmFit
@@ -255,11 +227,12 @@ predict.lmFit <- function(object, newdata = NULL, se.fit = FALSE, ...)
 	# Use the training table unless the caller supplied prediction data.
 	if (is.null(newdata)) {
 		newdata <- object$data
+		data.name <- "object$data"
 	} else {
 		stopifnot(inherits(newdata, "gpData"))
-		if (!object$table %in% names(newdata))
-			stop("Table `", object$table, "` is missing in `newdata`.")
+		data.name <- "newdata"
 	}
+	lmFitCheckTableFactor(newdata, object$table, object$gp, caller = "predict.lmFit()", data.name = data.name)
 	data_table <- as.data.frame(newdata[[object$table]])
 
 	# Build the prediction model matrix.
