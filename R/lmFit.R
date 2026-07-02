@@ -220,8 +220,9 @@ coef.lmFit <- function(object, ...)
 
 #' @method predict lmFit
 #' @export
-predict.lmFit <- function(object, newdata = NULL, se.fit = FALSE, ...)
+predict.lmFit <- function(object, newdata = NULL, type = c('latent', 'terms', 'response'), se.fit = FALSE, ...)
 {
+	type <- match.arg(type)
 	if (se.fit == TRUE && object[["lik.hyperpar"]] == "optimize")
 		stop("se.fit = TRUE for lik.hyperpar = 'optimize' not implemented at the moment")
 	# Use the training table unless the caller supplied prediction data.
@@ -245,17 +246,38 @@ predict.lmFit <- function(object, newdata = NULL, se.fit = FALSE, ...)
 	# Extract fitted RTMB parameters and compute the linear predictor.
 	par <- object$obj$env$parList(object$fit$par)
 	f <- (A %*% par[[object$beta.name]])[,1]
+	pred <- as.matrix(data.frame(f = f))
 
-	# Return only the linear predictor unless standard errors were requested.
-	if (!se.fit)
-		return(f)
+	if (se.fit) {
+		# Compute standard errors for the linear predictor from the beta covariance block.
+		sigma <- solve(object$obj$he(object$fit$par))
+		beta.ind <- seq_len(ncol(object$x))
+		sigma.beta <- sigma[beta.ind, beta.ind, drop = FALSE]
+		pred <- cbind(pred, f_SE = sqrt(rowSums((A %*% sigma.beta) * A)))
+	}
 
-	# Compute standard errors for the linear predictor from the beta covariance block.
-	sigma <- solve(object$obj$he(object$fit$par))
-	beta.ind <- seq_len(ncol(object$x))
-	sigma.beta <- sigma[beta.ind, beta.ind, drop = FALSE]
-	f.SE <- sqrt(rowSums((A %*% sigma.beta) * A))
-	data.frame(f = f, f_SE = f.SE)
+	# here using the same code as in predict.gp
+	if (type == "terms" || type == "response") {
+		hyperpar <- list()
+		if (!is.null(object$lik.par))
+			hyperpar[[".lik"]] <- object$lik.par
+		par <- gpGetParForLikTemplate(object$gp, pred[,"f"], newdata, hyperpar)
+	}
+	if (type == "terms") {
+		if (object$gp$lik.reindex2main && object$gp$GP_factor != "1") {
+			fact_idx <- paste0(object$gp$GP_factor, "_idx")
+			pred <- pred[newdata[[1]][[fact_idx]],,drop=FALSE]
+		}
+		terms <- object$gp$lik$terms(data = newdata, par) # we are calling $terms and not $stage(stage = 1), because we want just the terms separately
+		if (!is.null(terms))
+			pred <- cbind(pred, as.matrix(terms)) # we want to keep the return value as matrix, as it has always been
+	}
+	else if (type == "response") {
+		pred <- as.matrix(object$gp$lik$stages(data = newdata, par, stages = 1:2)) # in this case, we don't return f and f_SE and the other stuff at the moment... we could though... to reconsider
+			# we want to keep the return value as matrix, as it has always been
+	}
+
+	pred
 }
 
 # Count the parameters optimized by RTMB.
