@@ -10,7 +10,8 @@
   type = c("latent", "terms", "response"),
   se.fit = FALSE,
   cov.fit = FALSE,
-  CI = 0.95,
+  conf.int = FALSE,
+  conf.level = 0.95,
   components = NULL,
   comp_missing = c("avg", "none"),
   w = NULL,
@@ -28,7 +29,7 @@
 
 \item{newdata}{object of class gpData, \emph{\strong{unscaled}} (i.e. not passed through \code{gpDataPrepare()}) data! They must be on the same scale as
 the unscaled training dataset used for fitting the model. If \code{NULL} (the default), predictions will be made on the training dataset (which
-is going to be super fast if CI = NULL)}
+is going to be super fast if conf.int = FALSE)}
 
 \item{type}{character; type of prediction:
 \describe{
@@ -41,6 +42,12 @@ the predictions will be reindexed to the dimension of the main table.}
 
 \item{cov.fit}{logical; if \code{TRUE}, the covariance matrix of the predictions will also be returned (can be very memory consuming for large datasets!).
 Default is \code{FALSE}.}
+
+\item{conf.int}{logical; should confidence intervals be calculated? If \code{FALSE}, no confidence intervals will be calculated,
+which makes the prediction much faster (but just in case both \code{se.fit} and \code{cov.fit} are also \code{FALSE}).
+If \code{TRUE}, \code{se.fit} will be automatically set to \code{TRUE}, since the standard errors are needed for the CI calculation.}
+
+\item{conf.level}{numeric; confidence level for the confidence intervals. Default is 0.95.}
 
 \item{components}{of the covariance formula. One of the following:
 \itemize{
@@ -75,24 +82,18 @@ if more different averages with different weights are desired, \code{w} can be a
 
 \item{hyperpar}{(optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.}
 
-\item{maxn}{maximum maximum dataset size to fit at once (!!! the unit ???!!!); if the dataset is larger, it will be split into chunks of size \code{maxn}
-before predictions are calculated. This parameter doesn't affect the result. It is only to speed-up the computation and use less memory by splitting the dataset
-\itemize{
-\item the K(newdata,newdata) matrix is then smaller. So it only speeds it up for CI != NULL (in the backsolve function) for CI = NULL its only slowdown.
-}}
+\item{maxn}{maximum dataset size (along the \code{gp$GP_factor}) to fit at once; if the dataset is larger, it will be split into chunks of size \code{maxn}
+before predictions are calculated. Use \code{Inf} to disable the splitting entirely. Choosing a suitable value may speed up the computation when either \code{se.fit} or \code{cov.fit} is \code{TRUE},
+because the Kxx matrices are then smaller - but testing is needed.}
 
 \item{pred.sims}{(currently unused) number of simulations to be used for calculating the response scale predictions and their CIs. Default is 100000.
-Higher values give more accurate results, but are slower. Ignored if \code{CI = NULL}.}
+Higher values give more accurate results, but are slower. Ignored if \code{conf.int = FALSE}.}
 
 \item{Kx.cache}{optional, object returned by \code{K_cache()} function, to speed up repeated calls to \code{predict.gp()} with the same \code{newdata} by
 caching parts of the K(training_data, newdata) matrix.}
 
 \item{Kxx.cache}{optional, object returned by \code{K_cache()} function, to speed up repeated calls to \code{predict.gp()} with the same \code{newdata} by
 caching parts of the K(newdata, newdata) matrix.}
-
-\item{!!!!!!}{upravit po nove definici - mozna udelat default NULL? CI numeric between 0 and 1, or \code{NULL}; confidence level for the confidence intervals to be calculated. If \code{NULL}, no standard errors
-and confidence intervals will be calculated, which makes the prediction much faster (but then also no mean on the response scale will be
-calculated - because for this, the standard error of the latent GP \code{f} is needed.)). Default is 0.95.}
 
 \item{link}{character, optional. In case of \code{type = "response"}, what should be the link function to take inverse of for calculating the derived quantity (response scale)? Character as passed to \code{make.link()}.}
 

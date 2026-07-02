@@ -2,7 +2,7 @@
 % Please edit documentation in R/lmFit.R
 \name{lmFit}
 \alias{lmFit}
-\title{Fit a linear version of a GP model}
+\title{Fit a linear model on the GP model object}
 \usage{
 lmFit(
   gp,
@@ -20,18 +20,26 @@ lmFit(
 \arguments{
 \item{gp}{gp model object; its likelihood template will be used}
 
-\item{formula}{the linear model formula}
+\item{formula}{the linear model formula to replace the latent Gaussian process \code{f}}
 
-\item{data}{object of class \code{gpData}; data used for the likelihood and the linear predictor}
+\item{data}{object of class \code{gpData}; data used for the likelihood and the linear predictor. See the details below.}
 
 \item{table}{character - name of the table in \code{data} that is going to be used to construct the model matrix for
-the linear model}
+the linear model. This table must be of the dimension of \code{gp$GP_factor}.}
 
 \item{beta.name}{character; name of the linear predictor coefficient parameter}
 
-\item{lik.hyperpar}{character; should likelihood hyperparameters be fixed or optimized?}
+\item{lik.hyperpar}{character; if there are likelihood hyperparameters, should they be fixed or optimized?
+\describe{
+\item{\code{"fix"}}{the likelihood hyperparameters will be fixed at value specified by \code{lik.fix}}
+\item{\code{"optimize"}}{the likelihood hyperparameters will be optimized along with the parameters in \code{formula}}
+}}
 
-\item{lik.fix}{Can be either a single numeric value - then it will be used for all likelihood hyperparameters - or \code{NULL}. If \code{NULL}, values are taken from \code{gp$hyperpar$value}.}
+\item{lik.fix}{when \code{lik.hyperpar = "fix"}, to what value should the likelihood hyperparameters be fixed?
+\describe{
+\item{single numeric value}{all likelihood hyperparameters will be set to this value}
+\item{\code{"value"}}{the likelihood hyperparameters will be set to values in the column \code{"value"} in the hyperparameter table (\code{gp$hyperpar$value})}
+}}
 
 \item{lik.prefix}{character; prefix added to likelihood hyperparameter names in \code{summary()}}
 
@@ -43,6 +51,18 @@ the linear model}
 Object of class \code{lmFit}
 }
 \description{
-Fits a GP-free version of the model, where the latent Gaussian process \code{f}
+Fits a linear model, where the latent Gaussian process \code{f}
 is replaced by a linear predictor constructed from \code{formula}.
+}
+\details{
+Note that the model is linear in the \code{formula} specified. If \code{lik.hyperpar = "optimize"},
+the model is not necessarily linear in these hyperparameters; this is given by the likelihood template defined in the \code{gp} object.
+
+The table used for the linear model must have the same dimension as \code{gp$GP_factor}, because the linear predictor replaces
+the latent Gaussian process \code{f} directly. If \code{gp$GP_factor == "1"}, the table must have no grouping factor.
+
+Note that no scaling (covariate standardization) is done neither in this function nor in \code{predict}. It is up to the user
+to provide the correct \code{data} argument with the desired scaling.
+
+This function is used in the cross-validation process to fit the null model for the baseline comparison.
 }
