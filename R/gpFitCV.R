@@ -19,6 +19,8 @@
 #' @param dump.fn if not \code{NULL}, debug dump of given fold model will be saved upon an error, with this file name (the .rda extension will be added to it). Special \code{\%} sequences can be used, see Details below. 
 #' @param tr.max.lines the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs
 #' @param pred.options list of options to be passed to the \code{\link{predict.gp}} method.
+#' @param lmFit.options list of options to be passed to \code{\link{lmFit}} when fitting the intercept-only null model for each fold.
+#' @param lmFit.pred.options list of options to be passed to the \code{predict.lmFit} method when predicting from the null model.
 #' @param ... options to be passed to the \code{\link{gpFit}} method.
 #'
 #' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:
@@ -38,9 +40,19 @@
 gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.model = NULL,
 	parallel = TRUE, fn.prefix = "", log.fn = if (parallel) "log-fold%f-%h-%p.txt" else NULL, dump.fn = if (parallel) "dump-fold%f-%h_%p"  else NULL,
 	tr.max.lines = 5, pred.options = list(type = "terms", se.fit = TRUE),
+	lmFit.options = list(lik.hyperpar = "fix"),
+	lmFit.pred.options = list(type = "terms"),
 	...)
 {
 	args <- list(fold.col = fold.col, fold.fact = fold.fact)
+
+	# pre-check this, to provide more targetted error message if needed
+	if (any(gp$hyperpar$component == ".lik") && lmFit.options[["lik.hyperpar"]] == "fix") { 
+		# there are likelihood hyperparameters, and to be fixed; check if lik.fix was specified
+		if (is.null(lmFit.options[["lik.fix"]]))
+			stop("the likelihood template has hyperparameters, and lmFit.options=list(lik.hyperpar = 'fix'); please specify how should they be fixed with the lmFit.options=list(lik.fix = ) argument. See ?lmFit for more details.")
+	}
+
 	fold.col <- gpFitCV__validate_and_get_fold_col(gp, fold.col, fold.fact)
 		# validate fold.col and fold.fact arguments and get evaluated fold.col (as a vector)
 
@@ -112,12 +124,21 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 			test_data <- gpDataSubset(gp$obsdata, fact = fold.fact, ind = (fold.col == f))
 
 			gpcv <- gp:::gpSetData(gpcv, train_data) # nechapu, proc tu najednou musi byt gp::: ... kdyz "gp" je mezi .packages! voser!
-			
+
 			if (!is.null(start.from.model))
 				gpcv <- gpHyperparStartFromModel(gpcv, start.from.model$fitCV$models[[f]])
-					
+
+			# first fit & predict the null model - if something fails with an error, we want to fail it ASAP, not after some loong GP computation
+			nullm <- do.call(lmFit, c(list(gp = gpcv, formula = ~1, data = gpcv$data), lmFit.options))
+			test_data_lm <- gpDataPrepare(gpcv, test_data, scale.as = gpcv$data)
+				# lmFit and predict.lmFit don't solve scaling, so we do it manually here, just in case...
+				# but these scaling things might be worth checking in case some problems arise in models 
+				# with complicated likelihood hyperparameters
+			nullPredCV <- do.call(predict, c(list(nullm, newdata = test_data_lm), lmFit.pred.options))
+
+			# now fit & predict the GP model - this might take a lot of time
 			m <- gpFit(gpcv, ...)
-			predCV <- do.call(predict, c(list(m, test_data), pred.options))
+			predCV <- do.call(predict, c(list(m, newdata = test_data), pred.options))
 			
 			m <- gpPack(m, maximum = TRUE)
 			# pack it even more! These will be then restored in gpGetCVModel() :
@@ -130,7 +151,8 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 			list(
 				fold = f,
 				m = m,
-				predCV = predCV
+				predCV = predCV,
+				nullPredCV = nullPredCV
 			)
 		})
 	}
@@ -139,6 +161,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 		args = args,
 		models = list(), # list of models for each fold
 		predCV = NULL, # cross-validated prediction for the training dataset
+		nullPredCV = NULL,
 		stats = NULL # CV stats		
 	)
 	# put the results together
@@ -168,9 +191,15 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 		f <- fold.run[[i]]$fold
 		gp$fitCV$models[[f]] <- fold.run[[i]]$m
 		
+		# assemble GP predictions
 		if (is.null(gp$fitCV$predCV))
 			gp$fitCV$predCV <- as.data.frame(matrix(NA, nrow = length(fold.col), ncol = ncol(fold.run[[i]]$predCV), dimnames = list(NULL, colnames(fold.run[[i]]$predCV))))
 		gp$fitCV$predCV[fold.col == f,] <- fold.run[[i]]$predCV
+
+		# assemble null predictions
+		if (is.null(gp$fitCV$nullPredCV))
+			gp$fitCV$nullPredCV <- as.data.frame(matrix(NA, nrow = length(fold.col), ncol = ncol(fold.run[[i]]$nullPredCV), dimnames = list(NULL, colnames(fold.run[[i]]$nullPredCV))))
+		gp$fitCV$nullPredCV[fold.col == f,] <- fold.run[[i]]$nullPredCV
 		
 	}
 	#gp$fitCV$stats <- ... !!!
