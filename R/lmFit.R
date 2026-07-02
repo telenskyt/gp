@@ -12,8 +12,9 @@
 #' @param gp gp model object; its likelihood template will be used
 #' @param formula the linear model formula to replace the latent Gaussian process \code{f}
 #' @param data object of class \code{gpData}; data used for the likelihood and the linear predictor. See the details below.
-#' @param table character - name of the table in \code{data} that is going to be used to construct the model matrix for 
-#'	the linear model. This table must be of the dimension of \code{gp$GP_factor}.
+#' @param table character or \code{NULL} - name of the table in \code{data} that is going to be used to construct the model matrix for
+#'	the linear model. This table must be of the dimension of \code{gp$GP_factor}. For the null model
+#'	(\code{~ 1}), \code{table} can be \code{NULL}.
 #' @param beta.name character; name of the linear predictor coefficient parameter
 #' @param lik.hyperpar character; if there are likelihood hyperparameters, should they be fixed or optimized?
 #' \describe{
@@ -34,6 +35,8 @@
 #'
 #' The table used for the linear model must have the same dimension as \code{gp$GP_factor}, because the linear predictor replaces
 #' the latent Gaussian process \code{f} directly. If \code{gp$GP_factor == "1"}, the table must have no grouping factor.
+#' For an intercept-only formula, \code{lmFit()} constructs the model matrix at the \code{gp$GP_factor}
+#' dimension directly, so no table needs to be supplied.
 #'
 #' Note that no scaling (covariate standardization) is done neither in this function nor in \code{predict}. It is up to the user 
 #' to provide the correct \code{data} argument with the desired scaling.
@@ -42,23 +45,20 @@
 #'
 #' @return Object of class \code{lmFit}
 #' @export
-lmFit <- function(gp, formula, data, table, beta.name = "beta_lm", lik.hyperpar = c("fix", "optimize"), lik.fix = NULL, lik.prefix = ".lik.", silent = TRUE, optCtrl = list(iter.max=300, eval.max=400))
+lmFit <- function(gp, formula, data, table = NULL, beta.name = "beta_lm", lik.hyperpar = c("fix", "optimize"), lik.fix = NULL, lik.prefix = ".lik.", silent = TRUE, optCtrl = list(iter.max=300, eval.max=400))
 {
 	# Check basic inputs.
 	stopifnot(class(gp) == "gp")
 	stopifnot(is(gp$lik, "likTempPhased"))
 	stopifnot(class(data) == "gpData")
-	stopifnot(is.character(table) && length(table) == 1)
+	stopifnot(is.null(table) || (is.character(table) && length(table) == 1))
 	stopifnot(is.character(beta.name) && length(beta.name) == 1 && nchar(beta.name) > 0)
 	lik.hyperpar <- match.arg(lik.hyperpar)
 	stopifnot(is.character(lik.prefix) && length(lik.prefix) == 1)
-	lmFitCheckTableFactor(data, table, gp, caller = "lmFit()", data.name = "data")
 
-	# Build the model matrix for the linear predictor.
-	data_table <- as.data.frame(data[[table]])
-	x <- model.matrix(formula, data_table)
-	if (nrow(x) != nrow(data[[table]]))
-		stop("model.matrix() changed the number of rows from ", nrow(data[[table]]), " to ", nrow(x), ".")
+	if (is_intercept_only_formula(formula))
+		table <- NULL
+	x <- lmFitModelMatrix(formula, data, gp, table, caller = "lmFit()", data.name = "data")
 
 	# Work on a copy of the GP object without fitted state.
 	gp_lm <- gp
@@ -179,6 +179,42 @@ lmFitNll <- function(par, gp, data, x, beta.name, lik.par.names)
 	gp$lik$nll(data, lik.par)
 }
 
+#' Check for an intercept-only formula
+#'
+#' Returns `TRUE` when a formula has an intercept and no predictor terms,
+#' e.g. `y ~ 1`.
+#'
+#' @param formula A model formula.
+#'
+#' @return A logical scalar.
+#'
+#' @keywords internal
+is_intercept_only_formula <- function(formula)
+{
+	tt <- terms(formula)
+
+	identical(attr(tt, "intercept"), 1L) &&
+		length(attr(tt, "term.labels")) == 0L
+}
+
+lmFitModelMatrix <- function(formula, data, gp, table = NULL, caller, data.name)
+{
+	if (is_intercept_only_formula(formula)) {
+		return(matrix(1, nrow = gpDataSize(data, gp$GP_factor), ncol = 1, dimnames = list(NULL, "(Intercept)")))
+	}
+
+	if (is.null(table))
+		stop("`table` is required unless `formula` is intercept-only (for example, the null model `~ 1`).")
+
+	lmFitCheckTableFactor(data, table, gp, caller = caller, data.name = data.name)
+	data_table <- as.data.frame(data[[table]])
+	x <- model.matrix(formula, data_table)
+	if (nrow(x) != nrow(data_table))
+		stop("model.matrix() changed the number of rows from ", nrow(data_table), " to ", nrow(x), ".")
+
+	x
+}
+
 lmFitCheckTableFactor <- function(data, table, gp, caller, data.name)
 {
 	if (!table %in% names(data))
@@ -233,13 +269,8 @@ predict.lmFit <- function(object, newdata = NULL, type = c('latent', 'terms', 'r
 		stopifnot(inherits(newdata, "gpData"))
 		data.name <- "newdata"
 	}
-	lmFitCheckTableFactor(newdata, object$table, object$gp, caller = "predict.lmFit()", data.name = data.name)
-	data_table <- as.data.frame(newdata[[object$table]])
-
-	# Build the prediction model matrix.
-	A <- model.matrix(object$formula, data_table)
-	if (nrow(A) != nrow(data_table))
-		stop("model.matrix() changed the number of rows from ", nrow(data_table), " to ", nrow(A), ".")
+	A <- lmFitModelMatrix(object$formula, newdata, object$gp, object$table,
+		caller = "predict.lmFit()", data.name = data.name)
 	if (!identical(colnames(A), colnames(object$x)))
 		stop("Prediction model matrix columns do not match the fitted model matrix.")
 
@@ -334,7 +365,7 @@ summary.lmFit <- function(object, ...)
 {
 	cat("formula: ")
 	print(object$formula)
-	cat("table: ", object$table, "\n\n", sep = "")
+	#cat("table: ", if (is.null(object$table)) "<not used>" else object$table, "\n\n", sep = "")
 
 	printCoefmat(coef(object), ...)
 
