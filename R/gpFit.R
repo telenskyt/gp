@@ -100,6 +100,9 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 				  )
 {
 	method <- match.arg(method)
+	
+	if (is.null(gp[["data"]]))
+		stop("The gp object doesn't contain scaled data; perpahs you need to call gpUnpack() on it (you can use compute = FALSE to save CPU time)")	
 
 	if (!recursive) { # top level call, from the outside (not an internal call) - will be called just once in the beginning
 		if (grad.computation == FALSE && opt.h == TRUE)

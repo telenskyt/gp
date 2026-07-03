@@ -80,7 +80,6 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
 	if (is.null(gp[["fit"]]))
 		stop("Model object has not been fit yet: you need to call gpFit() first")
 	comp_missing <- match.arg(comp_missing)
-	need <- function (object, x) if (is.null(object[[x]])) stop("Model object is missing the `", x, "` element - try to call gpUnpack() on it")
 
 	need(gp, "data")
 	need(gp, "obsdata") #!!! na co?

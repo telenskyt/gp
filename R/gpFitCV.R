@@ -46,6 +46,9 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 {
 	args <- list(fold.col = fold.col, fold.fact = fold.fact)
 
+	if (is.null(gp[["data"]]))
+		stop("The gp object doesn't contain scaled data; perpahs you need to call gpUnpack() on it (you can use compute = FALSE to save CPU time)")	
+	
 	# pre-check this, to provide more targetted error message if needed
 	if (any(gp$hyperpar$component == ".lik") && lmFit.options[["lik.hyperpar"]] == "fix") { 
 		# there are likelihood hyperparameters, and to be fixed; check if lik.fix was specified
