@@ -172,11 +172,27 @@ pred <- function(gp, predx, same = FALSE, hyperpar = gpHyperparList(gp), compone
 		mstart(id = "pred cov")
 		if (se.fit) {
 			cat("\t* computing posterior (co)variances:\n")
-			need(fit, "LTinv.rW")
-			cat("\t\t* v <- LTinv.rW %*% K*\t\t\t\t")
-			mstart(id = "v")			
-			v <- fit$LTinv.rW %*% Kx
-			mstop(id = "v")
+			if (!is.null(fit[["LTinv.rW"]])) {
+				# new, faster way, the backsolve() has been already solved in LTinv.rW
+				cat("\t\t* v <- LTinv.rW %*% K*\t\t\t\t")
+				mstart(id = "v")			
+				v <- fit$LTinv.rW %*% Kx
+				mstop(id = "v")
+			} else {
+				# use the old way only if the LTinv.rW is not present
+				need(fit, "L")
+				need(fit, "W")
+				message("!!! LTinv.rW not found in the gp$fit object. If you do repeated predict()s, you will save CPU time if it is there: you can e.g. run gpUnpack(gp, compute = TRUE).")
+				cat("\t\t* backsolve... \t\t\t\t\t")
+				mstart(id = "backsolve")
+				if (gp$W.type == "diag") {
+					stopifnot(all(fit$W >= 0))
+					v <- backsolve(fit$L, sqrt(as.vector(fit$W)) * Kx, transpose = TRUE)
+				} else {
+					v <- backsolve(fit$L, rW %*% Kx, transpose = TRUE)
+				}
+				mstop(id = "backsolve")				
+			}
 
 			# vector * Matice = diag(vector) %*% Matice
 			# Kxx - k(x*,x*)
