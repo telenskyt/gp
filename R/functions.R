@@ -313,3 +313,31 @@ scale_cols <- function(d, cols)
 	d
 }
 
+
+#' A version of try() that returns NULL upon failure
+#'
+#' Evaluate an expression while trapping all errors. If an error occurs, it is
+#' printed and `NULL` is returned. If the expression succeeds, its value is
+#' returned unchanged.
+#'
+#' @param expr An expression to evaluate.
+#'
+#' @return The value of `expr`, or `NULL` if evaluation fails with an error.
+#'
+#' @examples
+#' tryNull({
+#'   12
+#'   stop("blabla")
+#' })
+#'
+#' tryNull(log(10))
+#'
+#' @export
+#
+# https://chatgpt.com/c/6a46b17d-4658-83eb-b705-b9654eaa1abd
+tryNull <- function(expr) 
+{
+	out <- try(eval.parent(substitute(expr)), silent = FALSE)
+	if (inherits(out, "try-error")) NULL else out
+}
+
