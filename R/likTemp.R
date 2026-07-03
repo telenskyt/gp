@@ -62,8 +62,13 @@ lik.getfun = function ()
 	if (!is.null(likFun))
 		return(likFun)
 
-	if (!is.null(likType))
-		return(match.fun(paste0("lik", capFirst(likType))))
+	if (!is.null(likType)) {
+		name <- paste0("lik", capFirst(likType))
+		fun <- match.fun(name)
+		if (!is.function(fun))
+			stop("Likelihood function ", name, " for likelihood ", likType, " not found")
+		return(fun)
+	}
 		
 	stop("error")
 },
@@ -121,6 +126,42 @@ stages = function (data, par, stages = 1:5)
 			par <- -sum(log(par))
 	}
 	return(par)
+},
+
+# Template method to evaluate predictive performance for given likelihood
+#	- now an internal helper to call the predPerf function for likelihood given by likType
+#
+# par, par.null: `par` from the "process" stage (stage 3); par.null - dtto but from the null model
+predPerfFun = function (par, par.null)
+{
+	if (!is.null(likType)) {
+		name <- paste0("predPerf", capFirst(likType))
+		fun <- match.fun(name)
+		if (!is.function(fun))
+			stop("Predictive performance function ", name, " for likelihood ", likType, " not found")
+	} else {
+		stop("predictive performance function not available when likelihood is not specified by likType") 
+	}
+	fun(par, par.null)
+},
+
+# This method is the interface provided for outside:
+#
+# Evaluate predictive performance for given predictions
+#
+# @param data 
+# @param pred predictions to be evaluated
+# @param pred.null predictions of a null model (some performance statistics need it as a baseline; see eg. ?predPerfBern)
+# @details Both \code{pred} and \code{pred.null} are expected to be predictions from predict(type = "terms").
+# @returns the predicted performance statistics, see eg. ?predPerfBern
+# @seealso [predPerfBern()]
+#
+# @export
+predPerf = function(data, pred, pred.null)
+{
+	par <- stages(data = data, par = pred, stages = 2:3)
+	par.null <- stages(data = data, par = pred.null, stages = 2:3)
+	predPerfFun(par, par.null)
 }
 
 
