@@ -205,7 +205,10 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 		gp$fitCV$nullPredCV[fold.col == f,] <- fold.run[[i]]$nullPredCV
 		
 	}
-	#gp$fitCV$stats <- ... !!!
+	
+	# evaluate
+	gp$fitCV[["stats"]] <- tryNull(gp$lik$predPerf(data = gp$data, pred = gp$fitCV$predCV, pred.null = gp$fitCV$nullPredCV))
+	
 	gp
 }
 
