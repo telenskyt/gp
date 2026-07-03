@@ -74,7 +74,7 @@
 #
 # theta.link - function to convert hyper-parameters to the theta - to the optimization scale used by optim() function
 #
-# grad.computation - computation of gradients (quite time consuming) - can be set to FALSE for FIXED models (opt.l = FALSE)
+# grad.computation - computation of gradients (quite time consuming) - can be set to FALSE for FIXED models (opt.h = FALSE)
 #
 # opt.control - option to pass to optim(control = )
 
@@ -93,7 +93,7 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 				  verbose = FALSE, 
 				  use_f_start = TRUE,
 				  weights = NULL,
-				  grad.computation = TRUE,
+				  grad.computation = opt.h,
 				  warn.exclude = NULL,
 				  recursive = FALSE, #internal option only, don't use!
 				  ...
