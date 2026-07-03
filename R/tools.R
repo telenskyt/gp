@@ -203,3 +203,7 @@ mstop <- function(absolute_time = FALSE, id = NULL, bw.compat = FALSE, quiet = F
 	}
 }
 
+
+# capitalize first letter of a string
+capFirst <- function (s) paste0(toupper(substring(s, 1, 1)), substring(s, 2))
+
