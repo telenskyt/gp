@@ -4,7 +4,9 @@
 #' @import methods
 #' @export likTempPhased
 #' @exportClass likTempPhased
-likTempPhased <- setRefClass(
+
+#' @include suppress_warnings.R
+likTempPhased <- suppress_warnings_from(setRefClass(
 	"likTempPhased",
 	#contains = "likTemp",
 	fields = list(
@@ -179,7 +181,7 @@ predPerf = function(data, pred, pred.null)
 }
 
 
-))
+)), message = "local assignment to field name will not change the field", fun = ".checkFieldsInMethod")
 
 if (0) {
 a <- likTempPhased$new(process = function () {}, lik = function () {})
