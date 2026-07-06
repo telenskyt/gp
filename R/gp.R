@@ -68,6 +68,8 @@ gp <- function(f, data, lik, lik.hyperpar = NULL, lik.formula = NULL, lik.reinde
 
 	stopifnot(is(lik, "likTempPhased"))
 	gp$lik <- lik
+	gp$lik.class <- lik$getRefClass()$className
+	gp$lik.constr.args <- lik$constr.args
 	if (is.null(lik.hyperpar))
 		lik.hyperpar <- list()
 	gp$lik.hyperpar <- lik.hyperpar

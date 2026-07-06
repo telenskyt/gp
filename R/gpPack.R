@@ -11,6 +11,12 @@ gpPack <- function(gp, maximum = FALSE)
 	# have to use gp[["fit"]] instead of gp$fit due to the damn partial matching!! Because it matched $fitCV instead!!! Sucks as fuck!!!
 	gp[["fit"]] <- gpPackFit(gp[["fit"]], maximum = maximum)
 	gp$data <- NULL
+	gp$lik <- NULL
+		# gp$lik class is no longer permanently stored in the packed object! Only the user supplied arguments to construct it! For two reasons:
+		#	- wrong design. Thanks to the unfortunate RC classes design in R, the gp$lik object instance contains class code, 
+		#	  which might be subject to updates in new package versions. We don't want that. We want only user-supplied code (parts of the template)
+		#	  to be stored in the object. The gp$lik class is now deleted in gpPack() and restored in gpUnpack().
+		#	- the gp$lik object storing class code was too big. Not so much compressed, but still.	
 	gp
 }
 
@@ -53,6 +59,11 @@ gpPackFit <- function(fit, maximum = FALSE)
 gpUnpack <- function (gp, compute = TRUE, need.K = compute, need.L = FALSE, need.LTinv.rW = compute)
 {
 	gp$data <- gpDataPrepare(gp, gp$obsdata)
+	if (!is.null(gp[["lik.constr.args"]])) {
+		gp$lik <- do.call(getRefClass(gp$lik.class)$new, gp$lik.constr.args)
+	} else if (is.null(gp[["lik"]])) {
+		stop("Cannot reconstruct gp$lik: missing likelihood constructor arguments.")
+	}
 
 	if (is.null(gp[["fit"]]))
 		return(gp)

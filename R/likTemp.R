@@ -13,7 +13,8 @@ likTempPhased <- setRefClass(
 		process = "function",
 		likType = "ANY",
 		likFun = "ANY",
-		f_start = "ANY"
+		f_start = "ANY",
+		constr.args = "list"
 	),
 	methods = list(
 	
@@ -24,6 +25,19 @@ initialize = function(
 	lik,
 	f_start = NULL)
 {
+	# now, the user-supplied template functions can no longer use variables from closure! All they can use must be from data & par arguments 
+	# or base functions. We are doing this to save potential space when storing the object on the disk. 
+	#	- another possible solution would be to allow the closures, but warn if they are big	
+	terms <- drop_fun_env(terms)
+	link <- drop_fun_env(link)
+	process <- drop_fun_env(process)
+	if (is.function(lik))
+		lik <- drop_fun_env(lik)
+	if (is.function(f_start))
+		f_start <- drop_fun_env(f_start)
+
+	constr.args <<- as.list(environment()) # save the arguments into a list
+	
 	#if (!is.null(terms))
 	terms <<- terms
 	link <<- link
@@ -171,4 +185,12 @@ if (0) {
 a <- likTempPhased$new(process = function () {}, lik = function () {})
 
 a <- likTempPhased$new(process = function () {}, lik = "bern")
+}
+
+
+drop_fun_env <- function(f, env = asNamespace("gp")) 
+{
+	if (is.function(f))
+		environment(f) <- env
+	f
 }
