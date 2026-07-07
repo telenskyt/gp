@@ -35,6 +35,9 @@
 #' @param has.main.table logical; allows to explictly specify that the first table in the list is main table. Default is \code{NULL}, which means autodetect, however, in certain cases,
 #' it might be needed to explicitly specify \code{has.main.table = TRUE} (e.g. when there are grouping factors that don't act as primary keys - unique row IDs - for any table)
 #'
+#' @param .onSubset optional; a function to be called after every \code{gpDataSubset()}. It takes the data in its only argument and returns it
+#' modified. It must not change the order of the records!
+#'
 #' @return An object of class \code{gpData}
 #'
 #' @details
@@ -103,7 +106,7 @@
 
 # todo: zmenit ten check na zacatku a rict is.data.frame() nebo is.matrix a hotovo.
 
-gpData <- function(x, has.main.table = NULL)
+gpData <- function(x, has.main.table = NULL, .onSubset = NULL)
 {
 	factors <- list()
 	stopifnot(is.list(x))
@@ -194,6 +197,12 @@ gpData <- function(x, has.main.table = NULL)
 	class(x) <- "gpData"
 	attr(x, "factors") <- factors
 	attr(x, "main_table") <- main_name # simplify checking for it in further processing
+	if (!is.null(.onSubset)) {
+		if (!is.function(.onSubset))
+			stop(".onSubset argument must be a function (or NULL)")
+		check_fun_env_size(.onSubset)
+	}
+	attr(x, ".onSubset") <- .onSubset
 	return(x)
 }
 
@@ -257,6 +266,8 @@ gpDataSubset <- function(x, fact = "1", ind)
 			fact_ind <- f_ind[[fact]]
 		x[[tbl]] <- x[[tbl]][fact_ind,,drop = FALSE]
 	}
+	if (is.function(attr(x, ".onSubset")))
+		x <- attr(x, ".onSubset")(x)
 	return(x)
 }
 
