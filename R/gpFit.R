@@ -131,6 +131,7 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 		cat("\n(gp, h args deleted)\n\n")
 		args2print <- NULL
 		mstart(TRUE, id = "gpFit", mem_precise = TRUE) # start measuring time & memory
+		cat("Fitting GP of dimension ", gp$GP_size, "x", gp$GP_size, "\n")
 	}
 
 	# optionally, do hyperparameter optimization (by recursively calling this function)
