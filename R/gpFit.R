@@ -211,8 +211,7 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 		# right before return, when opt.h = TRUE finishes
 		gp_fit_res <- mstop(TRUE, id = "gpFit")
 		fit$opt.h <- TRUE
-		fit$time = gp_fit_res$timeSec
-		fit$max_memory_usage_mb = gp_fit_res$maxMemMB
+		fit$run <- run_info(gp_fit_res)
 		fit$call <- match.call() # bacha duplicitni kod je nize!
 		fit$args <- args
 		fit$args$gp <- NULL # save space, at to tam neni 2x
@@ -261,8 +260,7 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 	if (!recursive) { # case when opt.h = FALSE, called once at the top level before finishing.
 		gp_fit_res <- mstop(TRUE, id = "gpFit")
 		fit$opt.h <- FALSE
-		fit$time = gp_fit_res$timeSec
-		fit$max_memory_usage_mb = gp_fit_res$maxMemMB
+		fit$run <- run_info(gp_fit_res)
 		fit$call <- match.call() # bacha duplicitni kod je vyse!
 		fit$args <- args
 		fit$args$gp <- NULL # save space, at to tam neni 2x
@@ -274,6 +272,25 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 		return (gp)
 	}
 	return(fit)
+}
+
+run_info <- function (gp_fit_res)
+{
+	si <- sessionInfo()
+	list(
+		time = gp_fit_res$timeSec,
+		max_memory_usage_mb = gp_fit_res$maxMemMB,
+		start_time = gp_fit_res$startTime,
+		end_time = gp_fit_res$endTime,
+		hostname = Sys.info()["nodename"],
+		matlib = list(
+			matrix_product = si[["matprod"]],
+			BLAS = si[["BLAS"]],
+			LAPACK = si[["LAPACK"]],
+			LA_version = si[["LA_version"]]
+		)
+	)
+	
 }
 
 capture.all <- function() {
