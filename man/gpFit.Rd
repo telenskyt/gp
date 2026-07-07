@@ -20,7 +20,7 @@ gpFit(
   verbose = FALSE,
   use_f_start = TRUE,
   weights = NULL,
-  grad.computation = TRUE,
+  grad.computation = opt.h,
   warn.exclude = NULL,
   recursive = FALSE,
   ...

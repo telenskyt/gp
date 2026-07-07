@@ -8,7 +8,7 @@ lmFit(
   gp,
   formula,
   data,
-  table,
+  table = NULL,
   beta.name = "beta_lm",
   lik.hyperpar = c("fix", "optimize"),
   lik.fix = NULL,
@@ -24,8 +24,9 @@ lmFit(
 
 \item{data}{object of class \code{gpData}; data used for the likelihood and the linear predictor. See the details below.}
 
-\item{table}{character - name of the table in \code{data} that is going to be used to construct the model matrix for
-the linear model. This table must be of the dimension of \code{gp$GP_factor}.}
+\item{table}{character or \code{NULL} - name of the table in \code{data} that is going to be used to construct the model matrix for
+the linear model. This table must be of the dimension of \code{gp$GP_factor}. For the null model
+(\code{~ 1}), \code{table} can be \code{NULL}.}
 
 \item{beta.name}{character; name of the linear predictor coefficient parameter}
 
@@ -60,6 +61,8 @@ the model is not necessarily linear in these hyperparameters; this is given by t
 
 The table used for the linear model must have the same dimension as \code{gp$GP_factor}, because the linear predictor replaces
 the latent Gaussian process \code{f} directly. If \code{gp$GP_factor == "1"}, the table must have no grouping factor.
+For an intercept-only formula, \code{lmFit()} constructs the model matrix at the \code{gp$GP_factor}
+dimension directly, so no table needs to be supplied.
 
 Note that no scaling (covariate standardization) is done neither in this function nor in \code{predict}. It is up to the user
 to provide the correct \code{data} argument with the desired scaling.

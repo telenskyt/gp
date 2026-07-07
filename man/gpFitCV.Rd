@@ -16,6 +16,8 @@ gpFitCV(
   dump.fn = if (parallel) "dump-fold\%f-\%h_\%p" else NULL,
   tr.max.lines = 5,
   pred.options = list(type = "terms", se.fit = TRUE),
+  lmFit.options = list(lik.hyperpar = "fix"),
+  lmFit.pred.options = list(type = "terms"),
   ...
 )
 }
@@ -47,6 +49,10 @@ must have already been fitted by gpFitCV with the exact same folds.}
 \item{tr.max.lines}{the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs}
 
 \item{pred.options}{list of options to be passed to the \code{\link{predict.gp}} method.}
+
+\item{lmFit.options}{list of options to be passed to \code{\link{lmFit}} when fitting the intercept-only null model for each fold.}
+
+\item{lmFit.pred.options}{list of options to be passed to the \code{predict.lmFit} method when predicting from the null model.}
 
 \item{...}{options to be passed to the \code{\link{gpFit}} method.}
 }
