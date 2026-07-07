@@ -71,7 +71,7 @@ lmFit <- function(gp, formula, data, table = NULL, beta.name = "beta_lm", lik.hy
 		stop("there are no likelihood hyperparameters to optimize")
 	if (lik.hyperpar == "fix" && any(lik.ind)) { # there are likelihood hyperparameters
 		if (is.null(lik.fix))
-			stop("the likelihood template has hyperparameters, and you specified lik.hyperpar = 'fix'. Please specify how should they be fixed with the lik.fix argument.")
+			stop("missing the lik.fix argument. It is needed since the likelihood template has hyperparameters, and you specified lik.hyperpar = 'fix'.")
 		else if (is.character(lik.fix) && lik.fix == "value") {
 			# everything is fine
 		} else if (is.numeric(lik.fix) && length(lik.fix) == 1) {
