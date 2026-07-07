@@ -53,7 +53,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 	if (any(gp$hyperpar$component == ".lik") && lmFit.options[["lik.hyperpar"]] == "fix") { 
 		# there are likelihood hyperparameters, and to be fixed; check if lik.fix was specified
 		if (is.null(lmFit.options[["lik.fix"]]))
-			stop("the likelihood template has hyperparameters, and lmFit.options=list(lik.hyperpar = 'fix'); please specify how should they be fixed with the lmFit.options=list(lik.fix = ) argument. See ?lmFit for more details.")
+			stop("missing the lik.fix argument in lmFit.options. It is needed since the likelihood template has hyperparameters, and you specified lmFit.options=list(lik.hyperpar = 'fix'). See ?lmFit for more details.")
 	}
 
 	fold.col <- gpFitCV__validate_and_get_fold_col(gp, fold.col, fold.fact)
