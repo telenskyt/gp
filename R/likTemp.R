@@ -30,13 +30,13 @@ initialize = function(
 	# now, the user-supplied template functions can no longer use variables from closure! All they can use must be from data & par arguments 
 	# or base functions. We are doing this to save potential space when storing the object on the disk. 
 	#	- another possible solution would be to allow the closures, but warn if they are big	
-	terms <- drop_fun_env(terms)
-	link <- drop_fun_env(link)
-	process <- drop_fun_env(process)
+	check_fun_env_size(terms)
+	check_fun_env_size(link)
+	check_fun_env_size(process)
 	if (is.function(lik))
-		lik <- drop_fun_env(lik)
+		check_fun_env_size(lik)
 	if (is.function(f_start))
-		f_start <- drop_fun_env(f_start)
+		check_fun_env_size(f_start)
 
 	constr.args <<- as.list(environment()) # save the arguments into a list
 	
@@ -190,9 +190,20 @@ a <- likTempPhased$new(process = function () {}, lik = "bern")
 }
 
 
-drop_fun_env <- function(f, env = asNamespace("gp")) 
+# Checks the size of the passed function along with its environment
+#' @importFrom lobstr obj_size
+check_fun_env_size <- function(f, max_size = getOption("gp.max_fun_size_warn", 1 * 1024^2))
 {
-	if (is.function(f))
-		environment(f) <- env
-	f
+	name <- deparse1(substitute(f))
+	size <- lobstr::obj_size(f)
+
+	if (size > max_size)
+		warning(
+			"Function environment of `", name, "` is large: ", format(size, units = "auto"), ". ",
+			"This may make packed gp objects large. Consider defining the function ",
+			"in a smaller environment. Note that all important things should be passed ",
+			"through the function arguments!",
+			call. = FALSE
+		)
+
 }
