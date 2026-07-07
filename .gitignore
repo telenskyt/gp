@@ -18,3 +18,5 @@ dump-*.rda
 .cd.Rdata
 /doc/
 /Meta/
+/inst/BUILDINFO
+

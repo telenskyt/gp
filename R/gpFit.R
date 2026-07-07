@@ -216,6 +216,7 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 		fit$args <- args
 		fit$args$gp <- NULL # save space, at to tam neni 2x
 		fit$f_start <- NULL # delete f_start information
+		fit$.pkg.version <- pkg_build_info()
 		#fit$my_args <- c(as.list(environment())) # c(as.list(environment()), list(...)) # simple. https://stackoverflow.com/a/17244041
 		# skip out of this top-level function call and return the final result
 		if (!is.null(fit.stage1) && 2 %in% stages) # fit object from stage 1 exists and it is not the current fit object
@@ -266,6 +267,7 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 		fit$args$gp <- NULL # save space, at to tam neni 2x
 		fit$f_start <- NULL # delete f_start information
 		#fit$my_args <- c(as.list(environment())) # c(as.list(environment()), list(...)) # simple. https://stackoverflow.com/a/17244041
+		fit$.pkg.version <- pkg_build_info()
 		gp$fit <- fit
 		gp$hyperpar <- gpHyperparImportVector(gp, fit$h) # don't forget to import the resultant hyperparameter vector to the table
 		return (gp)

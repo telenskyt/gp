@@ -161,6 +161,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 	}
 	args$folds <- folds
 	gp$fitCV <- list(
+		.pkg.version = pkg_build_info(),
 		args = args,
 		models = list(), # list of models for each fold
 		predCV = NULL, # cross-validated prediction for the training dataset

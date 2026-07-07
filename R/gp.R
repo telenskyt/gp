@@ -85,6 +85,7 @@ gp <- function(f, data, lik, lik.hyperpar = NULL, lik.formula = NULL, lik.reinde
 	gp$W.type <- match.arg(W.type)
 	gp$hyperpar <- gpHyperparDefaults(gp)
 	gpHyperparCheckAll(gp)
+	gp$.pkg.version <- pkg_build_info()
 
 	gp
 }
