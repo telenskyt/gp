@@ -82,6 +82,7 @@ Collate:
     'likTemp.R'
     'link.R'
     'lmFit.R'
+    'lmFitCV.R'
     'memoise_seq_bastl_oprav_fun.R'
     'mnfun.R'
     'my_dist.R'
