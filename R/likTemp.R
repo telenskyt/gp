@@ -165,7 +165,7 @@ predPerfFun = function (par, par.null)
 #
 # Evaluate predictive performance for given predictions
 #
-# @param data 
+# @param data scaled data, with the "y" - the training data
 # @param pred predictions to be evaluated
 # @param pred.null predictions of a null model (some performance statistics need it as a baseline; see eg. ?predPerfBern)
 # @details Both \code{pred} and \code{pred.null} are expected to be predictions from predict(type = "terms").
