@@ -78,7 +78,7 @@ mask <- function(D, S)
 	methods::new(
 		"dgCMatrix",
 		Dim      = P@Dim,
-		Dimnames = dimnames(D),
+		Dimnames = if (is.null(dimnames(D))) list(NULL, NULL) else dimnames(D),
 		i        = P@i,
 		p        = P@p,
 		x        = as.numeric(D[P@i + 1L + colNum * nr])
