@@ -193,9 +193,7 @@ parallelJobWrapper <- function (expr, working.dir = NULL, masterPID = NULL, log.
 		expr
 	}, error = function (e) {
 		#traceback() # i zde vyhodi no traceback available
-		cat("error: ")
-		print(e)
-		#cat("\n")
+		cat("error: ", conditionMessage(e), "\n", sep = "")
 		
 		if (parallel) {
 			cat("The stack:\n") # nevim jak ho vypsat, nic nefacha:
