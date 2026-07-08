@@ -43,6 +43,8 @@
 #'
 #' This function is used in the cross-validation process to fit the null model for the baseline comparison.
 #'
+#' RTMB engine is used to fit the linear model.
+#'
 #' @return Object of class \code{lmFit}
 #' @export
 lmFit <- function(gp, formula, data, table = NULL, beta.name = "beta_lm", lik.hyperpar = c("fix", "optimize"), lik.fix = NULL, lik.prefix = ".lik.", silent = TRUE, optCtrl = list(iter.max=300, eval.max=400))
@@ -63,6 +65,9 @@ lmFit <- function(gp, formula, data, table = NULL, beta.name = "beta_lm", lik.hy
 	# Work on a copy of the GP object without fitted state.
 	gp_lm <- gp
 	gp_lm$fit <- NULL
+	gp_lm$fitCV <- NULL
+	gp_lm$obsdata <- NULL
+	gp_lm$data <- NULL	
 
 	# Decide which likelihood hyperparameters are optimized and which fixed values are used.
 	lik.ind <- gp_lm$hyperpar$component == ".lik"
@@ -142,7 +147,7 @@ lmFit <- function(gp, formula, data, table = NULL, beta.name = "beta_lm", lik.hy
 	if (!silent)
 		cat("sdreport:\n")
 	sdr <- sdreport(obj)
-
+	
 	# Return the fitted object.
 	object <- list(
 		call = match.call(),
