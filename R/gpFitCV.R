@@ -49,10 +49,8 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 	if (is.null(gp[["data"]]))
 		stop("The gp object doesn't contain scaled data; perpahs you need to call gpUnpack() on it (you can use compute = FALSE to save CPU time)")	
 	if (!is.null(lmFit.options)) {
-		if (!is.null(lmFit.options[["data"]]))
-			stop("lmFit.options must not contain data argument")
-		if (!is.null(lmFit.options[["formula"]]))
-			stop("lmFit.options must not contain formula argument")
+		if (any(c("gp", "formula", "data") %in% names(lmFit.options)))
+			stop("lmFit.options must not contain gp, formula, or data argument")
 	}
 		
 	
