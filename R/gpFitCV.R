@@ -48,6 +48,14 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 
 	if (is.null(gp[["data"]]))
 		stop("The gp object doesn't contain scaled data; perpahs you need to call gpUnpack() on it (you can use compute = FALSE to save CPU time)")	
+	if (!is.null(lmFit.options)) {
+		if (!is.null(lmFit.options[["data"]]))
+			stop("lmFit.options must not contain data argument")
+		if (!is.null(lmFit.options[["formula"]]))
+			stop("lmFit.options must not contain formula argument")
+	}
+		
+	
 	
 	# pre-check this, to provide more targetted error message if needed
 	if (any(gp$hyperpar$component == ".lik") && (is.null(lmFit.options[["lik.hyperpar"]]) || lmFit.options[["lik.hyperpar"]] == "fix")) { 
@@ -88,9 +96,9 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 	
 	wd <- getwd.keepsym()
 	masterPID <- Sys.getpid()
-	cat("1: getOption('warn') == ", getOption('warn'), "\n")
-	cat(".packages(): \n")
-	print(str(.packages()))
+	#cat("1: getOption('warn') == ", getOption('warn'), "\n")
+	#cat(".packages(): \n")
+	#print(str(.packages()))
 	#fold.run <- foreach (f = folds, .packages = c("gp")) %do_as_needed% {
 	#fold.run <- foreach (f = folds, .packages = c("gp", "RTMB")) %do_as_needed% {	
 	fold.run <- foreach (f = folds, .packages = .packages()) %do_as_needed% {
@@ -99,10 +107,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 		options(show.error.locations = TRUE)
 		options(keep.source = TRUE)	
 		options(traceback.max.lines = tr.max.lines)
-		cat("2: getOption('warn') == ", getOption('warn'), "\n")
-#library(gp)
-#library(RTMB)		
-		inv.logit <- RTMB::plogis # !!!! dirty hack!!! Shouldn't be needed!!!
+		#cat("2: getOption('warn') == ", getOption('warn'), "\n")
 		
 		if (is.null(log.fn))
 			log.fn2 <- NULL 
@@ -118,7 +123,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 		}
 		parallelJobWrapper(working.dir = wd, masterPID = masterPID, log.fn = log.fn2, dump.fn = dump.fn2, parallel = parallel, tr.max.lines = tr.max.lines,
 		{
-			cat("3: getOption('warn') == ", getOption('warn'), "\n")
+			#cat("3: getOption('warn') == ", getOption('warn'), "\n")
 			gpcv <- gp
 			gpcv$fit <- NULL # delete the whole $fit object
 			gpcv$fitCV <- NULL # don't forget also the $fitCV object!
@@ -214,7 +219,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 }
 
 # internal helper function that validates fold.col and fold.fact arguments and returns evaluated fold.col (as a vector)
-gpFitCV__validate_and_get_fold_col <- function (gp, fold.col, fold.fact)
+gpFitCV__validate_and_get_fold_col <- function (gp, fold.col, fold.fact, data = gp$obsdata)
 {
 	if (gp$GP_factor != "1")
 		if (fold.fact != gp$GP_factor)
@@ -222,14 +227,14 @@ gpFitCV__validate_and_get_fold_col <- function (gp, fold.col, fold.fact)
 	if (is.character(fold.col) && length(fold.col) == 1) { # it is a name of a column in the main table
 		if (fold.fact != "1")
 			stop("Specifying fold.col by column name only works for fold.fact == '1'")
-		stopifnot(gpDataHasMainTable(gp$obsdata))
-		if (!fold.col %in% colnames(gp$obsdata[[1]]))
-			stop("column ", fold.col, " does not exist in the main table of the gp$obsdata.")
-		fold.col <- gp$obsdata[[1]][[fold.col]]
+		stopifnot(gpDataHasMainTable(data))
+		if (!fold.col %in% colnames(data[[1]]))
+			stop("column ", fold.col, " does not exist in the main table of the `", paste(deparse(substitute(data)), collapse = ""), "`")
+		fold.col <- data[[1]][[fold.col]]
 	}
 	# fold.col is now a vector along fold.fact
 	# check it now
-	stopifnot(length(fold.col) == gpDataSize(gp$obsdata, fold.fact))
+	stopifnot(length(fold.col) == gpDataSize(data, fold.fact))
 	# it should be a vector of integer numbers from 1 to N, where N is the number of folds
 	stopifnot(is.integer(fold.col))
 	stopifnot(all(1:max(fold.col) == sort(unique(fold.col))))
