@@ -119,7 +119,7 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 		parallelJobWrapper(working.dir = wd, masterPID = masterPID, log.fn = log.fn2, dump.fn = dump.fn2, parallel = parallel, tr.max.lines = tr.max.lines,
 		{
 			cat("3: getOption('warn') == ", getOption('warn'), "\n")
-			gpcv <- gpPack(gp, maximum = TRUE)
+			gpcv <- gp
 			gpcv$fit <- NULL # delete the whole $fit object
 			gpcv$fitCV <- NULL # don't forget also the $fitCV object!
 
