@@ -155,9 +155,9 @@ lmFit <- function(gp, formula, data, table = NULL, beta.name = "beta_lm", lik.hy
 		fit = fit,
 		sdr = sdr,
 		beta.name = beta.name,
-		lik.hyperpar = lik.hyperpar,
-		lik.par = lik.par.fit,
-		lik.prefix = lik.prefix,
+		lik.hyperpar = lik.hyperpar, # as in the function argument
+		lik.par = lik.par.fit, # likelihood hyperparameters optimized by lmFit(); NULL if fixed or absent
+		lik.prefix = lik.prefix, # as in the function argument
 		coef.names = coef.names
 	)
 	class(object) <- "lmFit"
@@ -287,9 +287,9 @@ predict.lmFit <- function(object, newdata = NULL, type = c('latent', 'terms', 'r
 		pred <- cbind(pred, f_SE = sqrt(rowSums((A %*% sigma.beta) * A)))
 	}
 
-	# here using the same code as in predict.gp
+	# Start from stored hyperparameters so fixed likelihood parameters are included.
 	if (type == "terms" || type == "response") {
-		hyperpar <- list()
+		hyperpar <- gpHyperparList(object$gp)
 		if (!is.null(object$lik.par))
 			hyperpar[[".lik"]] <- object$lik.par
 		par <- gpGetParForLikTemplate(object$gp, pred[,"f"], newdata, hyperpar)
