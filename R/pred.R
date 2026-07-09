@@ -52,7 +52,7 @@
 # - n <- gpDataSize(predx)
 
 pred <- function(gp, predx, same = FALSE, hyperpar = gpHyperparList(gp), components = NULL, comp_missing = c("avg", "none"),
-	w = NULL, groupMeans = NULL, se.fit = TRUE, cov.fit = FALSE, maxn = 250, Kx.cache = NULL, Kxx.cache = NULL,
+	w = NULL, groupMeans = NULL, se.fit = TRUE, cov.fit = FALSE, maxn = Inf, Kx.cache = NULL, Kxx.cache = NULL,
 	recursive = FALSE)
 {
 	fit <- gp$fit
@@ -73,6 +73,10 @@ pred <- function(gp, predx, same = FALSE, hyperpar = gpHyperparList(gp), compone
 	if (!is.null(groupMeans) && (cov.fit || !is.null(w))) # ma platit !is.null(groupMeans) => !cov.fit && is.null(w)
 		stop("these options (groupMeans & w, cov.fit) do not fit together")
 	if (n > maxn && !same && is.null(Kx.cache) && is.null(Kxx.cache) && is.null(w) && !cov.fit && is.null(groupMeans)) { # split the data set
+		# note that not always you can split the dataset along the gp$GP_factor (for example in the Lapwing study, the 
+		# GP_factor is nest-days, but the splitting must be along nests). It would either be needed to specify which factor
+		# should serve for the splitting, or somehow automatically determine splitting that doesn't conflict with any factor.
+		# So I disabled it now by default.
 		cat("n = ", n, ", splitting dataset to chunks of size maxn = ", maxn, "\n")
 		inds <- split(1:n, ceiling((1:n) / maxn))
 		#print(sapply(inds, length))
