@@ -15,7 +15,7 @@ pred(
   groupMeans = NULL,
   se.fit = TRUE,
   cov.fit = FALSE,
-  maxn = 250,
+  maxn = Inf,
   Kx.cache = NULL,
   Kxx.cache = NULL,
   recursive = FALSE

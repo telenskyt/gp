@@ -65,6 +65,7 @@ Collate:
     'd2.R'
     'd2_dhyp.R'
     'd3.R'
+    'dump.frames.safe.R'
     'functions.R'
     'gp.R'
     'gpComponents.R'

@@ -17,7 +17,7 @@
   w = NULL,
   groupMeans = NULL,
   hyperpar = gpHyperparList(gp),
-  maxn = 2000,
+  maxn = Inf,
   pred.sims = 1e+05,
   Kx.cache = NULL,
   Kxx.cache = NULL,
@@ -83,8 +83,9 @@ if more different averages with different weights are desired, \code{w} can be a
 \item{hyperpar}{(optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.}
 
 \item{maxn}{maximum dataset size (along the \code{gp$GP_factor}) to fit at once; if the dataset is larger, it will be split into chunks of size \code{maxn}
-before predictions are calculated. Use \code{Inf} to disable the splitting entirely. Choosing a suitable value may speed up the computation when either \code{se.fit} or \code{cov.fit} is \code{TRUE},
-because the Kxx matrices are then smaller - but testing is needed.}
+before predictions are calculated. Use \code{Inf} to disable the splitting entirely. Choosing a suitable value may speed up the computation when \code{se.fit = TRUE} and \code{cov.fit = FALSE},
+because the Kxx matrices are then smaller (that's probably the only part where splitting helps) - but testing is needed. (Note: splitting disabled for now
+by default, since in some models we would need to specify along which factor to split - cannot always use gp$GP_factor)}
 
 \item{pred.sims}{(currently unused) number of simulations to be used for calculating the response scale predictions and their CIs. Default is 100000.
 Higher values give more accurate results, but are slower. Ignored if \code{conf.int = FALSE}.}

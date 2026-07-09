@@ -9,7 +9,8 @@ gpUnpack(
   compute = TRUE,
   need.K = compute,
   need.L = FALSE,
-  need.LTinv.rW = compute
+  need.LTinv.rW = compute,
+  num.correct.W.tol = 10 * sqrt(.Machine$double.eps)
 )
 }
 \arguments{
@@ -21,6 +22,9 @@ so if you set this to \code{FALSE} for an object on which another needed object 
 you will only save the memory size of the resultant object, but not CPU time.
 
 Note that the status of the \code{rW} object will be exactly the same as the \code{L} object (so it is directed by \code{need.L} argument).}
+
+\item{num.correct.W.tol}{numerical correction of W. Applies only to the case of diagonal W (gp$W.type == "diag").
+If not NULL, values of W will be corrected for small negative numbers, within given tolerance.}
 }
 \description{
 Restore the auxiliary data structures, which are redundant and take significant space, but are needed for computations.

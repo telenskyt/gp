@@ -68,4 +68,6 @@ Note that no scaling (covariate standardization) is done neither in this functio
 to provide the correct \code{data} argument with the desired scaling.
 
 This function is used in the cross-validation process to fit the null model for the baseline comparison.
+
+RTMB engine is used to fit the linear model.
 }
