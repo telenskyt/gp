@@ -55,8 +55,11 @@ gpPackFit <- function(fit, maximum = FALSE)
 #'
 #' Note that the status of the \code{rW} object will be exactly the same as the \code{L} object (so it is directed by \code{need.L} argument).
 #'
+#' @param num.correct.W.tol numerical correction of W. Applies only to the case of diagonal W (gp$W.type == "diag"). 
+#' If not NULL, values of W will be corrected for small negative numbers, within given tolerance.
+#'
 #' @export
-gpUnpack <- function (gp, compute = TRUE, need.K = compute, need.L = FALSE, need.LTinv.rW = compute)
+gpUnpack <- function (gp, compute = TRUE, need.K = compute, need.L = FALSE, need.LTinv.rW = compute, num.correct.W.tol = 10*sqrt(.Machine$double.eps))
 {
 	gp$data <- gpDataPrepare(gp, gp$obsdata)
 	if (!is.null(gp[["lik.constr.args"]])) {
@@ -78,7 +81,7 @@ gpUnpack <- function (gp, compute = TRUE, need.K = compute, need.L = FALSE, need
 	if (is.null(gp$fit[["f"]])) {
 		cat("gpUnpack: $fit$f is missing: need to re-run the gpFitLaplace() for the last iteration\n")
 		
-		gf <- gpFit(gp, h = gpHyperparExportVector(gp, "value"), opt.h = FALSE, grad.computation = FALSE) 
+		gf <- gpFit(gp, h = gpHyperparExportVector(gp, "value"), opt.h = FALSE, grad.computation = FALSE, num.correct.W.tol = num.correct.W.tol) 
 			# !! there should be an option to avoid nlml computation, too, but perhaps that wouldn't help us anyway, since we need the L too...
 		stopifnot(!is.null(gf[["fit"]]))
 		stopifnot(!is.null(gf$fit[["f"]]))
@@ -117,9 +120,21 @@ cat("Re-creating covariance matrix... ")
 	if (gp$fit$method == "Laplace-Fisher")
 		fisher <- gp$fit$fisher.options
 
-	gp$fit$W <- -d2(gp, gp$fit$f, gp$data, hyperpar, fisher)
+	W <- -d2(gp, gp$fit$f, gp$data, hyperpar, fisher)
 
-	stopifnot(all(gp$fit$W >= 0))
+	if (gp$W.type == "diag" && gp$fit$method != "Laplace-Fisher" && any(W < 0) && !is.null(num.correct.W.tol) && is.finite(num.correct.W.tol)) { # 2026 osetreni - jen drobne numericke chybky muzem zarovnat na 0, s ohledem na komentar nize
+		W[W < 0 & W >= -num.correct.W.tol] <- 0
+		warning("corrected small negative values of W (within tolerance num.correct.W.tol)")
+	}
+		
+	if (gp$W.type == "diag" && gp$fit$method != "Laplace-Fisher" && any(W < 0)) {
+		# (2026 note: going through the log files of my models, it looks like this didn't actually work. 
+		# It happened in q_extend models, which didn't work out, only once it happened in normal model (O-tsc,sitesm/Picus_viridis), resulting in an error and core dump anyways.)
+		stop("some W < 0, i.e. the diagonal of the hessian has negative values (range: ", paste(range(W), collapse=" to "),
+			"),\n\tmeaning the hessian of the neg. log likelihood is not positive definite. Consider using method = \"Laplace-Fisher\". Increasing num.correct.W.tol can help for small negative values, but use with caution!")
+		
+	}
+	gp$fit$W <- W
 
 	if (!need.LTinv.rW && !need.L) {
 		if (!need.K) {

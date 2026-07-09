@@ -5,7 +5,7 @@
 # h - vector of hyperparameters that are being optimized (not fixed), optim.link funkci musi resit volajici, zde se uz okolo tohoto nic neresi
 # wt - weights. !!! They are not implemented properly now!!! In good design they should be parameters to d0, d1, d2, etc. functions
 # grad.computation - TRUE (computes all), FALSE (computes none), vector of indices - computes just those
-# num.correct.W.tol - numerical correction of W - if not NULL, values of W (hessian diagonal) will be corrected for small negative numbers, within given tolerance
+# num.correct.W.tol numerical correction of W. Applies only to the case of diagonal W (gp$W.type == "diag"). If not NULL, values of W will be corrected for small negative numbers, within given tolerance.
 #
 # Value:
 # f_cov_masked: posterior covariance masked by the structural non-zeros in W
