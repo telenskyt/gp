@@ -206,7 +206,7 @@ parallelJobWrapper <- function (expr, working.dir = NULL, masterPID = NULL, log.
 		if (!is.null(dump.fn)) {
 			dump.fn <- expand_special(dump.fn)
 			cat("dumping stack, variables etc. to ", dump.fn, "\n")
-			dump.frames(dumpto = dump.fn, to.file = TRUE, include.GlobalEnv = TRUE) # use debugger(loadVar("*", dump.fn)) to debug...
+			.dump.frames.safe(dumpto = dump.fn, to.file = TRUE, include.GlobalEnv = TRUE) # use debugger(loadVar("*", dump.fn)) to debug...
 		}
 	})
 	gc() # free up the memory because e.g. doRedis workers don't call gc() after it finishes (they should!!)
