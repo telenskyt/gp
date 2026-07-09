@@ -192,7 +192,8 @@ pred <- function(gp, predx, same = FALSE, hyperpar = gpHyperparList(gp), compone
 					stopifnot(all(fit$W >= 0))
 					v <- backsolve(fit$L, sqrt(as.vector(fit$W)) * Kx, transpose = TRUE)
 				} else {
-					v <- backsolve(fit$L, rW %*% Kx, transpose = TRUE)
+					need(fit, "rW")
+					v <- backsolve(fit$L, fit$rW %*% Kx, transpose = TRUE)
 				}
 				mstop(id = "backsolve")				
 			}
