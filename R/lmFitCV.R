@@ -155,7 +155,7 @@ lmFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL,
 	}
 	for (i in 1:length(fold.run)) { 
 		f <- fold.run[[i]]$fold
-		lm$fitCV$models[[f]] <- fold.run[[i]]$m
+		#lm$fitCV$models[[f]] <- fold.run[[i]]$m # do not store the models in the lmFitCV() case, can be too big for no reason
 		
 		# assemble linear model predictions
 		if (is.null(lm$fitCV$predCV))
