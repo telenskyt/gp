@@ -135,16 +135,20 @@ gpFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL, start.from.mod
 				gpcv <- gpHyperparStartFromModel(gpcv, start.from.model$fitCV$models[[f]])
 
 			# first fit & predict the null model - if something fails with an error, we want to fail it ASAP, not after some loong GP computation
-			nullm <- do.call(lmFit, c(list(gp = gpcv, formula = ~1, data = gpcv$data), lmFit.options))
+			nullFit.args <- lmFit.options
+			nullFit.args$gp <- NULL
+			nullFit.args$formula <- NULL
+			nullFit.args$data <- NULL
+			nullm <- do.call(function(...) lmFit(gpcv, formula = ~1, data = gpcv$data, ...), nullFit.args)
 			test_data_lm <- gpDataPrepare(gpcv, test_data, scale.as = gpcv$data)
 				# lmFit and predict.lmFit don't solve scaling, so we do it manually here, just in case...
 				# but these scaling things might be worth checking in case some problems arise in models 
 				# with complicated likelihood hyperparameters
-			nullPredCV <- do.call(predict, c(list(nullm, newdata = test_data_lm), lmFit.pred.options))
+			nullPredCV <- do.call(function(...) predict(nullm, newdata = test_data_lm, ...), lmFit.pred.options)
 
 			# now fit & predict the GP model - this might take a lot of time
 			m <- gpFit(gpcv, ...)
-			predCV <- do.call(predict, c(list(m, newdata = test_data), pred.options))
+			predCV <- do.call(function(...) predict(m, newdata = test_data, ...), pred.options)
 			
 			m <- gpPack(m, maximum = TRUE)
 			# pack it even more! These will be then restored in gpGetCVModel() :

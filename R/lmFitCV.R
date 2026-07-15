@@ -100,17 +100,18 @@ lmFitCV <- function (gp, fold.col, fold.fact = "1", folds = NULL,
 
 			# fit & predict the null model
 			nullFit.args <- lmFit.args
-			nullFit.args$gp <- gp
-			nullFit.args$formula <- ~1
-			nullFit.args$data <- train_data
-			nullm <- do.call(lmFit, nullFit.args)
-			nullPredCV <- do.call(predict, c(list(nullm, newdata = test_data), pred.options))
+			nullFit.args$gp <- NULL
+			nullFit.args$formula <- NULL
+			nullFit.args$data <- NULL
+			nullm <- do.call(function(...) lmFit(gp, formula = ~1, data = train_data, ...), nullFit.args)
+			nullPredCV <- do.call(function(...) predict(nullm, newdata = test_data, ...), pred.options)
 
 			# now fit & predict the linear model
-			lmFit.args$gp <- gp
-			lmFit.args$data <- train_data
-			m <- do.call(lmFit, lmFit.args)
-			predCV <- do.call(predict, c(list(m, newdata = test_data), pred.options))
+			fit.args <- lmFit.args
+			fit.args$gp <- NULL
+			fit.args$data <- NULL
+			m <- do.call(function(...) lmFit(gp, data = train_data, ...), fit.args)
+			predCV <- do.call(function(...) predict(m, newdata = test_data, ...), pred.options)
 			
 			list(
 				fold = f,
