@@ -21,17 +21,20 @@ likTempPhased <- suppress_warnings_from(setRefClass(
 	methods = list(
 	
 initialize = function(
-	terms = function (data, par) NULL, 
-	link = function (data, par) par, 
-	process, 
+	terms = NULL, # function or NULL
+	link = NULL, # function or NULL
+	process,  # must be a function
 	lik,
 	f_start = NULL)
 {
 	# now, the user-supplied template functions can no longer use variables from closure! All they can use must be from data & par arguments 
 	# or base functions. We are doing this to save potential space when storing the object on the disk. 
 	#	- another possible solution would be to allow the closures, but warn if they are big	
-	check_fun_env_size(terms)
-	check_fun_env_size(link)
+	if (is.function(terms))
+		check_fun_env_size(terms)
+	if (is.function(link))
+		check_fun_env_size(link)
+	stopifnot(is.function(process))
 	check_fun_env_size(process)
 	if (is.function(lik))
 		check_fun_env_size(lik)
@@ -39,8 +42,13 @@ initialize = function(
 		check_fun_env_size(f_start)
 
 	constr.args <<- as.list(environment()) # save the arguments into a list
-	
-	#if (!is.null(terms))
+
+	# default for terms and link
+	if (is.null(terms))
+		terms <- function (data, par) NULL
+	if (is.null(link))
+		link <- function (data, par) par
+
 	terms <<- terms
 	link <<- link
 	process <<- process
