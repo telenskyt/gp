@@ -78,6 +78,7 @@ Collate:
     'gpLGO.R'
     'gpLikelihood.R'
     'gpLoo.R'
+    'gpLooPrevVer.R'
     'gpPack.R'
     'gpPredictFromLatent.R'
     'likBern.R'
