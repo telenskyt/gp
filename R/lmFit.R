@@ -293,27 +293,15 @@ predict.lmFit <- function(object, newdata = NULL, type = c('latent', 'terms', 'r
 	}
 
 	# Start from stored hyperparameters so fixed likelihood parameters are included.
-	if (type == "terms" || type == "response") {
-		hyperpar <- gpHyperparList(object$gp)
-		if (!is.null(object$lik.par))
-			hyperpar[[".lik"]] <- object$lik.par
-		par <- gpGetParForLikTemplate(object$gp, pred[,"f"], newdata, hyperpar)
-	}
-	if (type == "terms") {
-		if (object$gp$lik.reindex2main && object$gp$GP_factor != "1") {
-			fact_idx <- paste0(object$gp$GP_factor, "_idx")
-			pred <- pred[newdata[[1]][[fact_idx]],,drop=FALSE]
-		}
-		terms <- object$gp$lik$terms(data = newdata, par) # we are calling $terms and not $stage(stage = 1), because we want just the terms separately
-		if (!is.null(terms))
-			pred <- cbind(pred, as.matrix(terms)) # we want to keep the return value as matrix, as it has always been
-	}
-	else if (type == "response") {
-		pred <- as.matrix(object$gp$lik$stages(data = newdata, par, stages = 1:2)) # in this case, we don't return f and f_SE and the other stuff at the moment... we could though... to reconsider
-			# we want to keep the return value as matrix, as it has always been
+	hyperpar <- gpHyperparList(object$gp)
+	if ((type == "terms" || type == "response") && !is.null(object$lik.par)) {
+		hyperpar[[".lik"]] <- modifyList(hyperpar[[".lik"]], object$lik.par)
+			# !!! this modifyList() solution would not solve a potential future case where only one element inside a vector-valued likelihood hyperparameter is optimized and the others are fixed.
+			# but that doesn't currently happen in this implementation of lmFit()
 	}
 
-	pred
+	gpPredictFromLatent(gp = object$gp, pred = pred, data = newdata, type = type,
+		hyperpar = hyperpar, se.fit = se.fit)
 }
 
 # Count the parameters optimized by RTMB.

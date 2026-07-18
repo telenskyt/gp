@@ -41,7 +41,7 @@
 #' 	which makes the prediction much faster (but just in case both \code{se.fit} and \code{cov.fit} are also \code{FALSE}). 
 #'	If \code{TRUE}, \code{se.fit} will be automatically set to \code{TRUE}, since the standard errors are needed for the CI calculation.
 #' @param conf.level numeric; confidence level for the confidence intervals. Default is 0.95.
-#' @param cov.fit logical; if \code{TRUE}, the covariance matrix of the predictions will also be returned (can be very memory consuming for large datasets!).
+#' @param cov.fit logical; if \code{TRUE}, the covariance matrix of the latent \code{f} (the Gaussian process) will also be returned, in the original dimension of the GP. Note that the covariance matrix can be very memory consuming for large datasets.
 #' Default is \code{FALSE}.
 #' @param link character, optional. In case of \code{type = "response"}, what should be the link function to take inverse of for calculating the derived quantity (response scale)? Character as passed to \code{make.link()}.
 #' @param parname character, optional. In case of \code{type = "response"}, what should be the name of the parameter which is the derived quantity on the response scale?
@@ -89,6 +89,9 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
 	all_components_used <- all(names(gp$covComp) %in% components)
 
 	type <- match.arg(type)
+	if (type != "latent" && (!is.null(w) || !is.null(groupMeans))) {
+		warning("type != 'latent' together with w or groupMeans needs review; likelihood-template predictions may not be correct in this case.")
+	}
 
 	# do a backward compatibility check
 	dots <- match.call(expand.dots = FALSE)$...
@@ -135,7 +138,6 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
 		stop("conf.level must be a number between 0 and 1")
 	}
 	if (conf.int) {
-		err <- qnorm( 1 - (1 - conf.level) / 2 )
 		se.fit <- TRUE
 	}
 
@@ -149,52 +151,26 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
 	)
 	cat("pred() took ")
 	mstop(id = "whole pred")
+	pred.cov <- NULL
 	if (cov.fit) {
 		pred.cov <- pred$cov
 		pred <- pred$pred
 	}
 	# pred is now always a matrix, with cols "f" and optionally also "f_SE"
 
-	if (type == "terms" || type == "response") {
-		# do the same as in gpGetParForLikTemplate(), but reindex not only f, but also pred!
-		if (gp$lik.reindex2main && gp$GP_factor != "1") {
-			stopifnot(gpDataHasMainTable(x_new))
-			# reindex from the GP_factor to main table, as requested by the template
-			fact_idx <- paste0(gp$GP_factor, "_idx")
-			pred <- pred[x_new[[1]][[fact_idx]],,drop=FALSE]
-			if (cov.fit)
-				stop("type == terms or response used with cov.fit = TRUE and with lik.reindex2main = TRUE; would need to reindex the covariance matrix here, but sounds crazy, reconsider this case")
-		}
-		par <- c(hyperpar[[".lik"]], list(f = pred[,"f"]))
-	}
+	pred <- gpPredictFromLatent(gp = gp, pred = pred, data = x_new, type = type,
+		hyperpar = hyperpar, se.fit = se.fit, cov.fit = cov.fit, pred.cov = pred.cov,
+		conf.int = conf.int, conf.level = conf.level)
 
-	if (conf.int) { # add confidence intervals
-		upper <- pred[, "f"] + err * pred[, "f_SE"]
-		lower <- pred[, "f"] - err * pred[, "f_SE"]
-		dCI <- cbind(lower, upper)
-		colnames(dCI) <- c(paste0("f_lower_", round(100 * conf.level), "CI"), #paste("lower ", round(100 * conf.level), "% CI", sep = ""),
-						   paste0("f_upper_", round(100 * conf.level), "CI")) #paste("upper ", round(100 * conf.level), "% CI", sep = "")
-		pred <- cbind(pred, dCI)
-	}
-
-	if (type == "terms") {
-		terms <- gp$lik$terms(data = x_new, par) # we are calling $terms and not $stage(stage = 1), because we want just the terms separately
-		if (!is.null(terms))
-			pred <- cbind(pred, as.matrix(terms)) # we want to keep the return value as matrix, as it has always been
-	}
-	else if (type == "response") {
-		pred <- as.matrix(gp$lik$stages(data = x_new, par, stages = 1:2)) # in this case, we don't return f and f_SE and the other stuff at the moment... we could though... to reconsider
-			# we want to keep the return value as matrix, as it has always been
-	}
 	cat("returning memory - gc() took ")
 	mstart(id = "gc")
 	gc() # Return the memory. Important! :-)
 	mstop(id = "gc")
 	cat("whole predict() took ")
 	mstop(id = "whole predict")
-	stopifnot(is.matrix(pred))
 	if (!cov.fit)
-		pred
+		stopifnot(is.matrix(pred))
 	else
-		list(pred = pred, cov = pred.cov)
+		stopifnot(is.list(pred), is.matrix(pred$pred))
+	pred
 }
