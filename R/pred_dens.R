@@ -1,6 +1,9 @@
 
 
+# predictive density using integrate()
 # input:
+# pred - GP dimension (gp$GP_size), not reindexed!!!
+#			!!! now it doesn't work for true CV, because it doesn't use the CV terms, but the terms calculated from the gp model object hyperparameters!!!!
 # pred - predictions from LOO/LGO-CV approximation, or real fold CV
 #		- to co vylezlo z __predictor casti templaty ("s" u cejek)
 #		- s covariance matrix na urovni granularity W (tj. cov matrix marginalizovana na ty komponenty likelihood)
@@ -9,7 +12,7 @@
 #				- u q atlasu to neni linearni transformace ???
 #
 
-# predictive density using integrate()
+
 
 # !!!! slo by udelat i multi-dimensional verzi pro W.type = "bdiag" s nejakou cubature()
 #	- ??? ale jak pak pres to iterovat? Neresi to nekdo? podle me mask(.., W) je k tomu blizko
@@ -27,10 +30,10 @@ pred_dens_logit__int <- function(gp, data = gp[["data"]], pred, subdivisions = 1
 	
 	if (is.list(pred)) {
 		stopifnot(!is.null(pred[["f"]]))
-		stopifnot(!is.null(pred[["f_cov_masked"]]))
-		stopifnot(inherits(pred[["f_cov_masked"]], "sparseMatrix"))
-		stopifnot(isDiagonal(pred[["f_cov_masked"]]))
-		pred <- as.matrix(data.frame(f = pred$f, f_SE = sqrt(diag(pred[["f_cov_masked"]]))))
+		stopifnot(!is.null(pred[["cov"]]))
+		stopifnot(inherits(pred[["cov"]], "sparseMatrix"))
+		#stopifnot(isDiagonal(pred[["cov"]]))
+		pred <- as.matrix(data.frame(f = pred$f, f_SE = sqrt(diag(pred[["cov"]]))))
 	} else if (is.data.frame(pred)) {
 		pred <- as.matrix(pred)
 	} else {

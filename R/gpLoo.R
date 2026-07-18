@@ -46,15 +46,7 @@ gpLooGen_v0 <- function (gp, folds)
 }
 
 
-# generalized version for LGO-CV
-# opravena verze, tohle je presne to co jsem chtel!!
-# stale predpoklada, ze W je diagonal! Ale dela to po skupinach. Odsud je uz jen krucek k non-diagonal verzi!
-#
-# warning: can take longer time if only few folds chosen (then the block matrices are big and take time to invert)
-#
-# odvodil jsem si to sam jako analogii eq 67 ve Vehtari 2016, kdyz se to f[i] a t~[i] vezmou jako multidimenzionalni
-# a pak se provede ten trik s delenim dvou gaussian PDF v eq 38, 39, ale zobecni se to na multidimenzionalni.
-# a ono to konecne funguje!!!
+
 #' LGO-CV prediction - an approximation of leave-group-out cross-validation
 #' @param gp GP model object
 #' @param fold.col either a name of a column in the main table, or a vector along factor \code{fold.fact}.
@@ -65,7 +57,15 @@ gpLooGen_v0 <- function (gp, folds)
 #
 #' @importFrom Matrix Matrix
 #' @importFrom Matrix fac2sparse
+#' @importFrom Matrix Diagonal
 #' @export
+#
+# warning: can take longer time if only few folds (groups) chosen (then the block matrices are big and matrix operations take longer time)
+#
+# odvodil jsem si to sam jako analogii eq 67 ve Vehtari 2016, kdyz se to f[i] a t~[i] vezmou jako multidimenzionalni
+# a pak se provede ten trik s delenim dvou gaussian PDF v eq 38, 39, ale zobecni se to na multidimenzionalni.
+# a ono to konecne funguje!!!
+
 gpLGOpred <- function (gp, fold.col, fold.fact = "1")
 {
 	fold.col <- gpFitCV__validate_and_get_fold_col(gp, fold.col, fold.fact)
@@ -86,34 +86,54 @@ gpLGOpred <- function (gp, fold.col, fold.fact = "1")
 	}
 	# fold.col is now of the dimension of the GP
 
-	#stopifnot(is.vector(gp$fit$W))
-	pr.cov <- predict(gp, type = "latent", cov.fit = TRUE)
+	### calculate S - the posterior covariance matrix masked by the groups
+	S <- predict(gp, type = "latent", cov.fit = TRUE)
 
+	mstart(id = "rest_of_LGO")
 	mask <- crossprod(fac2sparse(factor(fold.col))) # make a sparse matrix `mask` of the GP dimension, which has 1 where the elements belong to the same fold
-	pr.cov <- mask(pr.cov$cov, mask) # now mask the posterior to it
-
-	if (gp$W.type == "diag")
-		M <- solve(pr.cov - Diagonal(x = 1/gp$fit$W))
-	else {
-		Winv <- solve(gp$fit$W)
-		M <- solve(pr.cov - Winv)
-	}
-	R <- pr.cov - pr.cov %*% M %*% pr.cov # use matrix inversion lemma, the form from R&W 2006 page 201 top!
-		# this calculates the inverse(inverse(pr.cov) - gp$fit$W)), even though the inverse(pr.cov) itself doesn't exist!!!
-		# (pozn.: na toto reseni me privedla page https://math.stackexchange.com/a/1251958/15731, i kdyz s tim primo nesouvisi - ale nasel jsem ji kdyz 
-		# jsem googlil: division of two multivariate normal PDFs)
-		#
-		# pozn: mozna by to slo spocitat nejak rychleji a lepe bez toho inversu, kdyz mam L? Ale asi ne, protoze ta pr.cov je uz po tom maskovani
+	S <- mask(S$cov, mask) # now mask the posterior to it
 	
-	if (gp$W.type == "diag")
-		f.loo.cov.masked <- Diagonal(x = diag(R))
-	else
-		f.loo.cov.masked <- mask(R, gp$fit$W) 
-	f.loo <- gp$fit$f - f.loo.cov.masked %*% gp$fit$a
-	list(f = as.matrix(f.loo), f_cov_masked = f.loo.cov.masked)
-		# keep f as a column vector, same as in gpFitLaplace()
-}
+	### retrieve rW - the cholesky factor of W = t(rW) %*% rW
+	stopifnot(!is.null(gp[["fit"]]))
+	if (gp$W.type == "diag") {
+		if (!is.null(gp$fit[["rW"]]))
+			rW <- Diagonal(x = gp$fit$rW)
+		else {
+			need(gp$fit, "W")
+			rW <- Diagonal(x = sqrt(gp$fit$W))
+		}
+	} else {
+		if (!is.null(gp$fit[["rW"]]))
+			rW <- gp$fit$rW
+		else {
+			need(gp$fit, "W")
+			warning("had to compute rW using cholesky; would be more optimal to have rW stored in the object.")
+			rW <- chol_W(gp$fit$W)
+		}
+	}
+		
+	M <- - rW %*% S %*% t(rW)
+	diag(M) <- diag(M) + 1
 
+	LM <- Matrix::chol(M)
+	v <- Matrix::solve(t(LM), rW %*% S, sparse = TRUE) # backsolve() for the sparse matrix
+#	if (gp$W.type == "diag")
+#		R <- diag(S) + colSums(v^2)
+#	else
+		R <- S + crossprod(v)
+		# ??? co tady ten crossprod?? nemelo by se to maskovat na group mask? Asi z kouzelnych aritmetickych duvodu neni treba?
+		# the W.type == "diag" pathway could be probably optimized a bit more - but that only in case of LOO and not LGO?
+	R <- Matrix::forceSymmetric(R)
+		# it won't waste time by testing the symmetry; it will just take half of it and say the rest is symmetric :)
+		# note though that when you do mask(R, ...), the symmetry is gone - mask() doesn't support it now
+	
+	f.loo <- gp$fit$f - R %*% gp$fit$a
+	cat("Computing the rest of LGO took ")
+	mstop(id = "rest_of_LGO")
+	list(f = as.matrix(f.loo), cov = R)
+		# keep f as a column vector, same as in gpFitLaplace()
+		# we will keep the masking of R by mask(R, g$fit$W) on the caller now
+}
 
 # GPStuff implementation
 # vypada to ze nefunguje, ze tam maji chybu, ze to neni ekvivaletni tomu nasemu co delam podle Vehtari 2016
