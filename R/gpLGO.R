@@ -1,6 +1,9 @@
 
 #' Calculate the approximation of the LGO-CV (leave-group-out cross-validation) and evaluate it.
 #'
+#' Works at the same level as \code{gpFitCV} - makes CV predictions and evaluates them to the gp object. There is an important difference though: 
+#' LGO-CV works for a given set of hyperparameters, whereas the default gpFitCV() optimises them, and thus cross-validates also the hyperparameter optimization process.
+#'
 #' @param gp GP model object
 #' @param fold.col either a name of a column in the main table, or a vector along factor \code{fold.fact}.
 #'		The column (or the supplied vector) must be a vector of integers from \code{1} to \code{N} (\code{N} being the number of folds),
@@ -15,6 +18,7 @@
 #' @param hyperpar (optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.
 #'
 #' @returns the gp model object with approximate LGO-CV predictions and statistics in \code{gp$fit$LGOCV}.
+#' @export
 gpLGO <- function(gp, fold.col, fold.fact = "1",
 	pred.null = NULL,
 	lmFit.options = list(lik.hyperpar = "fix"),
