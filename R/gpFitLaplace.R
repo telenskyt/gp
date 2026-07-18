@@ -480,7 +480,7 @@ chol_W <- function(W, ...)
 		range(Wv - W)
 	}
 
-	rW	
+	rW
 }
 
 chol_psd <- function(W, rel = 1e-15, maxit = 7)
@@ -495,6 +495,9 @@ chol_psd <- function(W, rel = 1e-15, maxit = 7)
 		out <- try(
 			suppress_warnings_from(
 				Matrix::Cholesky(W, perm = TRUE, LDL = FALSE, super = FALSE, Imult = tau), 
+					# the perm = TRUE is still useful here, even though we will "undo" the permutation in chol_W() function; 
+					# for sparse matrices it can reduce fill-in, making the Cholesky factorization faster and less memory-hungry
+					# The PSD/numerical-singularity handling comes from Imult = tau, not from perm.
 				message = "CHOLMOD warning 'not positive definite'", fun = "Cholesky", package = "Matrix"
 			),
 			silent = TRUE
