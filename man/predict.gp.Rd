@@ -40,7 +40,7 @@ the predictions will be reindexed to the dimension of the main table.}
 the predictions will be reindexed to the dimension of the main table.}
 }}
 
-\item{cov.fit}{logical; if \code{TRUE}, the covariance matrix of the predictions will also be returned (can be very memory consuming for large datasets!).
+\item{cov.fit}{logical; if \code{TRUE}, the covariance matrix of the latent \code{f} (the Gaussian process) will also be returned, in the original dimension of the GP. Note that the covariance matrix can be very memory consuming for large datasets.
 Default is \code{FALSE}.}
 
 \item{conf.int}{logical; should confidence intervals be calculated? If \code{FALSE}, no confidence intervals will be calculated,
