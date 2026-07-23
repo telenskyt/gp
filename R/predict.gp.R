@@ -118,9 +118,9 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
             if (!tbl_name %in% names(gp$obsdata)) {
 				stop("newdata contains table '", tbl_name, "' which was not present in the training data")
 			} else {
-				if (!all(names(newdata[[tbl_name]]) %in% names(gp$obsdata[[tbl_name]]))) {
-					stop("newdata$", tbl_name, " contains columns not present in training data")
-				}
+				#if (!all(names(newdata[[tbl_name]]) %in% names(gp$obsdata[[tbl_name]]))) {
+				#	stop("newdata$", tbl_name, " contains columns not present in training data")
+				#}
 				if (!all(names(gp$obsdata[[tbl_name]] %in% names(newdata[[tbl_name]])))) {
 					stop("newdata$", tbl_name, " is missing columns present in training data")
 				}
