@@ -155,11 +155,12 @@ expand_special <- function (fn)
 #' debugging purposes, when we want to run the job in non-parallel, interactive mode, in which case most of the wrapper function (logging, setting working directory)
 #' will be disabled.
 #' @param tr.max.lines the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs
+#' @param log.append logical; if \code{TRUE}, append to \code{log.fn} instead of overwriting it. Might be useful to create per-worker rather than per-job logs.
 #' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:
 #' - \code{\%h} - hostname, i.e. the name of the machine where the worker job runs
 #' - \code{\%p} - process ID of the worker job
 #' @export
-parallelJobWrapper <- function (expr, working.dir = NULL, masterPID = NULL, log.fn = NULL, dump.fn = NULL, parallel = TRUE, tr.max.lines = 5)
+parallelJobWrapper <- function (expr, working.dir = NULL, masterPID = NULL, log.fn = NULL, dump.fn = NULL, parallel = TRUE, tr.max.lines = 5, log.append = FALSE)
 
 #myParallel
 #jobWrapper
@@ -179,7 +180,7 @@ parallelJobWrapper <- function (expr, working.dir = NULL, masterPID = NULL, log.
 			# spust logovani - dej logu do jmena hostname a PID, kdyby nahodou na tom samem tasku makalo vic workeru (u doRedis clovek nikdy nevi!)
 			if (!is.null(log.fn)) {
 				log.fn <- expand_special(log.fn)
-				fold.LOG <- startLog(filename = log.fn, add_timestamp = TRUE)
+				fold.LOG <- startLog(filename = log.fn, add_timestamp = TRUE, append = log.append)
 				on.exit({ cat("closing log file\n"); endLog(fold.LOG); cat("(after closing log, shouldn't be seen in any log)\n"); }) 
 					# we have to do it like this, because of the doRedis bug (worker will not close the sink; po case to zpusobi chybu "sink stack is full". Not reported yet)
 			}
