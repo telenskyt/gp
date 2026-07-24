@@ -18,6 +18,11 @@ pred(
   maxn = Inf,
   Kx.cache = NULL,
   Kxx.cache = NULL,
+  parallel = FALSE,
+  log.fn = NULL,
+  dump.fn = NULL,
+  log.append = FALSE,
+  tr.max.lines = 5,
   recursive = FALSE
 )
 }
@@ -27,6 +32,16 @@ pred(
 \item{se.fit}{return the standard errors of the predicted values?}
 
 \item{cov.fit}{return the covariance matrix of the predicted values?}
+
+\item{parallel}{use \code{parallel::parLapply()} on the registered default cluster for chunked predictions?}
+
+\item{log.fn}{if not \code{NULL}, log parallel chunk jobs using \code{parallelJobWrapper()}}
+
+\item{dump.fn}{if not \code{NULL}, dump debug info from failed parallel chunk jobs using \code{parallelJobWrapper()}}
+
+\item{log.append}{logical; if \code{TRUE}, append to \code{log.fn} instead of overwriting it}
+
+\item{tr.max.lines}{the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs}
 }
 \value{
 A matrix of predictions, always at the dimension of the Gaussian Process, with columns \code{f} and \code{f_SE} (if \code{se.fit = TRUE}).

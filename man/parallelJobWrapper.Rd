@@ -11,7 +11,8 @@ parallelJobWrapper(
   log.fn = NULL,
   dump.fn = NULL,
   parallel = TRUE,
-  tr.max.lines = 5
+  tr.max.lines = 5,
+  log.append = FALSE
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ debugging purposes, when we want to run the job in non-parallel, interactive mod
 will be disabled.}
 
 \item{tr.max.lines}{the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs}
+
+\item{log.append}{logical; if \code{TRUE}, append to \code{log.fn} instead of overwriting it}
 }
 \description{
 Useful wrapper for parallel jobs, run by e.g. foreach(), or, in general, for any non-interactive (background) jobs.

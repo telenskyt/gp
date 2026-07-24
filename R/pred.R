@@ -3,6 +3,11 @@
 #'@param se.fit	return the standard errors of the predicted values?
 #'@param cov.fit return the covariance matrix of the predicted values?
 #'@param components character vector of names of the components of covariance that should be used for this prediction
+#'@param parallel use \code{parallel::parLapply()} on the registered default cluster for chunked predictions?
+#'@param log.fn if not \code{NULL}, log parallel chunk jobs using \code{parallelJobWrapper()}
+#'@param dump.fn if not \code{NULL}, dump debug info from failed parallel chunk jobs using \code{parallelJobWrapper()}
+#'@param log.append logical; if \code{TRUE}, append to \code{log.fn} instead of overwriting it
+#'@param tr.max.lines the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs
 #'
 #' @returns A matrix of predictions, always at the dimension of the Gaussian Process, with columns \code{f} and \code{f_SE} (if \code{se.fit = TRUE}). 
 #' If \code{cov.fit = TRUE}, returns a named list, \code{pred} will be the mentioned matrix and \code{cov} will be the full covariance matrix.
@@ -53,7 +58,7 @@
 
 pred <- function(gp, predx, same = FALSE, hyperpar = gpHyperparList(gp), components = NULL, comp_missing = c("avg", "none"),
 	w = NULL, groupMeans = NULL, se.fit = TRUE, cov.fit = FALSE, maxn = Inf, Kx.cache = NULL, Kxx.cache = NULL,
-	recursive = FALSE)
+	parallel = FALSE, log.fn = NULL, dump.fn = NULL, log.append = FALSE, tr.max.lines = 5, recursive = FALSE)
 {
 	fit <- gp$fit
 	if (is.null(fit))
@@ -80,11 +85,25 @@ pred <- function(gp, predx, same = FALSE, hyperpar = gpHyperparList(gp), compone
 		cat("n = ", n, ", splitting dataset to chunks of size maxn = ", maxn, "\n")
 		inds <- split(1:n, ceiling((1:n) / maxn))
 		#print(sapply(inds, length))
-		fun <- function(ind, gp, X, same, hyperpar, components, comp_missing, se.fit, maxn) {
-			pred(gp, gpDataSubset(X, fact = gp$GP_factor, ind = ind), same = same, hyperpar = hyperpar, components = components,
-				comp_missing = comp_missing, se.fit = se.fit, maxn = maxn, recursive = TRUE)
+		fun <- function(ind, gp, X, same, hyperpar, components, comp_missing, se.fit, maxn,
+			log.fn = NULL, dump.fn = NULL, log.append = FALSE, wd = NULL, masterPID = NULL, tr.max.lines = 5) {
+			if (is.null(log.fn) && is.null(dump.fn)) {
+				pred(gp, gpDataSubset(X, fact = gp$GP_factor, ind = ind), same = same, hyperpar = hyperpar, components = components,
+					comp_missing = comp_missing, se.fit = se.fit, maxn = maxn, recursive = TRUE)
+			} else {
+				parallelJobWrapper(working.dir = wd, masterPID = masterPID, log.fn = log.fn, dump.fn = dump.fn, parallel = TRUE, tr.max.lines = tr.max.lines, log.append = log.append,
+				{
+					pred(gp, gpDataSubset(X, fact = gp$GP_factor, ind = ind), same = same, hyperpar = hyperpar, components = components,
+						comp_missing = comp_missing, se.fit = se.fit, maxn = maxn, recursive = TRUE)
+				})
+			}
 		}
-		prediction <- lapply(inds, fun, gp, predx, same, hyperpar, components, comp_missing, se.fit, maxn)
+		if (parallel) {
+			wd <- getwd.keepsym()
+			masterPID <- Sys.getpid()
+			prediction <- parallel::parLapply(NULL, inds, fun, gp, predx, same, hyperpar, components, comp_missing, se.fit, maxn, log.fn, dump.fn, log.append, wd, masterPID, tr.max.lines)
+		} else
+			prediction <- lapply(inds, fun, gp, predx, same, hyperpar, components, comp_missing, se.fit, maxn)
 		prediction <- do.call('rbind', prediction)
 	} else {
 		mstart(id = "predmean")

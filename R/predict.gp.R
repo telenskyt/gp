@@ -11,12 +11,12 @@
 #'
 #' @param comp_missing how to compensate for missing components (if there are any), in mean and variance of the predictions:
 ##' \describe{
-##' \item{\code{"none"}}{no compensation. In this case, the interpretation of the result's variance isn't much clear (!!!??? why?).}
-##' \item{\code{"avg"}}{the missing components are replaced by "averaging over them" - more
-##'		precisely, it predicts for the average effects of these components - for these, the variance/CI corresponds to confidence interval
+##' \item{\code{"avg"}}{each omitted component is replaced by its posterior prediction for the average of that component over the training dataset.
+##'		!!Overit: for these components, the variance/CI corresponds to confidence interval
 ##'		(uncertainty around the mean predictions) and not the prediction interval - see http://www.sthda.com/english/articles/40-regression-analysis/166-predict-in-r-model-predictions-and-confidence-intervals/
 ##'		For models which have grouping factors, be aware of how the average is weighted - see CAUTION CAU001 in the code.
 ##' }
+##' \item{\code{"none"}}{no compensation. In this case, the interpretation of the result's variance isn't much clear (!!!??? why?).}
 #' }
 #' Thus, the most reasonable setting now is \code{"avg"}; unless one cares only about the prediction mean (`f`) of the latent variable, in which case
 #' a simple "none" would also do the job.
@@ -43,12 +43,21 @@
 #' @param conf.level numeric; confidence level for the confidence intervals. Default is 0.95.
 #' @param cov.fit logical; if \code{TRUE}, the covariance matrix of the latent \code{f} (the Gaussian process) will also be returned, in the original dimension of the GP. Note that the covariance matrix can be very memory consuming for large datasets.
 #' Default is \code{FALSE}.
-#' @param link character, optional. In case of \code{type = "response"}, what should be the link function to take inverse of for calculating the derived quantity (response scale)? Character as passed to \code{make.link()}.
-#' @param parname character, optional. In case of \code{type = "response"}, what should be the name of the parameter which is the derived quantity on the response scale?
 #' @param maxn maximum dataset size (along the \code{gp$GP_factor}) to fit at once; if the dataset is larger, it will be split into chunks of size \code{maxn}
-#' before predictions are calculated. Use \code{Inf} to disable the splitting entirely. Choosing a suitable value may speed up the computation when \code{se.fit = TRUE} and \code{cov.fit = FALSE},
-#' because the Kxx matrices are then smaller (that's probably the only part where splitting helps) - but testing is needed. (Note: splitting disabled for now
+#' before predictions are calculated. 
+#' Use \code{Inf} to disable the splitting entirely. Choosing a suitable value may speed up the computation when \code{se.fit = TRUE} and \code{cov.fit = FALSE},
+#' because the Kxx matrices are then smaller (that's probably the only part where splitting helps) - but testing is needed. 
+#'
+#' The splitting is only available when \code{newdata} is not \code{NULL}, \code{cov.fit = FALSE}, and
+#' \code{w}, \code{groupMeans}, \code{Kx.cache}, and \code{Kxx.cache} are all \code{NULL}.
+#' (Note: splitting disabled for now
 #' by default, since in some models we would need to specify along which factor to split - cannot always use gp$GP_factor)
+#'
+#' @param parallel should prediction chunks be run in parallel? Uses \code{parallel::parLapply()}, and requires a default cluster to be already registered.
+#' @param log.fn if not \code{NULL}, standard and error output of each prediction chunk job will be saved into a log file with this file name. Special \code{\%} sequences can be used, see Details below.
+#' @param dump.fn if not \code{NULL}, debug dump of given prediction chunk job will be saved upon an error, with this file name (the .rda extension will be added to it). Special \code{\%} sequences can be used, see Details below.
+#' @param log.append logical; if \code{TRUE}, append to \code{log.fn} instead of overwriting it. Might be useful to create per-worker rather than per-job logs.
+#' @param tr.max.lines the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs
 #'
 #' @param pred.sims (currently unused) number of simulations to be used for calculating the response scale predictions and their CIs. Default is 100000.
 #' Higher values give more accurate results, but are slower. Ignored if \code{conf.int = FALSE}.
@@ -56,6 +65,11 @@
 #' caching parts of the K(training_data, newdata) matrix.
 #' @param Kxx.cache optional, object returned by \code{K_cache()} function, to speed up repeated calls to \code{predict.gp()} with the same \code{newdata} by
 #' caching parts of the K(newdata, newdata) matrix.
+#'
+#' @details The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:
+#' - \code{\%h} - hostname, i.e. the name of the machine where the worker job runs
+#' - \code{\%p} - process ID of the worker job
+#' You can use these in conjunction with \code{log.append = TRUE} to create per-worker log files.
 #'
 #' @returns A matrix of predictions, with columns \code{f} and \code{f_SE} (if \code{se.fit = TRUE}). If \code{cov.fit = TRUE}, returns a named list, \code{pred} will be
 #'	the mentioned matrix and \code{cov} will be the full covariance matrix. For the dimension of the prediction, see the \code{type} parameter.
@@ -75,7 +89,7 @@
 predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response'),	se.fit = FALSE, cov.fit = FALSE, conf.int = FALSE, conf.level = 0.95,
 						components = NULL, comp_missing = c("avg", "none"), w = NULL, groupMeans = NULL,
 						hyperpar = gpHyperparList(gp),
-						maxn = Inf, pred.sims = 100000,
+						maxn = Inf, parallel = FALSE, log.fn = NULL, dump.fn = NULL, log.append = FALSE, tr.max.lines = 5, pred.sims = 100000,
 						Kx.cache = NULL, Kxx.cache = NULL, ...)
 {
 	if (is.null(gp[["fit"]]))
@@ -147,7 +161,8 @@ predict.gp <- function(gp, newdata = NULL, type = c('latent', 'terms', 'response
 	mstart(id = "whole predict", mem_precise = TRUE)
 	mstart(id = "whole pred", mem_precise = TRUE)
 	pred <- pred(gp, x_new, same = same, hyperpar = hyperpar, components = components, comp_missing = comp_missing,
-		w = w, groupMeans = groupMeans, se.fit = se.fit, cov.fit = cov.fit, maxn = maxn, Kx.cache = Kx.cache, Kxx.cache = Kxx.cache
+		w = w, groupMeans = groupMeans, se.fit = se.fit, cov.fit = cov.fit, maxn = maxn, Kx.cache = Kx.cache, Kxx.cache = Kxx.cache,
+		parallel = parallel, log.fn = log.fn, dump.fn = dump.fn, log.append = log.append, tr.max.lines = tr.max.lines
 	)
 	cat("pred() took ")
 	mstop(id = "whole pred")
