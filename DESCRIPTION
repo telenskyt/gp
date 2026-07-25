@@ -82,6 +82,7 @@ Collate:
     'gpPack.R'
     'gpPredictFromLatent.R'
     'likBern.R'
+    'likPois.R'
     'suppress_warnings.R'
     'likTemp.R'
     'link.R'
