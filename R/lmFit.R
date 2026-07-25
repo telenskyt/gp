@@ -307,6 +307,7 @@ predict.lmFit <- function(object, newdata = NULL, type = c('latent', 'terms', 'r
 # Count the parameters optimized by RTMB.
 lmFitDf <- function(object)
 {
+	stopifnot(inherits(object, "lmFit"))
 	length(object$fit$par)
 }
 
