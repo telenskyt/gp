@@ -81,6 +81,8 @@ print(gc())
 	#eye <- diag(n) 
 	#if (hyper_iter >= 2)
 	#	stop("HERE")
+	using_f_start_now <- FALSE
+	f_start_was_reset <- FALSE
 	if (use_f_start && exists("f_start") && !is.null(f_start) && hyper_iter >= 2) { # myslim ze dava smysl zvednout iteraci, od ktere se pouziva f_start...
 		# hyper_iter podminka: ono to failovalo kdyz se fci graf() dal l.start a bylo use_f_start = TRUE, nekdy to slo do uplne numerickejch chyb
 		# tak tam davam tuto podminku ze pouziju f_start az kdyz se to trochu stabilizuje
@@ -96,18 +98,27 @@ print(gc())
 		}
 		#a <- f_start$a
 		obj <- Inf # this value is unknown, and we can't use the old `a`, we need to calculate it again, and `obj` as well!
-		a <- rep(0, n) # so just start `a` from this value
-		a_doesnt_correspond_with_f <- TRUE
-		#f <- mn
-		#obj <- -sum(wt * d0(f, y))		
-		using_f_start_now <- TRUE
-	} else {
+		nll_with_f_start <- -sum(wt * d0(gp, f, y, hyperpar))
+		if (!is.finite(nll_with_f_start) || nll_with_f_start > 10 * -sum(wt * d0(gp, mn, y, hyperpar))) {
+			# if the log likelihood itself for the f_start is more than 10-times worse than normal zero f starting value, bail the f_start!
+			# the obj also contains the prior p(f|X), which is unknown to us at the moment, so it is not complete; but if the likelihood itself is so much worse,
+			# it is already a warning sign
+			warning(" bailing out of f_start in this hyperparameter iteration: the log likelihood log p(y|f) is more than 10 times worse with f_start than with the zero starting vector\n",
+				" (-sum(d0(f_start))= ", -sum(wt * d0(gp, f, y, hyperpar)), ", -sum(d0(f=0+mnfun))= ", -sum(wt * d0(gp, mn, y, hyperpar)), ")")
+			f_start_was_reset <- TRUE
+		} else {
+			# everything seems alright
+			a <- rep(0, n) # so just start `a` from this value
+			a_doesnt_correspond_with_f <- TRUE
+			using_f_start_now <- TRUE
+		}
+	}
+	if (!using_f_start_now) {
 		# initialise (bacha tento kod je jeste duplikovan nize!)
 		a <- rep(0, n)
 		f <- mn
 		a_doesnt_correspond_with_f <- FALSE
 		obj <- -sum(wt * d0(gp, f, y, hyperpar))
-		using_f_start_now <- FALSE
 	}
 	obj.old <- Inf
 gc()
@@ -118,7 +129,6 @@ gc()
 	#       p(y|f) je likelihood a p(f|X) je gaussian prior.
 	it <- 0
 	LAiter <- c()
-	f_start_was_reset <- FALSE
 	while ((obj.old == Inf || obj == Inf || obj < obj.old - tol) && it < itmax) { 
 		cat("Iteration ", it+1, "...\n")
 		#print(gc())
@@ -450,15 +460,15 @@ psiline <- function(s, gp, adiff, a, K, y, mn = 0, wt, hyperpar)
 	psi(gp, a, f, mn, y, wt, hyperpar)
 }
 
-# tato fce psi() dava -psi (psi s obracenym znamenkem) toho psi from Rasmussen & Williams 2006, 
-# psi(f) = log p(y|f) + log p(f|X) coz odpovida p(f|X,y), az na integral p(y|X) coz je konstanta vuci f
+# tato fce psi() dava -psi (psi s obracenym znamenkem) toho psi from Rasmussen & Williams 2006 - ale bez tech normalizacnich konstant!
+# Rasmussenovsky psi(f) = log p(y|f) + log p(f|X) coz odpovida p(f|X,y), az na integral p(y|X) coz je konstanta vuci f
 # je to tedy vlastne posterior pro latent f! p(y|f) je likelihood a p(f|X) je gaussian prior!
 # jen s obracenym znaminkem
 # toto se minimalizuje v LA iteracich
 
 psi <- function(gp, a, f, mn, y, wt, hyperpar) 
 {
-	0.5 * t(a) %*% (f - mn) - sum(wt * d0(gp, f, y, hyperpar))
+	0.5 * t(a) %*% (f - mn) - sum(wt * d0(gp, f, y, hyperpar)) # omitting the constants: + 1/2*log(det(K)) + n/2*log(2*pi)
 }
 
 
