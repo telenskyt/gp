@@ -27,7 +27,7 @@ d0_dhyp <- function (gp, f, data = gp$data, hyperpar, i)
 			
 	# cmb - the closure trick somewhere from the RTMB docs, to tie this to particular data and prevent unnecessary headaches!
 	#mstart(id = "MakeTape", mem_precise = TRUE)
-	par <- c(hyperpar[[".lik"]], list(f = numeric(gp$GP_size)))
+	par <- c(hyperpar[[".lik"]], list(f = f))
 	F <- MakeTape(cmb(gp$lik$nll, data), par)
 	#mstop(id = "MakeTape")
 
