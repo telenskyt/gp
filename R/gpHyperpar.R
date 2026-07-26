@@ -245,17 +245,16 @@ gpPriorGradient <- function (gp, h)
 #' @export
 gpHyperparCheck <- function(gp, h, tol = sqrt(.Machine$double.eps), incl.fixed = FALSE)
 {
-	if (incl.fixed) {
-		stopifnot(length(h) == nrow(gp$hyperpar))
-		stopifnot(all(h >= gp$hyperpar$low - tol))
-		#stopifnot(all(h >= gp$hyperpar$low))
-			#stop("all(h >= gp$hyperpar$low) is not TRUE, see indices ", which(!(h >= gp$hyperpar$low)))
-		#stopifnot(all(h <= gp$hyperpar$up))
-		stopifnot(all(h <= gp$hyperpar$up + tol))
-	} else {
-		stopifnot(length(h) == sum(!gp$hyperpar$fixed))
-		stopifnot(all(h >= gp$hyperpar$low[!gp$hyperpar$fixed] - tol))
-		stopifnot(all(h <= gp$hyperpar$up[!gp$hyperpar$fixed] + tol))	
+	rows <- if (incl.fixed) seq_len(nrow(gp$hyperpar)) else which(!gp$hyperpar$fixed)
+	stopifnot(length(h) == length(rows))
+
+	hy <- gp$hyperpar[rows, ]
+	bad <- which(is.na(h) | h < hy$low - tol | h > hy$up + tol)
+
+	if (length(bad)) {
+		out <- hy[bad, c("component", "hyperpar", "i", "var", "low", "up")]
+		out$h <- h[bad]
+		stop("Hyperparameters outside limits:\n", paste(capture.output(print(out)), collapse = "\n"))
 	}
 }
 
