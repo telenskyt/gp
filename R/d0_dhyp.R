@@ -27,10 +27,11 @@ d0_dhyp <- function (gp, f, data = gp$data, hyperpar, i)
 			
 	# cmb - the closure trick somewhere from the RTMB docs, to tie this to particular data and prevent unnecessary headaches!
 	#mstart(id = "MakeTape", mem_precise = TRUE)
-	par <- c(hyperpar[[".lik"]], list(f = f))
+	par <- c(hyperpar[[".lik"]], list(f = numeric(gp$GP_size)))
 	F <- MakeTape(cmb(gp$lik$nll, data), par)
 	#mstop(id = "MakeTape")
 
+	par$f <- as.vector(f)
 	res <- drop(F$jacobian(unlist(par)))[i] # unlist() needed for the $jacobian() method
 	if (!is.numeric(res) || !all(is.finite(res)))
 		stop("d0_dhyp() of the user defined likelihood (negLogLik parameter to gp()) is not numeric: ", res)
