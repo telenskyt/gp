@@ -32,7 +32,7 @@
 #' @param weights numeric or \code{NULL}; observation weights (not implemented).
 #' @param grad.computation logical; compute gradients during the gaussian process optimization (required when
 #'   \code{opt.h = TRUE}).
-#' @param warn.exclude character vector; vector of warnings that should be disabled. Allowed values are: \code{"warn.stage2.start"}. Default \code{NULL}.
+#' @param warn.exclude character vector; vector of codes of warnings that should be disabled. The codes are reported by some warnings. Default \code{NULL}.
 #' @param recursive internal option; do not use.
 #' @param ... further arguments to be passed to fitting method (e.g. \code{gpFitLaplace()})
 #'
@@ -100,13 +100,24 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 				  )
 {
 	method <- match.arg(method)
-	
+		
 	if (is.null(gp[["data"]]))
 		stop("The gp object doesn't contain scaled data; perpahs you need to call gpUnpack() on it (you can use compute = FALSE to save CPU time)")	
 
 	if (!recursive) { # top level call, from the outside (not an internal call) - will be called just once in the beginning
 		if (grad.computation == FALSE && opt.h == TRUE)
 			warning("grad.computation is set to FALSE when hyperparameters are optimized - hope you intended it!")
+			
+		if (opt.h && use_f_start && 
+			any(gp$hyperpar$component == ".lik" & !gp$hyperpar$fixed) && # there are any non-fixed likelihood hyperparameters
+			is.null(gp$lik$f_start) && !"warn.f_start_method" %in% warn.exclude
+		)
+			warning("the likelihood template is missing the f_start method; in many cases it is needed because gpFit(use_f_start = TRUE) and the likelihood has hyperparameters,\n",
+				"and if it is not provided, the convergence might be slow or bad. Either:\n", 
+				"(i) provide the f_start method in gp(lik=) argument, or\n", 
+				"(ii) set gpFit(use_f_start = FALSE), at the expense of slower fit, or\n",
+				"(iii) if you are sure you don't need it in your case, you might ignore this warning and disable it by warn.exclude = 'warn.f_start_method'."
+			)
 
 		# get all visible object as a list
 		# (dela to moc slozite, stacilo by c(as.list(environment()), list(...))  viz https://stackoverflow.com/a/17244041

@@ -73,7 +73,7 @@ Sampling can be used when no such method is implemented (but it is slower).}
 \item{grad.computation}{logical; compute gradients during the gaussian process optimization (required when
 \code{opt.h = TRUE}).}
 
-\item{warn.exclude}{character vector; vector of warnings that should be disabled. Allowed values are: \code{"warn.stage2.start"}. Default \code{NULL}.}
+\item{warn.exclude}{character vector; vector of codes of warnings that should be disabled. The codes are reported by some warnings. Default \code{NULL}.}
 
 \item{recursive}{internal option; do not use.}
 

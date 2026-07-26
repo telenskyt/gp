@@ -86,14 +86,13 @@ print(gc())
 		# tak tam davam tuto podminku ze pouziju f_start az kdyz se to trochu stabilizuje
 		# !! pozor, z nejakeho duvodu promenna hyper_iter tady bude cislovana od 0 (= 0 v 1. iteraci)
 		cat("..using f_start\n")
-		if (is.null(hyperpar[[".lik"]])) { 
-			f <- f_start$f
-		} else { # there are likelihood hyperparameters
-			if (is.null(gp$lik$f_start)) # we need specific method for calculating f_start; 
-				stop("the likelihood template is missing the f_start method; it is needed because gpFit(use_f_start = TRUE) and the likelihood has hyperparameters. Either provide the f_start method in gp(lik=) argument or set gpFit(use_f_start = FALSE), at the expense of slower fit.")
+		if (!is.null(hyperpar[[".lik"]]) && !is.null(gp$lik$f_start)) { # there are likelihood hyperparameters and we have the special f_start method
 			par <- gpGetParForLikTemplate(gp, f = f_start$f, y, hyperpar) # provide some f, so that it works,
 			par$f <- NULL # but we will delete it anyway
 			f <- gp$lik$f_start(prev_terms = f_start$terms, current_terms = gp$lik$terms(y, par))
+		} else {
+			# if the likelihood has hyperparameters, but not the f_start method, there might be a problem; but user has been warned in gpFit()
+			f <- f_start$f
 		}
 		#a <- f_start$a
 		obj <- Inf # this value is unknown, and we can't use the old `a`, we need to calculate it again, and `obj` as well!
