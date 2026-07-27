@@ -101,6 +101,9 @@ pred_dens_logit__IS  <- function(gp, data, pred, samp = 1000L, ...)
 																# but that probably will not happen here
 		}
 	}
+	# !!! tady by se melo ujistit, ze "y" je po radcich konstantni, a udelat z nej jen vektor; aby fce likBern() pouzila tu optimalizovanou vetev
+	#	- ale tady ji pouzit nelze! Protoze my to chceme zachovat elementwise
+	#
 	# now we have the matrix of probabilities
 	template$lik(par3_acc)
 	# and we can get the density(F) and calculate weights from it...
