@@ -38,5 +38,6 @@ better null model (and a slightly lower pseudo-R2 statistics then).}
 the gp model object with approximate LGO-CV predictions and statistics in \code{gp$fit$LGOCV}.
 }
 \description{
-Calculate the approximation of the LGO-CV (leave-group-out cross-validation) and evaluate it.
+Works at the same level as \code{gpFitCV} - makes CV predictions and evaluates them to the gp object. There is an important difference though:
+LGO-CV works for a given set of hyperparameters, whereas the default gpFitCV() optimises them, and thus cross-validates also the hyperparameter optimization process.
 }

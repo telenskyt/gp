@@ -30,6 +30,15 @@ gpLGO <- function(gp, fold.col, fold.fact = "1",
 			stop("lmFit.options must not contain gp, formula, or data argument")
 	}
 
+	if (is.null(pred.null)) { # get null model predictions
+		nullFit.args <- lmFit.options
+		nullFit.args$gp <- NULL
+		nullFit.args$formula <- NULL
+		nullFit.args$data <- NULL
+		nullm <- do.call(function(...) lmFit(gp, formula = ~1, data = gp$data, ...), nullFit.args)
+		pred.null <- do.call(function(...) predict(nullm, newdata = gp$data, ...), lmFit.pred.options)
+	}
+
 	gp$fit$LGOCV <- list(pred = gpLGOpred(gp, fold.col = fold.col, fold.fact = fold.fact))
 
 	mstart(id = "LGO_pred_dens")
@@ -44,15 +53,6 @@ gpLGO <- function(gp, fold.col, fold.fact = "1",
 	pred <- gpPredictFromLatent(gp = gp, pred = pred, data = gp$data, type = "terms",
 		hyperpar = hyperpar, se.fit = TRUE,
 		pred.cov = gp$fit$LGOCV$pred$cov)
-
-	if (is.null(pred.null)) { # get null model predictions
-		nullFit.args <- lmFit.options
-		nullFit.args$gp <- NULL
-		nullFit.args$formula <- NULL
-		nullFit.args$data <- NULL
-		nullm <- do.call(function(...) lmFit(gp, formula = ~1, data = gp$data, ...), nullFit.args)
-		pred.null <- do.call(function(...) predict(nullm, newdata = gp$data, ...), lmFit.pred.options)
-	}
 
 	gp$fit$LGOCV$stats <- gp$lik$predPerf(data = gp$data, pred = as.data.frame(pred), pred.null = as.data.frame(pred.null))
 	gp$fit$LGOCV$stats$NLPD <- LGOev$value
