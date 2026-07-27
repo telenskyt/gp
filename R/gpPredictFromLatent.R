@@ -86,7 +86,7 @@ gpPredictFromLatent <- function(gp, pred, data, type = c("latent", "terms", "res
 	if (type == "terms") {
 		terms <- gp$lik$terms(data = data, par) # we are calling $terms and not $stage(stage = 1), because we want just the terms separately
 		if (!is.null(terms))
-			pred <- cbind(pred, as.matrix(terms)) # we want to keep the return value as matrix, as it has always been
+			pred <- as.matrix(bind_cols(pred, as.matrix(terms))) # we want to keep the return value as matrix, as it has always been
 	}
 	else if (type == "response") {
 		pred <- as.matrix(gp$lik$stages(data = data, par, stages = 1:2)) # in this case, we don't return f and f_SE and the other stuff at the moment... we could though... to reconsider

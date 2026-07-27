@@ -10,7 +10,7 @@ likTempPhased <- suppress_warnings_from(setRefClass(
 	"likTempPhased",
 	#contains = "likTemp",
 	fields = list(
-		terms = "function",
+		termsFun = "function",
 		link = "function",
 		process = "function",
 		likType = "ANY",
@@ -49,7 +49,7 @@ initialize = function(
 	if (is.null(link))
 		link <- function (data, par) par
 
-	terms <<- terms
+	termsFun <<- terms
 	link <<- link
 	process <<- process
 	likType <<- NULL
@@ -97,6 +97,20 @@ lik.getfun = function ()
 	stop("error")
 },
 
+# interface to the provided terms
+#
+# par here should contain f
+terms = function(data, par)
+{
+	# first stage, "terms", is called without "f"; the terms() must never use "f", that must be kept for further stages
+	par1 <- par
+	par1$f <- NULL
+	par2 <- termsFun(data, par1) # might return NULL
+	if (!is.null(par2) && !nrow(par2) %in% c(1, length(par$f)))
+		stop("the terms() must return data.frame with either 1 row or ", length(par$f), " rows in your case")
+	par2
+},
+
 # par - a list of vectors or matrices; same format as for the lik() method
 # samples - number of samples
 # returns the simulated data as a list of matrix(es), columns corresponding to samples
@@ -125,10 +139,7 @@ nll = function (data, par)
 stages = function (data, par, stages = 1:5)
 {
 	if (1 %in% stages) {
-		# first stage, "terms", is called without "f"; the terms() must never use "f", that must be kept for further stages
-		par1 <- par
-		par1$f <- NULL
-		par2 <- terms(data, par1) # might return NULL
+		par2 <- terms(data, par) # might return NULL
 		# we add "f" back and create what we can call "predictions"; .lik hyperparameters and everything else is no longer there
 		par <- bind_cols(par2, data.frame(f = par$f)) # with bind_cols(), par2 can be NULL - this is important
 		# par are "predictions" now 

@@ -89,8 +89,7 @@ print(gc())
 		# !! pozor, z nejakeho duvodu promenna hyper_iter tady bude cislovana od 0 (= 0 v 1. iteraci)
 		cat("..using f_start\n")
 		if (!is.null(hyperpar[[".lik"]]) && !is.null(gp$lik$f_start)) { # there are likelihood hyperparameters and we have the special f_start method
-			par <- gpGetParForLikTemplate(gp, f = f_start$f, y, hyperpar) # provide some f, so that it works,
-			par$f <- NULL # but we will delete it anyway
+			par <- gpGetParForLikTemplate(gp, f = f_start$f, y, hyperpar) # provide some f, so that it works
 			f <- gp$lik$f_start(prev_terms = f_start$terms, current_terms = gp$lik$terms(y, par))
 		} else {
 			# if the likelihood has hyperparameters, but not the f_start method, there might be a problem; but user has been warned in gpFit()
