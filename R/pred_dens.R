@@ -62,7 +62,8 @@ pred_dens_logit__int <- function(gp, data = gp[["data"]], pred, subdivisions = 1
 		qhi <- qnorm(1 - 1e-10, pred[i, "f"], pred[i, "f_SE"])
 		int <- integrate(function (x) { 
 			par_i$f <- rep(x, length(par_i$f)) # needed for the case of reindexing
-			gp$lik$stages(data_i, par_i, stages = 1:4)*dnorm(x, pred[i, "f"], pred[i, "f_SE"])
+			prod(gp$lik$stages(data_i, par_i, stages = 1:4))*dnorm(x, pred[i, "f"], pred[i, "f_SE"])
+				# prod() used for cases where stage 4 returns a vector of probabilities (might happen in some templates)
 		}, qlo, qhi, subdivisions = subdivisions, ...)
 		pd[i] <- int$value
 		err[i] <- int$abs.error/int$value
