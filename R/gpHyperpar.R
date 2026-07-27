@@ -107,22 +107,25 @@ gpHyperparDefaults <- function (gp)
 			prior = list(quote(uniform_lp(x)))
 		))
 	}
-	# Make sure the prior is nicely printed (see https://stackoverflow.com/a/79761799/):
-	ctl_new_pillar.nice_list_tbl <<- function(controller, x, width, ..., title = NULL) {
-		if (!is.list(x)) { # might want to add &!is.data.frame(x) etc.
-			return(NextMethod())
-		}
-		pillar::new_pillar(list(
-			#title = pillar::pillar_component(pillar::new_pillar_title(title)), # title - name of the column, just right above the <type>
-			title = pillar::new_pillar_title(title), # title - name of the column, just right above the <type>
-			type  = pillar::new_pillar_component(list("<list>"), width = 6),
-			#data  = pillar::new_pillar_shaft_simple(deparse(x), align = "left") # this is nonsense
-			data  = pillar::new_pillar_shaft_simple(x, align = "left") # this works too for class "call"!
-			#data  = pillar::new_pillar_shaft_simple(sapply(x, deparse), align = "left") # this works too
-		))
-	}	
 	class(R) <- c("nice_list_tbl", class(R))
 	R
+}
+
+# Make sure the prior is nicely printed (see https://stackoverflow.com/a/79761799/):
+#' @exportS3Method pillar::ctl_new_pillar
+ctl_new_pillar.nice_list_tbl <- function(controller, x, width, ..., title = NULL) 
+{
+	if (!is.list(x)) { # might want to add &!is.data.frame(x) etc.
+		return(NextMethod())
+	}
+	pillar::new_pillar(list(
+		#title = pillar::pillar_component(pillar::new_pillar_title(title)), # title - name of the column, just right above the <type>
+		title = pillar::new_pillar_title(title), # title - name of the column, just right above the <type>
+		type  = pillar::new_pillar_component(list("<list>"), width = 6),
+		#data  = pillar::new_pillar_shaft_simple(deparse(x), align = "left") # this is nonsense
+		data  = pillar::new_pillar_shaft_simple(x, align = "left") # this works too for class "call"!
+		#data  = pillar::new_pillar_shaft_simple(sapply(x, deparse), align = "left") # this works too
+	))
 }
 
 
