@@ -30,20 +30,20 @@ gpLGO <- function(gp, fold.col, fold.fact = "1",
 			stop("lmFit.options must not contain gp, formula, or data argument")
 	}
 
-	gp$fit$LGOCV <- gpLGOpred(gp, fold.col = fold.col, fold.fact = fold.fact)
+	gp$fit$LGOCV <- list(pred = gpLGOpred(gp, fold.col = fold.col, fold.fact = fold.fact))
 
-	mstart(TRUE, id = "LGO_pred_dens")
-	LGOev <- pred_dens_logit__int(gp, pred = gp$fit$LGOCV)
+	mstart(id = "LGO_pred_dens")
+	LGOev <- pred_dens_logit__int(gp, pred = gp$fit$LGOCV$pred)
 	cat("predictive density calculation took ")
-	mstop(TRUE, id = "LGO_pred_dens")
+	mstop(id = "LGO_pred_dens")
 
-	pred <- as.matrix(data.frame(f = as.numeric(gp$fit$LGOCV$f)))
+	pred <- as.matrix(data.frame(f = as.numeric(gp$fit$LGOCV$pred$f)))
 
-	pred <- cbind(pred, f_SE = sqrt(diag(gp$fit$LGOCV$cov)))
+	pred <- cbind(pred, f_SE = sqrt(diag(gp$fit$LGOCV$pred$cov)))
 
 	pred <- gpPredictFromLatent(gp = gp, pred = pred, data = gp$data, type = "terms",
 		hyperpar = hyperpar, se.fit = TRUE,
-		pred.cov = gp$fit$LGOCV$cov)
+		pred.cov = gp$fit$LGOCV$pred$cov)
 
 	if (is.null(pred.null)) { # get null model predictions
 		nullFit.args <- lmFit.options
