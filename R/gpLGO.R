@@ -39,22 +39,23 @@ gpLGO <- function(gp, fold.col, fold.fact = "1",
 		pred.null <- do.call(function(...) predict(nullm, newdata = gp$data, ...), lmFit.pred.options)
 	}
 
-	gp$fit$LGOCV <- list(pred = gpLGOpred(gp, fold.col = fold.col, fold.fact = fold.fact))
+	lgo.pred <- gpLGOpred(gp, fold.col = fold.col, fold.fact = fold.fact)
 
 	mstart(id = "LGO_pred_dens")
-	LGOev <- pred_dens_logit__int(gp, pred = gp$fit$LGOCV$pred)
+	LGOev <- pred_dens_logit__int(gp, pred = lgo.pred)
 	cat("predictive density calculation took ")
 	mstop(id = "LGO_pred_dens")
 
-	pred <- as.matrix(data.frame(f = as.numeric(gp$fit$LGOCV$pred$f)))
+	pred <- as.matrix(data.frame(f = as.numeric(lgo.pred$f)))
 
-	pred <- cbind(pred, f_SE = sqrt(diag(gp$fit$LGOCV$pred$cov)))
+	pred <- cbind(pred, f_SE = sqrt(diag(lgo.pred$cov)))
 
 	pred <- gpPredictFromLatent(gp = gp, pred = pred, data = gp$data, type = "terms",
-		hyperpar = hyperpar, se.fit = TRUE,
-		pred.cov = gp$fit$LGOCV$pred$cov)
+		hyperpar = hyperpar, se.fit = TRUE, cov.fit = TRUE,
+		pred.cov = lgo.pred$cov)
 
-	gp$fit$LGOCV$stats <- gp$lik$predPerf(data = gp$data, pred = as.data.frame(pred), pred.null = as.data.frame(pred.null))
+	gp$fit$LGOCV <- list(pred = pred)
+	gp$fit$LGOCV$stats <- gp$lik$predPerf(data = gp$data, pred = as.data.frame(pred$pred), pred.null = as.data.frame(pred.null))
 	gp$fit$LGOCV$stats$NLPD <- LGOev$value
 	gp
 }
