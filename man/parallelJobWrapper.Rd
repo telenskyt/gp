@@ -32,7 +32,7 @@ will be disabled.}
 
 \item{tr.max.lines}{the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs}
 
-\item{log.append}{logical; if \code{TRUE}, append to \code{log.fn} instead of overwriting it}
+\item{log.append}{logical; if \code{TRUE}, append to \code{log.fn} instead of overwriting it. Might be useful to create per-worker rather than per-job logs.}
 }
 \description{
 Useful wrapper for parallel jobs, run by e.g. foreach(), or, in general, for any non-interactive (background) jobs.

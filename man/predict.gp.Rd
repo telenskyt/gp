@@ -97,13 +97,13 @@ The splitting is only available when \code{newdata} is not \code{NULL}, \code{co
 (Note: splitting disabled for now
 by default, since in some models we would need to specify along which factor to split - cannot always use gp$GP_factor)}
 
-\item{parallel}{should prediction chunks be run in parallel? Uses \code{parallel::parLapply()}, and requires a default cluster to be already registered.}
+\item{parallel}{should prediction chunks (see \code{maxn}) be run in parallel? Requires default cluster to be already registered.}
 
-\item{log.fn}{if not \code{NULL}, standard and error output of each prediction chunk job will be saved into a log file with this file name. Special \code{\%} sequences can be used, see Details below.}
+\item{log.fn}{if not \code{NULL}, standard and error output of each parallel prediction chunk job will be saved into a log file with this file name template. Special \code{\%} sequences can be used, see Details below.}
 
-\item{dump.fn}{if not \code{NULL}, debug dump of given prediction chunk job will be saved upon an error, with this file name (the .rda extension will be added to it). Special \code{\%} sequences can be used, see Details below.}
+\item{dump.fn}{if not \code{NULL}, debug dump of a failed parallel prediction chunk job will be saved using this file name template. Special \code{\%} sequences can be used, see Details below; the \code{.rda} extension is added after expansion.}
 
-\item{log.append}{logical; if \code{TRUE}, append to \code{log.fn} instead of overwriting it}
+\item{log.append}{logical; if \code{TRUE}, append to \code{log.fn} instead of overwriting it. Might be useful to create per-worker rather than per-job logs.}
 
 \item{tr.max.lines}{the \code{max.lines} parameter for \code{traceback}, i.e. the maximum number of lines printed per call when error occurs}
 
@@ -124,10 +124,11 @@ the mentioned matrix and \code{cov} will be the full covariance matrix. For the 
 Predict from a fitted Gaussian process model.
 }
 \details{
-The arguments \code{log.fn} and \code{dump.fn} allow for special sequences:
+The arguments \code{log.fn} and \code{dump.fn} are file name templates used when \code{parallel = TRUE}
+and predictions are split into chunks (see \code{maxn}. They allow for special sequences, expanded in the worker process:
 \itemize{
 \item \code{\%h} - hostname, i.e. the name of the machine where the worker job runs
 \item \code{\%p} - process ID of the worker job
-You can use these in conjunction with \code{log.append = TRUE} to create per-worker log files.
+You can use these in \code{log.fn} in conjunction with \code{log.append = TRUE} to create per-worker log files.
 }
 }
