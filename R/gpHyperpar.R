@@ -168,7 +168,10 @@ gpHyperparList <- function (gp, col = "value")
 	# https://stackoverflow.com/questions/46616791/split-data-frame-by-two-factors
 	gp$hyperpar %>% 
 		split(~component) %>% 
-		map(function (d) split(d[[col]], d$hyperpar))
+		map(function (d) {
+			hyperpar_order <- unique(d$hyperpar)
+			split(d[[col]], d$hyperpar)[hyperpar_order]
+		})
 }
 
 # convert hyperparameter vector h to optimization scale (using link function)
