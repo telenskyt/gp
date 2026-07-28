@@ -31,6 +31,9 @@ gpPackFit <- function(fit, maximum = FALSE)
 	fit$rW <- NULL
 	fit$K <- NULL
 	fit$W <- NULL
+	if (!is.null(fit[["LGOCV"]])) {	
+		fit$LGOCV$pred <- NULL
+	}
 	if (maximum) {
 		fit$f <- NULL # nakonec i bez tohoto se da obejit!!! :-))) # ale defaultne necham tam radsi uplne to puvodni, kvuli ruzne num nestabilite....
 		fit$f_cov_masked <- NULL
