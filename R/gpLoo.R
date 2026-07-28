@@ -92,7 +92,8 @@ gpLGOpred <- function (gp, fold.col, fold.fact = "1")
 	mstart(id = "rest_of_LGO")
 	mask <- crossprod(fac2sparse(factor(fold.col))) # make a sparse matrix `mask` of the GP dimension, which has 1 where the elements belong to the same fold
 	S <- mask(S$cov, mask) # now mask the posterior to it
-	
+
+	mstart(id = "rW")
 	### retrieve rW - the cholesky factor of W = t(rW) %*% rW
 	stopifnot(!is.null(gp[["fit"]]))
 	if (gp$W.type == "diag") {
@@ -111,23 +112,40 @@ gpLGOpred <- function (gp, fold.col, fold.fact = "1")
 			rW <- chol_W(gp$fit$W)
 		}
 	}
-		
+	cat("getting the rW took ")
+	mstop(id = "rW")
+	
+	mstart()
 	M <- - rW %*% S %*% t(rW)
 	diag(M) <- diag(M) + 1
+	cat("M <- took ")
+	mstop()
 
+	mstart()
 	LM <- Matrix::chol(M)
+	cat("LM <- took ")
+	mstop()
+	
+	mstart()
 	v <- Matrix::solve(t(LM), rW %*% S, sparse = TRUE) # backsolve() for the sparse matrix
+	cat("v <- Matrix::solve(t(LM), rW %*% S, sparse = TRUE) took ")
+	mstop()
 #	if (gp$W.type == "diag")
 #		R <- diag(S) + colSums(v^2)
 #	else
+	mstart()
 		R <- S + crossprod(v)
+	cat("R <- S + crossprod(v) took ")
+	mstop()
 		# ??? co tady ten crossprod?? nemelo by se to maskovat na group mask? Asi z kouzelnych aritmetickych duvodu neni treba?
 		# the W.type == "diag" pathway could be probably optimized a bit more - but that only in case of LOO and not LGO?
 	R <- Matrix::forceSymmetric(R)
 		# it won't waste time by testing the symmetry; it will just take half of it and say the rest is symmetric :)
 		# note though that when you do mask(R, ...), the symmetry is gone - mask() doesn't support it now
-	
+	mstart()
 	f.loo <- gp$fit$f - R %*% gp$fit$a
+	cat("f.loo <- took ")
+	mstop()
 	cat("Computing the rest of LGO took ")
 	mstop(id = "rest_of_LGO")
 	list(f = as.matrix(f.loo), cov = R)
