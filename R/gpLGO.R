@@ -25,6 +25,7 @@ gpLGO <- function(gp, fold.col, fold.fact = "1",
 	lmFit.pred.options = list(type = "terms"),
 	hyperpar = gpHyperparList(gp))
 {
+	args <- list(fold.col = fold.col, fold.fact = fold.fact)
 	if (!is.null(lmFit.options)) {
 		if (any(c("gp", "formula", "data") %in% names(lmFit.options)))
 			stop("lmFit.options must not contain gp, formula, or data argument")
@@ -54,7 +55,11 @@ gpLGO <- function(gp, fold.col, fold.fact = "1",
 		hyperpar = hyperpar, se.fit = TRUE, cov.fit = TRUE,
 		pred.cov = lgo.pred$cov)
 
-	gp$fit$LGOCV <- list(pred = pred)
+	gp$fit$LGOCV <- list(
+		.pkg.version = pkg_build_info(),
+		args = args,
+		pred = pred
+	)
 	gp$fit$LGOCV$stats <- gp$lik$predPerf(data = gp$data, pred = as.data.frame(pred$pred), pred.null = as.data.frame(pred.null))
 	gp$fit$LGOCV$stats$NLPD <- LGOev$value
 	gp
