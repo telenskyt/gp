@@ -11,8 +11,13 @@
 #				- u cejek tam je to "A" identity matrix, takze to posune jenom meanem
 #				- u q atlasu to neni linearni transformace ???
 #
+
+
+
 # !!!! slo by udelat i multi-dimensional verzi pro W.type = "bdiag" s nejakou cubature()
 #	- ??? ale jak pak pres to iterovat? Neresi to nekdo? podle me mask(.., W) je k tomu blizko
+
+
 pred_dens_logit__int <- function(gp, data = gp[["data"]], pred, subdivisions = 10000L, ...)
 {
 	#vec <- gp$negLogLik$process(data, pred)
@@ -42,7 +47,6 @@ pred_dens_logit__int <- function(gp, data = gp[["data"]], pred, subdivisions = 1
 
 	hyperpar <- gpHyperparList(gp)
 	N <- gpDataSize(data, fact = gp$GP_factor)
-	stopifnot(nrow(pred) == N) # for now
 	works_for_reindex_confirmed <- FALSE
 	pd <- c()
 	err <- c()		
@@ -56,12 +60,10 @@ pred_dens_logit__int <- function(gp, data = gp[["data"]], pred, subdivisions = 1
 		}
 		qlo <- qnorm(1e-10, pred[i, "f"], pred[i, "f_SE"])
 		qhi <- qnorm(1 - 1e-10, pred[i, "f"], pred[i, "f_SE"])
-		int <- integrate(function (x_maybe_vec) {
-			vapply(x_maybe_vec, function (x) { # integrate sometimes might pass a vector to evaluate multiple values at once!
-				par_i$f <- rep(x, length(par_i$f)) # needed for the case of reindexing
-				prod(gp$lik$stages(data_i, par_i, stages = 1:4))*dnorm(x, pred[i, "f"], pred[i, "f_SE"])
-					# prod() used for cases where stage 4 returns a vector of probabilities (might happen in some templates)
-			}, numeric(1))
+		int <- integrate(function (x) { 
+			par_i$f <- rep(x, length(par_i$f)) # needed for the case of reindexing
+			prod(gp$lik$stages(data_i, par_i, stages = 1:4))*dnorm(x, pred[i, "f"], pred[i, "f_SE"])
+				# prod() used for cases where stage 4 returns a vector of probabilities (might happen in some templates)
 		}, qlo, qhi, subdivisions = subdivisions, ...)
 		pd[i] <- int$value
 		err[i] <- int$abs.error/int$value
