@@ -16,6 +16,7 @@
 #' @param lmFit.options list of options to be passed to \code{\link{lmFit}} when fitting the intercept-only null model. Only used when \code{pred.null = NULL}.
 #' @param lmFit.pred.options list of options to be passed to the \code{predict.lmFit} method when predicting from the null model. Only used when \code{pred.null = NULL}.
 #' @param hyperpar (optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.
+#' @param chunked logical, passed to \code{\link{gpLGOpred}}; use dense fold blocks? This currently requires diagonal \code{W}.
 #'
 #' @returns the gp model object with approximate LGO-CV predictions and statistics in \code{gp$fit$LGOCV}.
 #' @export
@@ -23,9 +24,10 @@ gpLGO <- function(gp, fold.col, fold.fact = "1",
 	pred.null = NULL,
 	lmFit.options = list(lik.hyperpar = "fix"),
 	lmFit.pred.options = list(type = "terms"),
-	hyperpar = gpHyperparList(gp))
+	hyperpar = gpHyperparList(gp),
+	chunked = FALSE)
 {
-	args <- list(fold.col = fold.col, fold.fact = fold.fact)
+	args <- list(fold.col = fold.col, fold.fact = fold.fact, chunked = chunked)
 	if (!is.null(lmFit.options)) {
 		if (any(c("gp", "formula", "data") %in% names(lmFit.options)))
 			stop("lmFit.options must not contain gp, formula, or data argument")
@@ -40,7 +42,7 @@ gpLGO <- function(gp, fold.col, fold.fact = "1",
 		pred.null <- do.call(function(...) predict(nullm, newdata = gp$data, ...), lmFit.pred.options)
 	}
 
-	lgo.pred <- gpLGOpred(gp, fold.col = fold.col, fold.fact = fold.fact)
+	lgo.pred <- gpLGOpred(gp, fold.col = fold.col, fold.fact = fold.fact, chunked = chunked)
 
 	mstart(id = "LGO_pred_dens")
 	LGOev <- pred_dens_logit__int(gp, pred = lgo.pred)

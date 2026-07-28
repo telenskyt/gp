@@ -47,26 +47,13 @@ gpLooGen_v0 <- function (gp, folds)
 
 
 
-#' LGO-CV prediction - an approximation of leave-group-out cross-validation
-#' @param gp GP model object
-#' @param fold.col either a name of a column in the main table, or a vector along factor \code{fold.fact}.
-#'		The column (or the supplied vector) must be a vector of integers from \code{1} to \code{N} (\code{N} being the number of folds), 
-#'		specifying the number of the cross-validation fold the given record belongs to.
-#' @param fold.fact a factor along which the cross-validation folds (\code{fold.col}) are specified. Factor \code{"1"} means the folds are specified for the rows of the main table.
-#'		Note that if the GP dimension is given by some real grouping factor (i.e. \code{gp$GP_factor != "1"}), then the \code{fold.fact} must be that factor.
-#
-#' @importFrom Matrix Matrix
-#' @importFrom Matrix fac2sparse
-#' @importFrom Matrix Diagonal
-#' @export
-#
 # warning: can take longer time if only few folds (groups) chosen (then the block matrices are big and matrix operations take longer time)
 #
 # odvodil jsem si to sam jako analogii eq 67 ve Vehtari 2016, kdyz se to f[i] a t~[i] vezmou jako multidimenzionalni
 # a pak se provede ten trik s delenim dvou gaussian PDF v eq 38, 39, ale zobecni se to na multidimenzionalni.
 # a ono to konecne funguje!!!
 
-gpLGOpred <- function (gp, fold.col, fold.fact = "1")
+gpLGOpred__get_fold_col <- function (gp, fold.col, fold.fact = "1")
 {
 	fold.col <- gpFitCV__validate_and_get_fold_col(gp, fold.col, fold.fact)
 		# validate fold.col and fold.fact arguments and get evaluated fold.col (as a vector)
@@ -85,6 +72,103 @@ gpLGOpred <- function (gp, fold.col, fold.fact = "1")
 		fold.col <- fold.col[gp$obsdata[[1]][[fold_idx_col]]]		
 	}
 	# fold.col is now of the dimension of the GP
+	fold.col
+}
+
+
+# Diagonal-W implementation which exploits the block-diagonal structure induced by the LGO folds.
+# In addition to doing the LGO calculation by dense blocks, it calculates only the corresponding
+# diagonal blocks of the posterior covariance matrix.
+gpLGOpred__chunked <- function (gp, fold.col, fold.fact = "1")
+{
+	if (!identical(gp$W.type, "diag"))
+		stop("gpLGOpred__chunked() currently supports only gp$W.type == 'diag'")
+
+	fold.col <- gpLGOpred__get_fold_col(gp, fold.col, fold.fact)
+
+	stopifnot(!is.null(gp[["fit"]]))
+	need(gp$fit, "K")
+	need(gp$fit, "W")
+	need(gp$fit, "f")
+	need(gp$fit, "a")
+	stopifnot(is.matrix(gp$fit$K))
+	stopifnot(all(gp$fit$W >= 0))
+
+	if (is.null(gp$fit[["LTinv.rW"]]))
+		need(gp$fit, "L")
+
+	folds <- seq_len(max(fold.col))
+	fold.indices <- lapply(folds, function(fold) which(fold.col == fold))
+	fold.order <- unlist(fold.indices, use.names = FALSE)
+	stopifnot(length(fold.order) == gp$GP_size)
+	stopifnot(setequal(fold.order, seq_len(gp$GP_size)))
+
+	rW <- sqrt(as.vector(gp$fit$W))
+	R.blocks <- vector("list", length(fold.indices))
+
+	cat("Computing LGO prediction by ", length(fold.indices), " dense fold blocks... ", sep = "")
+	mstart(id = "chunked_LGO")
+	for (i in seq_along(fold.indices)) {
+		ii <- fold.indices[[i]]
+
+		K_i <- gp$fit$K[, ii, drop = FALSE]
+		if (!is.null(gp$fit[["LTinv.rW"]]))
+			u_i <- gp$fit$LTinv.rW %*% K_i
+		else
+			u_i <- backsolve(gp$fit$L, rW * K_i, transpose = TRUE)
+
+		S_i <- gp$fit$K[ii, ii, drop = FALSE] - crossprod(u_i)
+		stopifnot(all(diag(S_i) >= 0, na.rm = TRUE))
+
+		rW_i <- rW[ii]
+		M_i <- -S_i * tcrossprod(rW_i)
+		diag(M_i) <- diag(M_i) + 1
+
+		LM_i <- chol(M_i)
+		v_i <- backsolve(LM_i, rW_i * S_i, transpose = TRUE)
+		R.blocks[[i]] <- S_i + crossprod(v_i)
+
+		rm(K_i, u_i, S_i, M_i, LM_i, v_i)
+		gc()
+	}
+
+	R <- Matrix::bdiag(R.blocks)
+	rm(R.blocks)
+	gc()
+	inverse.order <- order(fold.order)
+	R <- R[inverse.order, inverse.order, drop = FALSE]
+	R <- Matrix::forceSymmetric(R)
+
+	f.loo <- gp$fit$f - R %*% gp$fit$a
+	mstop(id = "chunked_LGO")
+
+	list(f = as.matrix(f.loo), cov = R)
+		# keep f as a column vector, same as in gpFitLaplace()
+}
+
+
+#' LGO-CV prediction - an approximation of leave-group-out cross-validation
+#' @param gp GP model object
+#' @param fold.col either a name of a column in the main table, or a vector along factor \code{fold.fact}.
+#'		The column (or the supplied vector) must be a vector of integers from \code{1} to \code{N} (\code{N} being the number of folds),
+#'		specifying the number of the cross-validation fold the given record belongs to.
+#' @param fold.fact a factor along which the cross-validation folds (\code{fold.col}) are specified. Factor \code{"1"} means the folds are specified for the rows of the main table.
+#'		Note that if the GP dimension is given by some real grouping factor (i.e. \code{gp$GP_factor != "1"}), then the \code{fold.fact} must be that factor.
+#' @param chunked logical; use dense fold blocks? This currently requires diagonal \code{W}. The default \code{FALSE} uses the general sparse implementation.
+#'
+#' @importFrom Matrix Matrix
+#' @importFrom Matrix fac2sparse
+#' @importFrom Matrix Diagonal
+#' @export
+gpLGOpred <- function (gp, fold.col, fold.fact = "1", chunked = FALSE)
+{
+	if (!is.logical(chunked) || length(chunked) != 1 || is.na(chunked))
+		stop("chunked must be TRUE or FALSE")
+
+	if (chunked)
+		return(gpLGOpred__chunked(gp, fold.col = fold.col, fold.fact = fold.fact))
+
+	fold.col <- gpLGOpred__get_fold_col(gp, fold.col, fold.fact)
 
 	### calculate S - the posterior covariance matrix masked by the groups
 	S <- predict(gp, type = "latent", cov.fit = TRUE)
