@@ -102,7 +102,7 @@ print(gc())
 			# if the log likelihood itself for the f_start is more than 10-times worse than normal zero f starting value, bail the f_start!
 			# the obj also contains the prior p(f|X), which is unknown to us at the moment, so it is not complete; but if the likelihood itself is so much worse,
 			# it is already a warning sign
-			warning(" bailing out of f_start in this hyperparameter iteration: the log likelihood log p(y|f) is more than 10 times worse with f_start than with the zero starting vector\n",
+			message(" bailing out of f_start in this hyperparameter iteration: the log likelihood log p(y|f) is more than 10 times worse with f_start than with the zero starting vector\n",
 				" (-sum(d0(f_start))= ", -sum(wt * d0(gp, f, y, hyperpar)), ", -sum(d0(f=0+mnfun))= ", -sum(wt * d0(gp, mn, y, hyperpar)), ")")
 			f_start_was_reset <- TRUE
 		} else {
@@ -151,27 +151,55 @@ gc()
 		if (gp$W.type == "diag") {
 			rW <- sqrt(W) # W and rW are vectors in this case
 			xx <- rW %*% t(rW)
-		gc()
+			gc()
 			xx <- xx * K
-		gc() # ta vlozena gc() tady jsou velmi dulezita!!!
+			gc() # ta vlozena gc() tady jsou velmi dulezita!!!
 			diag(xx) <- diag(xx) + 1
-		gc()
-			L <- chol(xx)
-			rm(xx)
+			gc()
+		} else {
+			rW <- chol_W(W)
+			xx <- rW %*% K %*% t(rW)
+			gc()
+			diag(xx) <- diag(xx) + 1
+		}
+		
+		L <- try(chol(xx), silent = TRUE)
+		rm(xx)
 		gc()
 				# caution! This L is a transpose of the L in R&W2006, it is upper-triangular. Here, the L <- chol(B) means t(L) %*% L == B, in R&W2006 it is L %*% t(L) == B
 				# but I've checked this code of finding mode and also the predictions and it's used correctly (it takes this into account). -- Tomas 02/2020
+
+		if (inherits(L, "try-error")) { # chol() failed
+			# using "f reset" code which is duplicated with what is below!
+			if (using_f_start_now) { 
+				# vypni f_start a inicializuj jako by nebyl
+				message("L = chol() ended up with error: ", conditionMessage(attr(L, "condition")),
+					"; f_start was TRUE; resetting it to FALSE and restarting the whole LA optimisation") # this is OK, no problem
+				# initialise (bacha duplicitni kod s kodem vyse!)
+				a <- rep(0, n)
+				f <- mn
+				a_doesnt_correspond_with_f <- FALSE
+				obj <- -sum(wt * d0(gp, f, y, hyperpar))
+				using_f_start_now <- FALSE
+
+				obj.old <- Inf
+				f_start_was_reset <- TRUE
+				next
+			} else { # f_start nebyl nastaven
+				# nevime, zda to vubec nastavalo; tento pripad zatim vubec nebyl nalezen
+				# zde je treba vyhodit chybu, protoze by to stejne spadlo ve funkci optim
+				# a pokud toto bude problem, bude asi potreba to resit vice principialneji a delat nejaky numericky osetreni ve fci psi()
+				options(error = recover) # tady chci debug rovnou :-)
+				stop("L = chol() ended up with error: ", conditionMessage(attr(L, "condition")), ", and f_start not used") # 2026-02: this shouldn't happen now!
+				# bohuzel spousta promennych co pouzivam jako globalnich jsou jen v environmentu v optimise.graf()
+			}		 	
+		}
+
+		if (gp$W.type == "diag") {
 			b <- W * cf + wt * d1(gp, f, y, hyperpar)
 			a_new_proposed <- b - rW * backsolve(L, backsolve(L, rW * (K %*% b), transpose = TRUE))
 				# here it doesn't pay off to do just one backsolve() and then crossprod, because if we associate it this way, we need to backsolve just a single vector!
 		} else {
-			rW <- chol_W(W)
-			xx <- rW %*% K %*% t(rW)
-		gc()
-			diag(xx) <- diag(xx) + 1
-			L <- chol(xx)
-			rm(xx)
-		gc()
 			b <- W %*% cf + wt * d1(gp, f, y, hyperpar)
 			a_new_proposed <- b - t(rW) %*% backsolve(L, backsolve(L, rW %*% (K %*% b), transpose = TRUE))
 				# here it doesn't pay off to do just one backsolve() and then crossprod, because if we associate it this way, we need to backsolve just a single vector!
@@ -230,12 +258,12 @@ gc()
 			# tato vec se v jednom pripade stala (obj = Inf) kvuli tomu, ze f melo v jednom miste extremni hodnotu (cca 200) 
 			# a d0(f,y) ve fci psi() vratil -Inf
 			# kdyz se vypne f_start, uz se to nedeje; a to i v jinych pripadech; Pustime tedy cely cyklus znova, bez f_start
-			warning("Hyperpar iter", hyper_iter+1, ", LA iter:", it, ": obj = ", obj, " !!!!")
+			message("Hyperpar iter", hyper_iter+1, ", LA iter:", it, ": obj = ", obj, " !!!!")
 			message("LA iterations up to now:\n")
 			write(capture.output(print(LAiter)), stderr()) # super clumsy but that's R sometimes...			
 			if (using_f_start_now) { 
 				# vypni f_start a inicializuj jako by nebyl
-				warning(" f_start was TRUE; resetting it to FALSE and restarting the whole LA optimisation") # this is OK, no problem, klidne casem vyhodit z warningu tuto vetev
+				message(" f_start was TRUE; resetting it to FALSE and restarting the whole LA optimisation") # this is OK, no problem
 				# initialise (bacha duplicitni kod s kodem vyse!)
 				a <- rep(0, n)
 				f <- mn
