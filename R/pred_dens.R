@@ -20,6 +20,9 @@
 
 pred_dens_logit__int <- function(gp, data = gp[["data"]], pred, subdivisions = 10000L, ...)
 {
+	#### 
+	return(list(value = NA, err = NA)) # I think it doesn't work now!
+	
 	#vec <- gp$negLogLik$process(data, pred)
 	# vec - vector for given likelihood
 	# but now, for each factor of the likelihood / block of the W, we need to integrate over it
