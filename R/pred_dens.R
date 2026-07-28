@@ -60,7 +60,9 @@ pred_dens_logit__int <- function(gp, data = gp[["data"]], pred, subdivisions = 1
 		}
 		qlo <- qnorm(1e-10, pred[i, "f"], pred[i, "f_SE"])
 		qhi <- qnorm(1 - 1e-10, pred[i, "f"], pred[i, "f_SE"])
-		int <- integrate(function (x) { 
+		int <- integrate(function (x) {
+			if (length(x) != 1)
+				stop("integrate() called my function with x of length ", length(x), "; the function is not ready for that!")
 			par_i$f <- rep(x, length(par_i$f)) # needed for the case of reindexing
 			prod(gp$lik$stages(data_i, par_i, stages = 1:4))*dnorm(x, pred[i, "f"], pred[i, "f_SE"])
 				# prod() used for cases where stage 4 returns a vector of probabilities (might happen in some templates)
