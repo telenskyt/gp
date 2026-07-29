@@ -177,6 +177,56 @@ gpHyperparList <- function (gp, col = "value")
 		})
 }
 
+#' Read the last fitted hyperparameter vector from a log
+#'
+#' Finds the last `Fitting hyperparameters:` entry in a GP fitting log and
+#' reads the R-style printed vector that follows it.
+#'
+#' @param file Path to the log file.
+#'
+#' @return A numeric vector of hyperparameters.
+#' @export
+gpHyperparReadLog <- function(file)
+{
+	if (length(file) != 1L || is.na(file))
+		stop("`file` must be a single, non-missing path")
+
+	lines <- readLines(file, warn = FALSE)
+	marker_pattern <- "^[[:space:]]*Fitting hyperparameters:[[:space:]]*"
+	marker_lines <- grep(marker_pattern, lines)
+
+	if (length(marker_lines) == 0L)
+		stop("No `Fitting hyperparameters:` entry found in ", sQuote(file))
+
+	i <- marker_lines[[length(marker_lines)]]
+	vector_lines <- sub(marker_pattern, "", lines[[i]])
+
+	while (i < length(lines) &&
+		grepl("^[[:space:]]*\\[[[:digit:]]+\\]", lines[[i + 1L]])) {
+		i <- i + 1L
+		vector_lines <- c(vector_lines, lines[[i]])
+	}
+
+	vector_lines <- sub(
+		"^[[:space:]]*\\[[[:digit:]]+\\][[:space:]]*",
+		"",
+		vector_lines
+	)
+	vector_text <- paste(vector_lines, collapse = " ")
+
+	if (!nzchar(trimws(vector_text)))
+		stop("The last `Fitting hyperparameters:` entry in ",
+			sQuote(file), " contains no values")
+
+	tryCatch(
+		scan(text = vector_text, what = double(), quiet = TRUE),
+		error = function(e) {
+			stop("Could not read the last fitted hyperparameter vector from ",
+				sQuote(file), ": ", conditionMessage(e), call. = FALSE)
+		}
+	)
+}
+
 # convert hyperparameter vector h to optimization scale (using link function)
 gpLink <- function (gp, h)
 {
