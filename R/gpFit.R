@@ -35,7 +35,7 @@
 #' @param warn.exclude character vector; vector of codes of warnings that should be disabled. The codes are reported by some warnings. Default \code{NULL}.
 #' @param save.every.iter optional filename, used only when \code{opt.h = TRUE}. If supplied, a packed \code{gp} object
 #'   named \code{gpp} is saved to this file after every hyperparameter iteration, overwriting the previous checkpoint.
-#'   After hyperparameter optimization finishes, the completed model is packed and saved once more. Ignored when \code{opt.h = FALSE}.
+#'   Ignored when \code{opt.h = FALSE}.
 #' @param recursive internal option; do not use.
 #' @param ... further arguments to be passed to fitting method (e.g. \code{gpFitLaplace()})
 #'
