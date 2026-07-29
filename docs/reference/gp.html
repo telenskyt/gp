@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
       </span>
     </div>
 
@@ -66,10 +66,11 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gp</span><span class="op">(</span></span>
 <span>  <span class="va">f</span>,</span>
 <span>  <span class="va">data</span>,</span>
-<span>  <span class="va">negLogLik</span>,</span>
-<span>  negLogLik.hyperpar <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  negLogLik.formula <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  negLogLik.reindex2main <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">lik</span>,</span>
+<span>  lik.hyperpar <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  lik.formula <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  lik.reindex2main <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  W.type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"diag"</span>, <span class="st">"bdiag"</span>, <span class="st">"other"</span><span class="op">)</span>,</span>
 <span>  predictor.fun <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  response.parname <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  link <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -88,26 +89,69 @@
 <dd><p>object of class gpData, created by the gpData() function</p></dd>
 
 
-<dt id="arg-negloglik">negLogLik<a class="anchor" aria-label="anchor" href="#arg-negloglik"></a></dt>
-<dd><p>user-defined negative log likelihood function, taking two parameters: <code>data</code> (object of class gpData), and <code>par</code>, a list of parameters (numeric scalars or vectors).
-The <code>par</code> parameters list always includes <code>f</code>, a numeric vector - result of the gaussian process. The <code>par$f</code> vector can be either of the dimension of the gaussian process,
+<dt id="arg-lik">lik<a class="anchor" aria-label="anchor" href="#arg-lik"></a></dt>
+<dd><p>an object of class likTemp, representing the user-defined template of the likelihood function <code>p(y|f)</code>.</p>
+<p>ORIG DOC TO BE DELETED - MAYBE USE PART OF THESE FOR THE DOCUMENTATION OF CLASS likTemp
+either a single function, or a named list of three functions (three-stage template); these are two ways to supply
+the user-defined negative log likelihood function p(y|f):</p><ol><li><p><code>negLogLik</code> is a single function <code>f(data, par)</code>, taking two parameters:</p><dl><dt>data</dt>
+<dd><p>object of class <code>gpData</code>, containing both predictors and a response variable</p></dd>
+
+<dt><code>par</code></dt>
+<dd><p>a list of parameters (numeric scalars or vectors).
+Always includes <code>f</code>, a numeric vector - result of the gaussian process. The <code>par$f</code> vector can be either of the dimension of the gaussian process,
 or the main table - see the <code>negLogLik.reindex2main</code> parameter. The <code>par</code> parameters list can optionally include other parameters, see the <code>negLogLik.hyperpar</code> argument below.</p></dd>
 
 
-<dt id="arg-negloglik-hyperpar">negLogLik.hyperpar<a class="anchor" aria-label="anchor" href="#arg-negloglik-hyperpar"></a></dt>
-<dd><p>optional, a named list of extra hyperparameters for the <code>negLogLik</code> function (named list of numeric scalars or vectors); this doesn't include the special
-parameter <code>f</code> (the Gaussian process).</p></dd>
+</dl></li>
+<li><p>Logic is similar as in the previous case, but the <code>negLogLik</code> is supplied as a chain of three consecutive functions (three-stage template). Then, <code>negLogLik</code> is a named list of three functions:</p><dl><dt><code>pred.link</code></dt>
+<dd><p>either character or <code>function(data, par)</code>. This is predictor &amp; link component. Processes the parameters into other parameters;
+is also used by <code>predict(type = "response")</code> for predictions,
+therefore, the <code>data</code> might not contain the response variable (thus, the response variable must not be used by this function). Should be either a character string representing
+the name of a link function    (this will be the most frequent case; see !!! for supported link functions), or a <code>function(data, par)</code> (see above for parameter description !!!).
+This function will return a named list of parameters <code>par</code> that will be passed on to the next stage.</p></dd>
+
+<dt><code>process</code></dt>
+<dd><p><code>function(data, par)</code>, this function processes the parameters and the <code>data</code> (which always contain the response variable here) and shapes both
+parameters and data for particular likelihood function. This function should return a named list required by particular likelihood function (see !!!).
+This component is used by cross-validation and Laplace-Fisher approximation.</p></dd>
+
+<dt><code>lik</code></dt>
+<dd><p>function evaluating the likelihood. Either character representing name of likelihood function (see !!! for supported values), or custom <code>function(x)</code> taking <code>x</code> from
+the previous stage.</p></dd>
 
 
-<dt id="arg-negloglik-formula">negLogLik.formula<a class="anchor" aria-label="anchor" href="#arg-negloglik-formula"></a></dt>
+</dl></li>
+</ol></dd>
+
+
+<dt id="arg-lik-hyperpar">lik.hyperpar<a class="anchor" aria-label="anchor" href="#arg-lik-hyperpar"></a></dt>
+<dd><p>optional, a named list of extra likelihood hyperparameters for the <code>negLogLik</code> function (named list of numeric scalars or vectors); this doesn't include the special
+parameter <code>f</code> (the Gaussian process). This effectively defines the likelihood hyperparameters, named ".lik" in the hyperparameter table.</p></dd>
+
+
+<dt id="arg-lik-formula">lik.formula<a class="anchor" aria-label="anchor" href="#arg-lik-formula"></a></dt>
 <dd><p>optional, formula related to the supplied <code>negLogLik</code> function. This is not used in any way, except it is stored in the object and printed in the summary,
 so it has only informational purpose.</p></dd>
 
 
-<dt id="arg-negloglik-reindex-main">negLogLik.reindex2main<a class="anchor" aria-label="anchor" href="#arg-negloglik-reindex-main"></a></dt>
+<dt id="arg-lik-reindex-main">lik.reindex2main<a class="anchor" aria-label="anchor" href="#arg-lik-reindex-main"></a></dt>
 <dd><p>should the <code>par$f</code> parameter of the <code>negLogLik</code> function be reindexed to the rows of the main table?
 If <code>FALSE</code>, the <code>par$f</code> parameter will be kept at the dimension of the Gaussian Process (as reported by <code><a href="gpDetermineSize.html">gpDetermineSize()</a></code>).
 If the Gaussian process is running at the dimension of the main table, then it does not matter.</p></dd>
+
+
+<dt id="arg-w-type">W.type<a class="anchor" aria-label="anchor" href="#arg-w-type"></a></dt>
+<dd><p>the type of the hessian matrix (<code>W</code>) of the negative log likelihood function (as defined by the <code>lik</code> parameter)</p><dl><dt><code>"diag"</code></dt>
+<dd><p>(default) - the hessian matrix (<code>W</code>) is diagonal. Most common case, fastest computation. This is usually the case when the user-defined likelihood factorizes over individual \(f_i\)'s.</p></dd>
+
+<dt><code>"bdiag"</code></dt>
+<dd><p>the hessian matrix (<code>W</code>) is block-diagonal. This is usually the case when the user-defined likelihood factorizes over mutually disjoint sets of \(f_i\)'s.</p></dd>
+
+<dt><code>"other"</code></dt>
+<dd><p>the hessian matrix (<code>W</code>) is a general matrix.</p></dd>
+
+
+</dl><p>One should keep the setting as specific as possible to keep the computation efficient.</p></dd>
 
 </dl></div>
     <div id="value">

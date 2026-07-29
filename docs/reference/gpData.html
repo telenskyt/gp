@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
       </span>
     </div>
 
@@ -63,7 +63,7 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gpData</span><span class="op">(</span><span class="va">x</span>, has.main.table <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gpData</span><span class="op">(</span><span class="va">x</span>, has.main.table <span class="op">=</span> <span class="cn">NULL</span>, .onSubset <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -78,6 +78,11 @@ factor column; the column must exist and be a unique identification of the table
 <dt id="arg-has-main-table">has.main.table<a class="anchor" aria-label="anchor" href="#arg-has-main-table"></a></dt>
 <dd><p>logical; allows to explictly specify that the first table in the list is main table. Default is <code>NULL</code>, which means autodetect, however, in certain cases,
 it might be needed to explicitly specify <code>has.main.table = TRUE</code> (e.g. when there are grouping factors that don't act as primary keys - unique row IDs - for any table)</p></dd>
+
+
+<dt id="arg--onsubset">.onSubset<a class="anchor" aria-label="anchor" href="#arg--onsubset"></a></dt>
+<dd><p>optional; a function to be called after every <code><a href="gpDataSubset.html">gpDataSubset()</a></code>. It takes the data in its only argument and returns it
+modified. It must not change the order of the records!</p></dd>
 
 </dl></div>
     <div id="value">

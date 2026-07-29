@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
       </span>
     </div>
 
@@ -94,9 +94,20 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://devtools.r-lib.org/" class="external-link">devtools</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"https://github.com/telenskyt/gp/"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"https://github.com/telenskyt/gp/"</span>, force <span class="op">=</span> <span class="cn">TRUE</span>, INSTALL_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"--with-keep.source"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>You can also clone the github repository like this:</p>
 <pre><code>git clone https://github.com/telenskyt/gp/</code></pre>
+</div>
+<div class="section level2">
+<h2 id="install-intel-onemkl-math-kernel-library">Install Intel OneMKL Math Kernel Library<a class="anchor" aria-label="anchor" href="#install-intel-onemkl-math-kernel-library"></a>
+</h2>
+<p>The matrix operations will be sped up significantly using this library. It is using special CPU instructions designed for matrix operations. It works not only on Intel CPUs, but also on AMD and others, since they have similar instruction sets.</p>
+<ol style="list-style-type: decimal">
+<li><p>Install OneMKL from <a href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-download.html" class="external-link uri">https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-download.html</a></p></li>
+<li><p>Benchmark your R installation before integration into R: download and run <a href="https://mac.r-project.org/benchmarks/R-benchmark-25.R" class="external-link">R-benchmark-25.R</a> from <a href="https://mac.r-project.org/benchmarks/" class="external-link uri">https://mac.r-project.org/benchmarks/</a></p></li>
+<li><p><a href="https://www.intel.com/content/www/us/en/developer/articles/technical/using-onemkl-with-r.html" class="external-link">Install OneMKL into R</a> and perhaps <a href="https://www.intel.com/content/www/us/en/developer/articles/technical/accelerate-r-code-with-math-kernel-library.html" class="external-link">learn more about it</a></p></li>
+<li><p>Repeat the benchmark from point 2; you should see significant speed improvement!</p></li>
+</ol>
 </div>
 <div class="section level2">
 <h2 id="start-using-the-package">Start using the package<a class="anchor" aria-label="anchor" href="#start-using-the-package"></a>

@@ -19,13 +19,13 @@ Install the package directly from github:
 ```r
 library(devtools)
 
-install_github("https://github.com/telenskyt/gp-priv/", force = TRUE, INSTALL_opts = c("--with-keep.source"))
+install_github("https://github.com/telenskyt/gp/", force = TRUE, INSTALL_opts = c("--with-keep.source"))
 ```
 
 You can also clone the github repository like this:
 
 ```
-git clone https://github.com/telenskyt/gp-priv/
+git clone https://github.com/telenskyt/gp/
 ```
 
 ## Install Intel OneMKL Math Kernel Library

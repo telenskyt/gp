@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
       </span>
     </div>
 
@@ -57,6 +57,124 @@
       <small>Source: <a href="https://github.com/telenskyt/gp/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="0.2.0" id="version-020-jul-29-2026">version 0.2.0 (Jul 29, 2026)<a class="anchor" aria-label="anchor" href="#version-020-jul-29-2026"></a></h2>
+<div class="section level3">
+<h3 id="major-new-features-0-2-0">Major new features<a class="anchor" aria-label="anchor" href="#major-new-features-0-2-0"></a></h3>
+<ul><li><p>Introduced a completely new class-based likelihood template interface with <code>likTempPhased</code>. This, for the first time, allows automatic integration of user-defined likelihoods seamlessly into fitting, prediction, cross-validation, evaluation of predictive performance, and simulation. A likelihood can now define separate terms, link, processing and likelihood stages. Built-in Bernoulli and Poisson likelihoods are included.</p></li>
+<li><p>Introduced the new <code>"Laplace-Fisher"</code> fitting method for likelihoods whose Hessian is not positive semidefinite. This overcomes the limitation of the widespread Laplace Approximation. Fisher information matrix is calculated automatically for the supported likelihoods, or can estimated by sampling for any supplied likelihood template.</p></li>
+<li><p>Added approximations for leave-one-out and leave-group-out cross-validation with <code><a href="../reference/gpLGO.html">gpLGO()</a></code> and <code><a href="../reference/gpLGOpred.html">gpLGOpred()</a></code>. It calculates LGO-CV predictions without the need to fit the model N times for every fold. It supports general non-diagonal hessian matrix <code>W</code>, produces predictions and likelihood-specific performance statistics, and stores the results in <code>gp$fit$LGOCV</code>. An optional dense block implementation can accelerate diagonal-<code>W</code> models with many folds. Unlike <code><a href="../reference/gpFitCV.html">gpFitCV()</a></code>, this approximation operates at a fixed set of hyperparameters.</p></li>
+<li><p>Generalized the Laplace and Laplace-Fisher approximations in fitting beyond diagonal likelihood Hessians. Now even non-diagonal Hessian matrices are supported. The higher-order derivative calculations and likelihood-hyperparameter gradients, prediction support, packing, and LGO-CV calculations were generalized accordingly.</p></li>
+<li><p>Added an RTMB-based linear-model family through <code><a href="../reference/lmFit.html">lmFit()</a></code>. It replaces the latent GP with a formula-based linear predictor while retaining the GP model’s likelihood template. Likelihood hyperparameters can be fixed or optimized. The resulting <code>lmFit</code> objects support prediction, coefficient summaries, standard errors, <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC()</a></code>, <code><a href="https://rdrr.io/r/stats/extractAIC.html" class="external-link">extractAIC()</a></code>, <code><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs()</a></code>, and model-selection workflows such as <code><a href="https://rdrr.io/r/stats/step.html" class="external-link">step()</a></code>. <code><a href="../reference/lmFitCV.html">lmFitCV()</a></code> provides fold-based cross-validation for these models.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="smaller-new-features-0-2-0">Smaller new features<a class="anchor" aria-label="anchor" href="#smaller-new-features-0-2-0"></a></h3>
+<div class="section level4">
+<h4 id="prediction-and-cross-validation-0-2-0">Prediction and cross-validation<a class="anchor" aria-label="anchor" href="#prediction-and-cross-validation-0-2-0"></a></h4>
+<ul><li>
+<p>Reworked prediction around the likelihood-template pipeline:</p>
+<ul><li>
+<code>type = "latent"</code> returns latent GP predictions.</li>
+<li>
+<code>type = "terms"</code> adds likelihood-template terms.</li>
+<li>
+<code>type = "response"</code> applies the likelihood link stage.</li>
+<li>GP, linear-model, and LGO predictions now share the same latent-prediction post-processing through <code><a href="../reference/gpPredictFromLatent.html">gpPredictFromLatent()</a></code>.</li>
+</ul></li>
+<li><p>Replaced the old <code>CI</code> argument to <code><a href="../reference/predict.gp.html">predict.gp()</a></code> with <code>conf.int</code> and <code>conf.level</code>. Enabling confidence intervals now automatically enables standard-error calculation.</p></li>
+<li>
+<p><code><a href="../reference/gpFitCV.html">gpFitCV()</a></code> now:</p>
+<ul><li>Fits and predicts a null model independently within every fold.</li>
+<li>Automatically evaluates predictions through the likelihood template.</li>
+<li>Accepts <code>pred.options</code>, <code>lmFit.options</code>, and <code>lmFit.pred.options</code>.</li>
+<li>Stores both GP and null-model cross-validation predictions.</li>
+<li>Reports likelihood-specific predictive-performance statistics.</li>
+</ul></li>
+<li><p>Added parallel processing of chunked predictions with <code>predict.gp(parallel = TRUE)</code>. Parallel prediction jobs support log files, diagnostic dumps, shortened tracebacks, and appendable per-worker logs.</p></li>
+<li><p>Added Bernoulli predictive-performance evaluation through <code><a href="../reference/predPerfBern.html">predPerfBern()</a></code>, including AUC, TSS, deviance-based and likelihood-ratio pseudo-(R^2), NLL, and null-model NLL.</p></li>
+<li><p>Added Poisson predictive-performance evaluation through <code><a href="../reference/predPerfPois.html">predPerfPois()</a></code>, including ordinary (R^2), deviance-based and likelihood-ratio pseudo-(R^2), NLL, and null-model NLL.</p></li>
+<li><p>Likelihood-template <code><a href="https://rdrr.io/r/stats/terms.html" class="external-link">terms()</a></code> callbacks may now return either one shared row or one row for every latent value, with explicit result validation.</p></li>
+</ul></div>
+<div class="section level4">
+<h4 id="fitting-and-diagnostics-0-2-0">Fitting and diagnostics<a class="anchor" aria-label="anchor" href="#fitting-and-diagnostics-0-2-0"></a></h4>
+<ul><li><p>Added <code><a href="../reference/convergence.html">convergence()</a></code> for a concise assessment of optimizer and Laplace-approximation convergence.</p></li>
+<li><p>Added <code><a href="../reference/coef.gp.html">coef.gp()</a></code> for inspecting fitted hyperparameters together with marginal-likelihood, prior, and posterior gradients.</p></li>
+<li><p>Added <code><a href="../reference/iter.html">iter()</a></code> for examining recorded hyperparameter and Laplace iterations, including support for two-stage fits.</p></li>
+<li><p>Added <code>opt.method</code> to <code><a href="../reference/gpFit.html">gpFit()</a></code>, allowing the optimization method passed to <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim()</a></code> to be selected.</p></li>
+<li><p>Added <code>save.every.iter</code> to <code><a href="../reference/gpFit.html">gpFit()</a></code>. This saves a packed checkpoint after every hyperparameter iteration and once more when fitting finishes.</p></li>
+<li><p>Added <code><a href="../reference/gpHyperparReadLog.html">gpHyperparReadLog()</a></code> for recovering the last fitted hyperparameter vector from a fitting log.</p></li>
+<li><p>Hyperparameter optimization can now run without analytic gradients by setting <code>grad.computation = FALSE</code>. Gradient computation now defaults to the value of <code>opt.h</code>.</p></li>
+<li><p>Added likelihood-aware <code>f_start</code> handling. Likelihood templates may define an <code>f_start</code> transformation that adjusts the previous latent solution when likelihood hyperparameters change.</p></li>
+<li><p>Added <code><a href="../reference/gpLik.html">gpLik()</a></code>, a convenience function for running selected stages of a fitted model’s likelihood template.</p></li>
+<li><p>Fitted models now record package/build provenance, including the package version, Git commit, dirty flag, build time, and R version when available.</p></li>
+<li><p>Model-run metadata now includes timing, maximum memory usage, hostname, start and end times, and BLAS/LAPACK information.</p></li>
+</ul></div>
+<div class="section level4">
+<h4 id="data-handling-0-2-0">Data handling<a class="anchor" aria-label="anchor" href="#data-handling-0-2-0"></a></h4>
+<ul><li><p><code><a href="../reference/gpDataPrepare.html">gpDataPrepare()</a></code> now uses an explicit <code>scale.as</code> argument when another dataset’s scaling should be reused. This prevents accidental reuse of inappropriate training-data scaling.</p></li>
+<li><p>Zero-variance columns are detected during scaling, reported, and represented by zeros instead of resulting <code>NaN</code> values.</p></li>
+<li><p>Added <code>.onSubset</code> to <code><a href="../reference/gpData.html">gpData()</a></code>, allowing a callback to update derived data after every <code><a href="../reference/gpDataSubset.html">gpDataSubset()</a></code> operation.</p></li>
+<li><p>Added <code><a href="../reference/scale_cols.html">scale_cols()</a></code> for scaling selected columns only.</p></li>
+</ul></div>
+<div class="section level4">
+<h4 id="performance-and-storage-0-2-0">Performance and storage<a class="anchor" aria-label="anchor" href="#performance-and-storage-0-2-0"></a></h4>
+<ul><li><p>Substantially optimized calculations for non-diagonal likelihood Hessians, reducing dense intermediate allocations and avoiding several unnecessary sparse-to-dense conversions.</p></li>
+<li><p>Reworked construction of (B = W<sup>{1/2}KW</sup>{1/2} + I) to reduce peak memory consumption.</p></li>
+<li><p>Optimized common marginal-likelihood gradient calculations and reused cached matrix products more extensively.</p></li>
+<li><p>Posterior covariance masking is now performed before expensive dense/sparse products. In the motivating case, this reduced one operation from approximately nine seconds to around 0.1 seconds.</p></li>
+<li><p><code><a href="../reference/gpPack.html">gpPack()</a></code> now removes additional reconstructible matrices, the instantiated likelihood class, and stored LGO predictions. The likelihood object is reconstructed from its saved constructor arguments by <code><a href="../reference/gpUnpack.html">gpUnpack()</a></code>.</p></li>
+<li><p>Cross-validation fold models are packed more aggressively. <code><a href="../reference/lmFitCV.html">lmFitCV()</a></code> no longer stores all fold models, which can otherwise become extremely large for LOO/LGO-style runs.</p></li>
+<li><p>Likelihood-template constructor defaults and stored constructor arguments were reorganized to avoid capturing large environments. Large user-function environments now produce a warning.</p></li>
+<li><p>Reused <code>LTinv.rW</code> instead of repeatedly reconstructing or solving with the Cholesky factor.</p></li>
+<li><p>Added <code>f_cov_masked</code>, a sparse posterior covariance matrix restricted to the structural nonzero pattern of <code>W</code>.</p></li>
+</ul></div>
+</div>
+<div class="section level3">
+<h3 id="fixes-0-2-0">Fixes<a class="anchor" aria-label="anchor" href="#fixes-0-2-0"></a></h3>
+<ul><li><p>Fixed a critical likelihood-hyperparameter gradient bug (<a href="https://github.com/telenskyt/gp/issues/1" class="external-link">#1</a>): <code>d0_dhyp()</code> constructed its automatic-differentiation tape at <code>f = 0</code> and also evaluated it there instead of at the fitted latent values. This could produce incorrect fitted results whenever likelihood hyperparameters were optimized.</p></li>
+<li>
+<p>Hardened <code>f_start</code> against several serious numerical failures:</p>
+<ul><li>A previous solution is rejected when its likelihood under the current hyperparameters is non-finite or drastically worse than the ordinary starting value.</li>
+<li>Failed Cholesky decomposition while using <code>f_start</code> now resets the starting value and restarts the Laplace optimization (<a href="https://github.com/telenskyt/gp/issues/2" class="external-link">#2</a>).</li>
+<li>Non-finite Laplace objectives trigger the same fallback.</li>
+<li>Missing likelihood-specific <code>f_start</code> methods are reported before optimization begins.</li>
+</ul></li>
+<li><p>Reimplemented the likelihood-hyperparameter derivative calculation in <code>d1_dhyp()</code> to prevent extreme memory consumption with non-diagonal likelihood Hessians.</p></li>
+<li><p>Fixed <code>predict.gp(cov.fit = TRUE)</code>, which previously failed immediately because it tested the wrong variable.</p></li>
+<li><p>Fixed incorrect row reindexing in <code><a href="../reference/predict.gp.html">predict.gp()</a></code> for models whose GP dimension differs from the main-table dimension.</p></li>
+<li><p>Fixed likelihood-template prediction stages receiving unscaled rather than correctly prepared prediction data.</p></li>
+<li><p>Fixed <code>predict.lmFit(type = "terms")</code> failing to include fixed likelihood hyperparameters.</p></li>
+<li><p>Fixed prediction and sparse-matrix operations when matrices do not have dimension names.</p></li>
+<li><p>Fixed cross-validation training data potentially inheriting scaling from the full dataset rather than being scaled independently.</p></li>
+<li><p>Fixed <code><a href="../reference/gpUnpack.html">gpUnpack()</a></code> for maximally packed cross-validation models by refitting the final iteration when the latent solution is absent.</p></li>
+<li><p>Extended <code><a href="../reference/gpUnpack.html">gpUnpack()</a></code> to reconstruct diagonal and non-diagonal fitting matrices consistently, including Laplace-Fisher models and the numerical correction of small negative diagonal <code>W</code> values.</p></li>
+<li><p>Fixed an incorrect <code>rW</code> reference during unpacking.</p></li>
+<li><p>Fixed a typo that disabled validation that likelihood hyperparameters appear at the end of the hyperparameter table.</p></li>
+<li><p>Fixed <code><a href="../reference/gpHyperparList.html">gpHyperparList()</a></code> reordering hyperparameters alphabetically within components. Original table order is now preserved.</p></li>
+<li><p>Improved <code><a href="../reference/gpHyperparCheck.html">gpHyperparCheck()</a></code> so out-of-range hyperparameters are identified by component, parameter, index, variable, limits, and supplied value.</p></li>
+<li><p>Fixed accidental partial matching of <code>fitCV</code> as <code>fit</code>.</p></li>
+<li><p>Fixed <code><a href="../reference/gpFitCV.html">gpFitCV()</a></code> warning-level handling so it does not lower an explicitly stricter <code>options(warn)</code> setting.</p></li>
+<li><p>Fixed parallel diagnostic dumps potentially stalling indefinitely while deparsing enormous <code><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call()</a></code> expressions. Dumped call labels are now safely bounded.</p></li>
+<li><p>Rewrote several <code><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call()</a></code> sites so <code><a href="https://rdrr.io/r/base/match.call.html" class="external-link">match.call()</a></code> does not expand large argument objects into stored calls.</p></li>
+<li><p>Ensured RTMB is attached when <code>gp</code> is loaded, preventing automatic-differentiation failures in functions such as <code><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis()</a></code>.</p></li>
+<li><p>Fixed likelihood-template function handling that could remove required environments and cause RTMB “non-numeric argument” failures. Large environments are now warned about instead.</p></li>
+<li><p>Fixed several sparse-matrix operations that produced unnecessary gigabyte-scale dense allocations.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="minor-changes-and-improvements-0-2-0">Minor changes and improvements<a class="anchor" aria-label="anchor" href="#minor-changes-and-improvements-0-2-0"></a></h3>
+<ul><li><p>Renamed the fitted quantity <code>mnll</code> to the mathematically standard <code>nlml</code>—negative log marginal likelihood.</p></li>
+<li><p>Added targeted warning suppression with <code><a href="../reference/suppress_warnings_from.html">suppress_warnings_from()</a></code> and utilities for inspecting the warning call stack.</p></li>
+<li><p>Added <code>log.append</code> to <code><a href="../reference/parallelJobWrapper.html">parallelJobWrapper()</a></code>.</p></li>
+<li><p>Error logs now use concise condition messages instead of printing enormous condition objects.</p></li>
+<li><p><code><a href="../reference/gpFit.html">gpFit()</a></code> now reports the GP matrix dimension at the beginning of fitting.</p></li>
+<li><p>Hyperparameter priors are printed more clearly in tibbles through a custom pillar method.</p></li>
+<li><p>Removed an unnecessary prediction error for extra columns in <code>newdata</code>; required training columns are still checked.</p></li>
+<li><p>Added checks for invalid likelihood-hyperparameter indices, non-finite coefficient tables, incompatible likelihood settings, missing fitted data, and malformed template outputs.</p></li>
+<li><p>Stored LGO results now include the package version and the arguments used to create them, including the fold definition.</p></li>
+<li><p>Added instructions for accelerating matrix operations with Intel OneMKL.</p></li>
+<li><p>Expanded manual pages and updated the pkgdown website, including a dedicated News section.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.1.2" id="version-012-feb-17-2026">version 0.1.2 (Feb 17, 2026)<a class="anchor" aria-label="anchor" href="#version-012-feb-17-2026"></a></h2>
 <ul><li><p>added support for likelihood hyperparameters! With full AD (automatic differentiation) support from RTMB!</p></li>

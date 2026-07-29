@@ -19,7 +19,7 @@ error, a dump file will be saved for debugging purposes."><!-- mathjax --><scrip
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
       </span>
     </div>
 
@@ -74,7 +74,8 @@ error, a dump file will be saved for debugging purposes.</p>
 <span>  log.fn <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dump.fn <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  tr.max.lines <span class="op">=</span> <span class="fl">5</span></span>
+<span>  tr.max.lines <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  log.append <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -110,6 +111,10 @@ will be disabled.</p></dd>
 
 <dt id="arg-tr-max-lines">tr.max.lines<a class="anchor" aria-label="anchor" href="#arg-tr-max-lines"></a></dt>
 <dd><p>the <code>max.lines</code> parameter for <code>traceback</code>, i.e. the maximum number of lines printed per call when error occurs</p></dd>
+
+
+<dt id="arg-log-append">log.append<a class="anchor" aria-label="anchor" href="#arg-log-append"></a></dt>
+<dd><p>logical; if <code>TRUE</code>, append to <code>log.fn</code> instead of overwriting it. Might be useful to create per-worker rather than per-job logs.</p></dd>
 
 </dl></div>
     <div id="details">

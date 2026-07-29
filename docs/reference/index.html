@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
       </span>
     </div>
 
@@ -61,13 +61,21 @@
           <p class="section-desc"></p>
         </th>
       </tr></tbody><tbody><tr><td>
-          <p><code><a href="cv_eval_bern.html">cv_eval_bern()</a></code> </p>
+          <p><code><a href="coef.gp.html">coef(<i>&lt;gp&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Evaluation of cross-validation statistics for bernoulli (0/1) response variable and predicted probability</p></td>
+        <td><p>Extract fitted Gaussian-process hyperparameters</p></td>
+      </tr><tr><td>
+          <p><code><a href="convergence.html">convergence()</a></code> </p>
+        </td>
+        <td><p>Check model convergence</p></td>
       </tr><tr><td>
           <p><code><a href="endLog.html">endLog()</a></code> </p>
         </td>
         <td><p>Stop logging started by startLog()</p></td>
+      </tr><tr><td>
+          <p><code><a href="flatten.html">flatten()</a></code> </p>
+        </td>
+        <td><p>Flattens sparse matrix in column-by-column order This flattening procedure must be exactly the same as performed by RTMB Tape class, method $jacfun(sparse = TRUE), see https://github.com/kaskr/RTMB/issues/85</p></td>
       </tr><tr><td>
           <p><code><a href="foreach2.html">foreach2()</a></code> </p>
         </td>
@@ -96,6 +104,10 @@
           <p><code><a href="gpDataIsScaled.html">gpDataIsScaled()</a></code> </p>
         </td>
         <td><p>Check whether gpData has been scaled already (gpDataPrepare() has been called on it)</p></td>
+      </tr><tr><td>
+          <p><code><a href="gpDataPrepare.html">gpDataPrepare()</a></code> </p>
+        </td>
+        <td><p>Prepares the object of class gpData for the model (scaling, conversion to matrices etc.)</p></td>
       </tr><tr><td>
           <p><code><a href="gpDataSize.html">gpDataSize()</a></code> </p>
         </td>
@@ -145,9 +157,25 @@
         </td>
         <td><p>Converts a single column of the hyperparameter table to hierarchically structured list of lists of vectors (for each component and hyperparameter)</p></td>
       </tr><tr><td>
+          <p><code><a href="gpHyperparReadLog.html">gpHyperparReadLog()</a></code> </p>
+        </td>
+        <td><p>Read the last fitted hyperparameter vector from a log</p></td>
+      </tr><tr><td>
           <p><code><a href="gpHyperparStartFromModel.html">gpHyperparStartFromModel()</a></code> </p>
         </td>
         <td><p>Get the starting values of the hyperparameters from another model (gp0) wherever possible</p></td>
+      </tr><tr><td>
+          <p><code><a href="gpLGO.html">gpLGO()</a></code> </p>
+        </td>
+        <td><p>Calculate the approximation of the LGO-CV (leave-group-out cross-validation) and evaluate it.</p></td>
+      </tr><tr><td>
+          <p><code><a href="gpLGOpred.html">gpLGOpred()</a></code> </p>
+        </td>
+        <td><p>LGO-CV prediction - an approximation of leave-group-out cross-validation</p></td>
+      </tr><tr><td>
+          <p><code><a href="gpLik.html">gpLik()</a></code> </p>
+        </td>
+        <td><p>Run the GP likelihood template</p></td>
       </tr><tr><td>
           <p><code><a href="gpPack.html">gpPack()</a></code> </p>
         </td>
@@ -161,9 +189,33 @@
         </td>
         <td><p>Enhanced version of <code>%dopar%</code></p></td>
       </tr><tr><td>
+          <p><code><a href="inspect_warnings.html">inspect_warnings()</a></code> </p>
+        </td>
+        <td><p>Inspect warnings and their call stacks</p></td>
+      </tr><tr><td>
+          <p><code><a href="is_numeric_finite.html">is_numeric_finite()</a></code> </p>
+        </td>
+        <td><p>Tests if matrix M is numeric, with all finite, non-NA values. Works on dense as well as sparse matrices.</p></td>
+      </tr><tr><td>
+          <p><code><a href="iter.html">iter()</a></code> </p>
+        </td>
+        <td><p>Display hyperparameter optimization iterations</p></td>
+      </tr><tr><td>
           <p><code><a href="K_matrix.html">K_matrix()</a></code> </p>
         </td>
         <td><p>Construct covariance matrix (K) for given data and hyperparameters</p></td>
+      </tr><tr><td>
+          <p><code><a href="lmFit.html">lmFit()</a></code> </p>
+        </td>
+        <td><p>Fit a linear model on the GP model object</p></td>
+      </tr><tr><td>
+          <p><code><a href="lmFitCV.html">lmFitCV()</a></code> </p>
+        </td>
+        <td><p>Perform an N-fold cross-validation of a linear model fitted on a GP model object</p></td>
+      </tr><tr><td>
+          <p><code><a href="mask.html">mask()</a></code> </p>
+        </td>
+        <td><p>Mask dense matrix D to the structural non-zeros of sparse matrix S</p></td>
       </tr><tr><td>
           <p><code><a href="mnfun.html">mnfun()</a></code> </p>
         </td>
@@ -181,13 +233,33 @@
         </td>
         <td><p>Predict from a fitted Gaussian process model</p></td>
       </tr><tr><td>
-          <p><code><a href="predict_expand_link.html">predict_expand_link()</a></code> </p>
+          <p><code><a href="predPerfBern.html">predPerfBern()</a></code> </p>
         </td>
-        <td><p>Expand the predictions by quantities derived using the inverse link function</p></td>
+        <td><p>Evaluation of predictive performance for bernoulli (0/1) likelihood</p></td>
+      </tr><tr><td>
+          <p><code><a href="predPerfPois.html">predPerfPois()</a></code> </p>
+        </td>
+        <td><p>Evaluation of predictive performance for poisson likelihood</p></td>
+      </tr><tr><td>
+          <p><code><a href="scale_cols.html">scale_cols()</a></code> </p>
+        </td>
+        <td><p>scale() only selected columns</p></td>
+      </tr><tr><td>
+          <p><code><a href="snnzero.html">snnzero()</a></code> </p>
+        </td>
+        <td><p>Returns number of structural non-zeros in a sparse matrix</p></td>
       </tr><tr><td>
           <p><code><a href="startLog.html">startLog()</a></code> </p>
         </td>
         <td><p>Redirect stdout and stderr to a log file</p></td>
+      </tr><tr><td>
+          <p><code><a href="suppress_warnings_from.html">suppress_warnings_from()</a></code> </p>
+        </td>
+        <td><p>Suppress specific warnings by message and stack</p></td>
+      </tr><tr><td>
+          <p><code><a href="tryNull.html">tryNull()</a></code> </p>
+        </td>
+        <td><p>A version of try() that returns NULL upon failure</p></td>
       </tr><tr><td>
           <p><code><a href="validate_components.html">validate_components()</a></code> </p>
         </td>

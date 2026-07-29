@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
       </span>
     </div>
 
@@ -74,9 +74,14 @@
 <span>  groupMeans <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  se.fit <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  cov.fit <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  maxn <span class="op">=</span> <span class="fl">250</span>,</span>
+<span>  maxn <span class="op">=</span> <span class="cn">Inf</span>,</span>
 <span>  Kx.cache <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Kxx.cache <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  log.fn <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  dump.fn <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  log.append <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  tr.max.lines <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  recursive <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -96,7 +101,32 @@
 <dt id="arg-cov-fit">cov.fit<a class="anchor" aria-label="anchor" href="#arg-cov-fit"></a></dt>
 <dd><p>return the covariance matrix of the predicted values?</p></dd>
 
+
+<dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
+<dd><p>use <code><a href="https://rdrr.io/r/parallel/clusterApply.html" class="external-link">parallel::parLapply()</a></code> on the registered default cluster for chunked predictions?</p></dd>
+
+
+<dt id="arg-log-fn">log.fn<a class="anchor" aria-label="anchor" href="#arg-log-fn"></a></dt>
+<dd><p>if not <code>NULL</code>, log parallel chunk jobs using <code><a href="parallelJobWrapper.html">parallelJobWrapper()</a></code></p></dd>
+
+
+<dt id="arg-dump-fn">dump.fn<a class="anchor" aria-label="anchor" href="#arg-dump-fn"></a></dt>
+<dd><p>if not <code>NULL</code>, dump debug info from failed parallel chunk jobs using <code><a href="parallelJobWrapper.html">parallelJobWrapper()</a></code></p></dd>
+
+
+<dt id="arg-log-append">log.append<a class="anchor" aria-label="anchor" href="#arg-log-append"></a></dt>
+<dd><p>logical; if <code>TRUE</code>, append to <code>log.fn</code> instead of overwriting it</p></dd>
+
+
+<dt id="arg-tr-max-lines">tr.max.lines<a class="anchor" aria-label="anchor" href="#arg-tr-max-lines"></a></dt>
+<dd><p>the <code>max.lines</code> parameter for <code>traceback</code>, i.e. the maximum number of lines printed per call when error occurs</p></dd>
+
 </dl></div>
+    <div id="value">
+    <h2>Value</h2>
+    <p>A matrix of predictions, always at the dimension of the Gaussian Process, with columns <code>f</code> and <code>f_SE</code> (if <code>se.fit = TRUE</code>).
+If <code>cov.fit = TRUE</code>, returns a named list, <code>pred</code> will be the mentioned matrix and <code>cov</code> will be the full covariance matrix.</p>
+    </div>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

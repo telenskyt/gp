@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
       </span>
     </div>
 
@@ -65,20 +65,23 @@
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gpFit</span><span class="op">(</span></span>
 <span>  <span class="va">gp</span>,</span>
-<span>  h <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Laplace"</span>, <span class="st">"Laplace-Fisher"</span><span class="op">)</span>,</span>
 <span>  opt.h <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  two.stage <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  stages <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span>,</span>
 <span>  stage1low <span class="op">=</span> <span class="fl">0.01</span>,</span>
+<span>  h <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  use.prior <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  hessian <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  opt.method <span class="op">=</span> <span class="st">"L-BFGS-B"</span>,</span>
 <span>  opt.control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>factr <span class="op">=</span> <span class="fl">1e+10</span>, maxit <span class="op">=</span> <span class="fl">190</span><span class="op">)</span>,</span>
+<span>  fisher.options <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>sampling <span class="op">=</span> <span class="cn">FALSE</span>, samples <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Laplace"</span><span class="op">)</span>,</span>
 <span>  use_f_start <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  grad.computation <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  grad.computation <span class="op">=</span> <span class="va">opt.h</span>,</span>
 <span>  warn.exclude <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  save.every.iter <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  recursive <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -92,9 +95,10 @@
 <dd><p>GP model object.</p></dd>
 
 
-<dt id="arg-h">h<a class="anchor" aria-label="anchor" href="#arg-h"></a></dt>
-<dd><p>optional; a numeric vector of starting values of hyperparameters (untransformed, i.e. on their most natural scale). If <code>NULL</code>,
-the starting values are taken from <code>gp</code> hyperparameter table (<code>gp$hyperpar[,"start"]</code>).</p></dd>
+<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
+<dd><p>character; fitting method. Either <code>"Laplace"</code> (Laplace approximation), or <code>"Laplace-Fisher"</code> (Laplace-Fisher approximation).
+See <code>fisher.options</code> for the latter method.
+Laplace-Fisher approximation is the solution for when the hessian of the negative log likelihood is not positive semi-definite.</p></dd>
 
 
 <dt id="arg-opt-h">opt.h<a class="anchor" aria-label="anchor" href="#arg-opt-h"></a></dt>
@@ -116,24 +120,42 @@ note that stage 2 doesn't start from <code>gp$hyperpar$start</code>, but from <c
 <dd><p>the low threshold for the sigma2 parameter of the components for which the two-stage fitting applies.</p></dd>
 
 
+<dt id="arg-h">h<a class="anchor" aria-label="anchor" href="#arg-h"></a></dt>
+<dd><p>optional; a numeric vector of starting values of hyperparameters (untransformed, i.e. on their most natural scale). If <code>NULL</code>,
+the starting values are taken from <code>gp</code> hyperparameter table - from the <code>gp$hyperpar[,"start"]</code> column when <code>opt.h = TRUE</code>, or from
+the <code>gp$hyperpar[,"value"]</code> column when <code>opt.h = FALSE</code>.</p></dd>
+
+
 <dt id="arg-use-prior">use.prior<a class="anchor" aria-label="anchor" href="#arg-use-prior"></a></dt>
 <dd><p>logical; if TRUE, likelihood + prior (posterior) is optimized; if FALSE, only likelihood is optimized.</p></dd>
 
 
 <dt id="arg-hessian">hessian<a class="anchor" aria-label="anchor" href="#arg-hessian"></a></dt>
-<dd><p>logical; compute and return the Hessian during the optimization. Warning: may be heavy on CPU time! Default FALSE.</p></dd>
+<dd><p>logical; compute and return the Hessian during the hyperparameter optimization. Warning: may be heavy on CPU time! Default FALSE.</p></dd>
+
+
+<dt id="arg-opt-method">opt.method<a class="anchor" aria-label="anchor" href="#arg-opt-method"></a></dt>
+<dd><p>the method used by <code>optim(method = )</code></p></dd>
 
 
 <dt id="arg-opt-control">opt.control<a class="anchor" aria-label="anchor" href="#arg-opt-control"></a></dt>
 <dd><p>list of control parameters passed to the <code>optim(control = )</code></p></dd>
 
 
+<dt id="arg-fisher-options">fisher.options<a class="anchor" aria-label="anchor" href="#arg-fisher-options"></a></dt>
+<dd><p>list of the following options specifying how to generate the Fisher information matrix (applies when <code>method = "Laplace-Fisher"</code>):</p><dl><dt><code>sampling</code></dt>
+<dd><p>should sampling be used to create the Fisher information matrix? If <code>FALSE</code> (the default), likelihood-specific method must be implemented.
+Sampling can be used when no such method is implemented (but it is slower).</p></dd>
+
+<dt><code>samples</code></dt>
+<dd><p>how many samples should be generated for the sampling method?</p></dd>
+
+
+</dl></dd>
+
+
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>logical</p></dd>
-
-
-<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>character; fitting method. Currently <code>"Laplace"</code> supported (Laplace approximation).</p></dd>
 
 
 <dt id="arg-use-f-start">use_f_start<a class="anchor" aria-label="anchor" href="#arg-use-f-start"></a></dt>
@@ -150,7 +172,13 @@ note that stage 2 doesn't start from <code>gp$hyperpar$start</code>, but from <c
 
 
 <dt id="arg-warn-exclude">warn.exclude<a class="anchor" aria-label="anchor" href="#arg-warn-exclude"></a></dt>
-<dd><p>character vector; vector of warnings that should be disabled. Allowed values are: <code>"warn.stage2.start"</code>. Default <code>NULL</code>.</p></dd>
+<dd><p>character vector; vector of codes of warnings that should be disabled. The codes are reported by some warnings. Default <code>NULL</code>.</p></dd>
+
+
+<dt id="arg-save-every-iter">save.every.iter<a class="anchor" aria-label="anchor" href="#arg-save-every-iter"></a></dt>
+<dd><p>optional filename, used only when <code>opt.h = TRUE</code>. If supplied, a packed <code>gp</code> object
+named <code>gpp</code> is saved to this file after every hyperparameter iteration, overwriting the previous checkpoint.
+Ignored when <code>opt.h = FALSE</code>.</p></dd>
 
 
 <dt id="arg-recursive">recursive<a class="anchor" aria-label="anchor" href="#arg-recursive"></a></dt>

@@ -18,7 +18,7 @@ Note that restoring these structures can take some CPU time."><!-- mathjax --><s
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
       </span>
     </div>
 
@@ -65,7 +65,14 @@ Note that restoring these structures can take some CPU time.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gpUnpack</span><span class="op">(</span><span class="va">gp</span>, compute <span class="op">=</span> <span class="cn">TRUE</span>, need.K <span class="op">=</span> <span class="va">compute</span>, need.L <span class="op">=</span> <span class="va">compute</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gpUnpack</span><span class="op">(</span></span>
+<span>  <span class="va">gp</span>,</span>
+<span>  compute <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  need.K <span class="op">=</span> <span class="va">compute</span>,</span>
+<span>  need.L <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  need.LTinv.rW <span class="op">=</span> <span class="va">compute</span>,</span>
+<span>  num.correct.W.tol <span class="op">=</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">.Machine</span><span class="op">$</span><span class="va">double.eps</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -76,10 +83,17 @@ Note that restoring these structures can take some CPU time.</p>
 <dd><p>logical - should we prepare for computations (mostly predictions)? This is the CPU-heavy part. <code>compute = FALSE</code> will skip this.</p></dd>
 
 
-<dt id="arg-need-k-need-l">need.K, need.L<a class="anchor" aria-label="anchor" href="#arg-need-k-need-l"></a></dt>
-<dd><p>logical - in case of <code>compute = TRUE</code>, specify whether particular matrix (K, L) is needed. If only one of these matrices (K, L) is needed, it can
-significantly save memory, and in case of L matrix, also CPU time. Note that if <code>compute = TRUE</code>, <code>K</code> matrix will be calculated regardless of <code>need.K</code>;
-so <code>need.K = FALSE</code> will only save the memory size of the resultant object, but not CPU time.</p></dd>
+<dt id="arg-need-k-need-l-need-ltinv-rw">need.K, need.L, need.LTinv.rW<a class="anchor" aria-label="anchor" href="#arg-need-k-need-l-need-ltinv-rw"></a></dt>
+<dd><p>logical - in case of <code>compute = TRUE</code>, specify whether particular matrix (K, L) is needed. If only one of these matrices (K, L, need.LTinv.rW) is needed, it can
+significantly save memory and sometimes also CPU time. But the object depends on each other (K -&gt; L -&gt; LTinv.rW),
+so if you set this to <code>FALSE</code> for an object on which another needed object depends on,
+you will only save the memory size of the resultant object, but not CPU time.</p>
+<p>Note that the status of the <code>rW</code> object will be exactly the same as the <code>L</code> object (so it is directed by <code>need.L</code> argument).</p></dd>
+
+
+<dt id="arg-num-correct-w-tol">num.correct.W.tol<a class="anchor" aria-label="anchor" href="#arg-num-correct-w-tol"></a></dt>
+<dd><p>numerical correction of W. Applies only to the case of diagonal W (gp$W.type == "diag").
+If not NULL, values of W will be corrected for small negative numbers, within given tolerance.</p></dd>
 
 </dl></div>
 

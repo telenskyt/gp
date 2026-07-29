@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gp</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
       </span>
     </div>
 
@@ -74,6 +74,9 @@
 <span>  log.fn <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="va">parallel</span><span class="op">)</span> <span class="st">"log-fold%f-%h-%p.txt"</span> <span class="kw">else</span> <span class="cn">NULL</span>,</span>
 <span>  dump.fn <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="va">parallel</span><span class="op">)</span> <span class="st">"dump-fold%f-%h_%p"</span> <span class="kw">else</span> <span class="cn">NULL</span>,</span>
 <span>  tr.max.lines <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  pred.options <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"terms"</span>, se.fit <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  lmFit.options <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>lik.hyperpar <span class="op">=</span> <span class="st">"fix"</span><span class="op">)</span>,</span>
+<span>  lmFit.pred.options <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"terms"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -94,7 +97,7 @@ specifying the number of the cross-validation fold the given record belongs to.<
 
 <dt id="arg-fold-fact">fold.fact<a class="anchor" aria-label="anchor" href="#arg-fold-fact"></a></dt>
 <dd><p>a factor along which the cross-validation folds (<code>fold.col</code>) are specified. Factor <code>"1"</code> means the folds are specified for the rows of the main table.
-Note that if the GP dimension is given by some real grouping factor (i.e. <code>p$GP_factor != "1"</code>), then the <code>fold.fact</code> must be that factor.</p></dd>
+Note that if the GP dimension is given by some real grouping factor (i.e. <code>gp$GP_factor != "1"</code>), then the <code>fold.fact</code> must be that factor.</p></dd>
 
 
 <dt id="arg-folds">folds<a class="anchor" aria-label="anchor" href="#arg-folds"></a></dt>
@@ -102,8 +105,10 @@ Note that if the GP dimension is given by some real grouping factor (i.e. <code>
 
 
 <dt id="arg-start-from-model">start.from.model<a class="anchor" aria-label="anchor" href="#arg-start-from-model"></a></dt>
-<dd><p>an object of class <code>gp</code> to take the starting values from. If specified, then for each cross-validation fold model to be fit,
-the starting values of the hyperparameters will be taken from the corresponding fold model wherever possible.</p></dd>
+<dd><p>an object of class <code>gp</code> to take the starting values from (from the <code>value</code> column in the hyperparameter table,
+see <code><a href="gpHyperparStartFromModel.html">gpHyperparStartFromModel</a></code>). If specified, then for each cross-validation fold model to be fit,
+the starting values of the hyperparameters will be taken from the corresponding fold model wherever possible. This implies that the object specified in this argument
+must have already been fitted by gpFitCV with the exact same folds.</p></dd>
 
 
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
@@ -126,8 +131,20 @@ the starting values of the hyperparameters will be taken from the corresponding 
 <dd><p>the <code>max.lines</code> parameter for <code>traceback</code>, i.e. the maximum number of lines printed per call when error occurs</p></dd>
 
 
+<dt id="arg-pred-options">pred.options<a class="anchor" aria-label="anchor" href="#arg-pred-options"></a></dt>
+<dd><p>list of options to be passed to the <code><a href="predict.gp.html">predict.gp</a></code> method.</p></dd>
+
+
+<dt id="arg-lmfit-options">lmFit.options<a class="anchor" aria-label="anchor" href="#arg-lmfit-options"></a></dt>
+<dd><p>list of options to be passed to <code><a href="lmFit.html">lmFit</a></code> when fitting the intercept-only null model for each fold.</p></dd>
+
+
+<dt id="arg-lmfit-pred-options">lmFit.pred.options<a class="anchor" aria-label="anchor" href="#arg-lmfit-pred-options"></a></dt>
+<dd><p>list of options to be passed to the <code>predict.lmFit</code> method when predicting from the null model.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>options to be passed to the <code><a href="gpFit.html">gpFit()</a></code> method.</p></dd>
+<dd><p>options to be passed to the <code><a href="gpFit.html">gpFit</a></code> method.</p></dd>
 
 </dl></div>
     <div id="details">
