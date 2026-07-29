@@ -33,6 +33,9 @@
 #' @param grad.computation logical; compute gradients during the gaussian process optimization (required when
 #'   \code{opt.h = TRUE}).
 #' @param warn.exclude character vector; vector of codes of warnings that should be disabled. The codes are reported by some warnings. Default \code{NULL}.
+#' @param save.every.iter optional filename, used only when \code{opt.h = TRUE}. If supplied, a packed \code{gp} object
+#'   named \code{gpp} is saved to this file after every hyperparameter iteration, overwriting the previous checkpoint.
+#'   After hyperparameter optimization finishes, the completed model is packed and saved once more. Ignored when \code{opt.h = FALSE}.
 #' @param recursive internal option; do not use.
 #' @param ... further arguments to be passed to fitting method (e.g. \code{gpFitLaplace()})
 #'
@@ -95,6 +98,7 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 				  weights = NULL,
 				  grad.computation = opt.h,
 				  warn.exclude = NULL,
+				  save.every.iter = NULL,
 				  recursive = FALSE, #internal option only, don't use!
 				  ...
 				  )
@@ -105,6 +109,10 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 		stop("The gp object doesn't contain scaled data; perpahs you need to call gpUnpack() on it (you can use compute = FALSE to save CPU time)")	
 
 	if (!recursive) { # top level call, from the outside (not an internal call) - will be called just once in the beginning
+		if (opt.h && !is.null(save.every.iter) &&
+			(!is.character(save.every.iter) || length(save.every.iter) != 1L || is.na(save.every.iter) || !nzchar(save.every.iter)))
+			stop("`save.every.iter` must be NULL or a single non-empty filename.")
+
 		if (grad.computation == FALSE && opt.h == TRUE)
 			warning("grad.computation is set to FALSE when hyperparameters are optimized - hope you intended it!")
 			
@@ -233,6 +241,8 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 		if (!is.null(fit.stage1) && 2 %in% stages) # fit object from stage 1 exists and it is not the current fit object
 			fit$stage1 <- fit.stage1
 		gp$fit <- fit
+		if (!is.null(save.every.iter))
+			gpFitSaveIteration(gp, save.every.iter)
 		return (gp)
 	} else if (!recursive) { # direct call, no optim
 		# initiate the starting value of h, if needed
@@ -282,7 +292,19 @@ gpFit <- function (gp, method = c('Laplace', 'Laplace-Fisher'),
 		gp$hyperpar <- gpHyperparImportVector(gp, fit$h) # don't forget to import the resultant hyperparameter vector to the table
 		return (gp)
 	}
+	if (!is.null(save.every.iter)) {
+		gp$fit <- fit
+		gp$hyperpar <- gpHyperparImportVector(gp, fit$h)
+		gpFitSaveIteration(gp, save.every.iter)
+	}
 	return(fit)
+}
+
+gpFitSaveIteration <- function(gp, filename)
+{
+	gpp <- gpPack(gp)
+	save(gpp, file = filename)
+	invisible(NULL)
 }
 
 run_info <- function (gp_fit_res)
