@@ -22,6 +22,7 @@ gpFit(
   weights = NULL,
   grad.computation = opt.h,
   warn.exclude = NULL,
+  save.every.iter = NULL,
   recursive = FALSE,
   ...
 )
@@ -74,6 +75,9 @@ Sampling can be used when no such method is implemented (but it is slower).}
 \code{opt.h = TRUE}).}
 
 \item{warn.exclude}{character vector; vector of codes of warnings that should be disabled. The codes are reported by some warnings. Default \code{NULL}.}
+
+\item{save.every.iter}{optional filename. If supplied, a packed \code{gp} object is saved to this file after every
+hyperparameter iteration, overwriting the previous checkpoint. The completed object is saved once more before \code{gpFit()} returns.}
 
 \item{recursive}{internal option; do not use.}
 
