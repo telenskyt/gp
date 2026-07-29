@@ -11,7 +11,8 @@ gpLGO(
   pred.null = NULL,
   lmFit.options = list(lik.hyperpar = "fix"),
   lmFit.pred.options = list(type = "terms"),
-  hyperpar = gpHyperparList(gp)
+  hyperpar = gpHyperparList(gp),
+  chunked = FALSE
 )
 }
 \arguments{
@@ -33,6 +34,8 @@ better null model (and a slightly lower pseudo-R2 statistics then).}
 \item{lmFit.pred.options}{list of options to be passed to the \code{predict.lmFit} method when predicting from the null model. Only used when \code{pred.null = NULL}.}
 
 \item{hyperpar}{(optional) lists of hyperparameter values, as returned by \code{gpHyperparList()}; default is to use the hyperparameters from the \code{gp} object.}
+
+\item{chunked}{logical, passed to \code{\link{gpLGOpred}}; use dense fold blocks? This currently requires diagonal \code{W}.}
 }
 \value{
 the gp model object with approximate LGO-CV predictions and statistics in \code{gp$fit$LGOCV}.

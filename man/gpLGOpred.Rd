@@ -4,7 +4,7 @@
 \alias{gpLGOpred}
 \title{LGO-CV prediction - an approximation of leave-group-out cross-validation}
 \usage{
-gpLGOpred(gp, fold.col, fold.fact = "1")
+gpLGOpred(gp, fold.col, fold.fact = "1", chunked = FALSE)
 }
 \arguments{
 \item{gp}{GP model object}
@@ -15,6 +15,8 @@ specifying the number of the cross-validation fold the given record belongs to.}
 
 \item{fold.fact}{a factor along which the cross-validation folds (\code{fold.col}) are specified. Factor \code{"1"} means the folds are specified for the rows of the main table.
 Note that if the GP dimension is given by some real grouping factor (i.e. \code{gp$GP_factor != "1"}), then the \code{fold.fact} must be that factor.}
+
+\item{chunked}{logical; use dense fold blocks? This currently requires diagonal \code{W}. The default \code{FALSE} uses the general sparse implementation.}
 }
 \description{
 LGO-CV prediction - an approximation of leave-group-out cross-validation
